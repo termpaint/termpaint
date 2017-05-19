@@ -1,7 +1,25 @@
 #ifndef TERMPAINT_TERMPAINT_UTF8_INCLUDED
 #define TERMPAINT_TERMPAINT_UTF8_INCLUDED
 
-// internal header, do api or abi stable
+// internal header, not api or abi stable
+
+static inline int termpaintp_utf8_len(unsigned char first_byte) {
+    int size;
+    if (0xfc == (0xfe & first_byte)) {
+        size = 6;
+    } else if (0xf8 == (0xfc & first_byte)) {
+        size = 5;
+    } else if (0xf0 == (0xf8 & first_byte)) {
+        size = 4;
+    } else if (0xe0 == (0xf0 & first_byte)) {
+        size = 3;
+    } else if (0xc0 == (0xe0 & first_byte)) {
+        size = 2;
+    } else {
+        size = 1;
+    }
+    return size;
+}
 
 // return count of bytes written
 // buffer needs to be 6 bytes long

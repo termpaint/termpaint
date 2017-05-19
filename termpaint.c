@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "termpaint_compiler.h"
+#include "termpaint_utf8.h"
 
 /* TODO and known problems:
  * What about composing code points?
@@ -18,7 +19,7 @@
 
 
 typedef struct cell_ {
-    char text[7]; // full 31bit range plus termination
+    unsigned char text[7]; // full 31bit range plus termination
     //_Bool double_width;
     int fg_color;
     int bg_color;
@@ -123,13 +124,14 @@ void termpaint_surface_flush(termpaint_surface *surface) {
                 int_puts(integration, "39");
             }
             int_puts(integration, "m");
-            int_puts(integration, c->text);
+            int_puts(integration, (char*)c->text);
         }
         int_puts(integration, "\n");
     }
 }
 
-void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg) {
+void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg) {
+    const unsigned char *string = (const unsigned char *)string_s;
     while (*string) {
         if (x >= surface->width || y >= surface->height) {
             return;
@@ -139,20 +141,7 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
         c->fg_color = fg;
         c->bg_color = bg;
 
-        int size;
-        if (0xfc == (0xfe & string[0])) {
-            size = 6;
-        } else if (0xf8 == (0xfc & string[0])) {
-            size = 5;
-        } else if (0xf0 == (0xf8 & string[0])) {
-            size = 4;
-        } else if (0xe0 == (0xf0 & string[0])) {
-            size = 3;
-        } else if (0xc0 == (0xe0 & string[0])) {
-            size = 2;
-        } else {
-            size = 1;
-        }
+        int size = termpaintp_utf8_len(string[0]);
 
         for (int i = 0; i < size; i++) {
             if (string[i] == 0) {
