@@ -35,7 +35,7 @@ DEF_ATOM(context_menu, "ContextMenu")
 
 DEF_ATOM(delete, "Delete")
 DEF_ATOM(end, "End")
-// help ommited
+// help omitted
 DEF_ATOM(home, "Home")
 DEF_ATOM(insert, "Insert")
 DEF_ATOM(page_down, "PageDown")
