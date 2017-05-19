@@ -361,7 +361,7 @@ enum termpaint_input_state {
 };
 
 struct termpaint_input_ {
-    char buff[MAX_SEQ_LENGTH];
+    unsigned char buff[MAX_SEQ_LENGTH];
     int used;
     enum termpaint_input_state state;
 
@@ -380,9 +380,9 @@ static void termpaintp_input_reset(termpaint_input *ctx) {
     ctx->state = tpis_base;
 }
 
-static void termpaintp_input_raw(termpaint_input *ctx, const char *data, size_t length) {
+static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data, size_t length) {
     if (ctx->raw_filter_cb) {
-        if (ctx->raw_filter_cb(ctx->raw_filter_user_data, data, length)) {
+        if (ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)data, length)) {
             return;
         }
     }
@@ -390,7 +390,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const char *data, size_t 
         return;
     }
 
-    char buffer[6];
+    unsigned char buffer[6];
 
     termpaint_input_event event;
     event.type = 0;
@@ -460,7 +460,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const char *data, size_t 
                 // TODO exclude C0 space, C1 space and 0x7f
                 event.type = TERMPAINT_EV_CHAR;
                 event.length = termpaintp_encode_to_utf8(codepoint, buffer);
-                event.atom_or_string = buffer;
+                event.atom_or_string = (char*)buffer;
                 event.modifier = 0;
                 mod = mod - 1;
                 if (mod & 1) {
@@ -478,26 +478,26 @@ static void termpaintp_input_raw(termpaint_input *ctx, const char *data, size_t 
             // tokenizer should ensure that this is exactly one valid utf8 codepoint
             event.type = TERMPAINT_EV_CHAR;
             event.length = length-1;
-            event.atom_or_string = data+1;
+            event.atom_or_string = (const char*)data+1;
             event.modifier = MOD_ALT;
         }
         if (!event.type && length == 2 && data[0] == '\e' && data[1] > 32 && data[1] < 127) {
             event.type = TERMPAINT_EV_CHAR;
             event.length = length-1;
-            event.atom_or_string = data+1;
+            event.atom_or_string = (const char*)data+1;
             event.modifier = MOD_ALT;
         }
         if (!event.type && length > 1 && (0xc0 == (0xc0 & data[0]))) {
             // tokenizer should ensure that this is exactly one valid utf8 codepoint
             event.type = TERMPAINT_EV_CHAR;
             event.length = length;
-            event.atom_or_string = data;
+            event.atom_or_string = (const char*)data;
             event.modifier = 0;
         }
         if (!event.type && length > 0 && data[0] > 32 && data[0] < 127) {
             event.type = TERMPAINT_EV_CHAR;
             event.length = length;
-            event.atom_or_string = data;
+            event.atom_or_string = (const char*)data;
             event.modifier = 0;
         }
     }
@@ -523,11 +523,8 @@ void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *, termp
     ctx->event_user_data = user_data;
 }
 
-static inline char char_from(int c) {
-    return (char)((unsigned char)c);
-}
-
-bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned length) {
+bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned length) {
+    const unsigned char *data = (const unsigned char*)data_s;
     if (length + ctx->used >= MAX_SEQ_LENGTH) {
         // bail out
         termpaintp_input_reset(ctx);
@@ -561,13 +558,13 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned l
                 // escape sequence starts
                 } else if (data[i] == '\e') {
                     ctx->state = tpis_esc;
-                } else if (data[i] == char_from(0x8f)) { // SS3
+                } else if (data[i] == 0x8f) { // SS3
                     ctx->state = tpis_ss3;
-                } else if (data[i] == char_from(0x90)) { // DCS
+                } else if (data[i] == 0x90) { // DCS
                     ctx->state = tpis_cmd_str;
-                } else if (data[i] == char_from(0x9b)) { // CSI
+                } else if (data[i] == 0x9b) { // CSI
                     ctx->state = tpis_csi;
-                } else if (data[i] == char_from(0x9d)) { // OSC
+                } else if (data[i] == 0x9d) { // OSC
                     ctx->state = tpis_cmd_str;
                 } else {
                     finished = true;
@@ -697,7 +694,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned l
 
 
 const char *termpaint_input_peek_buffer(termpaint_input *ctx) {
-    return ctx->buff;
+    return (const char*)ctx->buff;
 }
 
 

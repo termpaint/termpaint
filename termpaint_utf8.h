@@ -24,7 +24,7 @@ static inline int termpaintp_utf8_len(unsigned char first_byte) {
 // return count of bytes written
 // buffer needs to be 6 bytes long
 // does not reject UTF-16 surrogates codepoints
-static inline int termpaintp_encode_to_utf8(int codepoint, char *buf) {
+static inline int termpaintp_encode_to_utf8(int codepoint, unsigned char *buf) {
 #define STORE_AND_SHIFT(index)              \
     buf[index] = codepoint & 0b00111111;    \
     codepoint = codepoint >> 6;
