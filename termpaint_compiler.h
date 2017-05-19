@@ -23,4 +23,6 @@ static inline _Bool termpaint_smul_overflow(int a, int b, int* res) {
 #endif
 }
 
+#define UNUSED(x) (void)x
+
 #endif

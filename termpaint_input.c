@@ -365,7 +365,7 @@ struct termpaint_input_ {
     int used;
     enum termpaint_input_state state;
 
-    _Bool (*raw_filter_cb)(void *user_data, const char *data, int length);
+    _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length);
     void *raw_filter_user_data;
 
     void (*event_cb)(void *, termpaint_input_event *);
@@ -380,7 +380,7 @@ static void termpaintp_input_reset(termpaint_input *ctx) {
     ctx->state = tpis_base;
 }
 
-static void termpaintp_input_raw(termpaint_input *ctx, const char *data, int length) {
+static void termpaintp_input_raw(termpaint_input *ctx, const char *data, size_t length) {
     if (ctx->raw_filter_cb) {
         if (ctx->raw_filter_cb(ctx->raw_filter_user_data, data, length)) {
             return;
@@ -424,7 +424,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const char *data, int len
                     (length >= 9 && memcmp(data, "\e[27;", 5) == 0 && data[length-1] == '~')
                  || (length >= 6 && data[0] == '\e' && data[1] == '[' && data[length-1] == 'u'))) {
             // TODO \e[<mod>;<char>u
-            int i;
+            unsigned i;
             if (data[length-1] == 'u') {
                 i = 2;
             } else {
@@ -513,7 +513,7 @@ termpaint_input *termpaint_input_new() {
     return ctx;
 }
 
-void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, int length), void *user_data) {
+void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length), void *user_data) {
     ctx->raw_filter_cb = cb;
     ctx->raw_filter_user_data = user_data;
 }
@@ -527,14 +527,14 @@ static inline char char_from(int c) {
     return (char)((unsigned char)c);
 }
 
-bool termpaint_input_add_data(termpaint_input *ctx, const char *data, int length) {
+bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned length) {
     if (length + ctx->used >= MAX_SEQ_LENGTH) {
         // bail out
         termpaintp_input_reset(ctx);
         return false;
     }
     // TODO utf8
-    for (int i = 0; i < length; i++) {
+    for (unsigned i = 0; i < length; i++) {
         ctx->buff[ctx->used] = data[i];
         ++ctx->used;
 

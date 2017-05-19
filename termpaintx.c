@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <stdbool.h>
 
+#include <termpaint_compiler.h>
+
 #define nullptr ((void*)0)
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
@@ -136,5 +138,6 @@ termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_clo
 }
 
 _Bool termpaint_full_integration_poll_ready(termpaint_integration *integration) {
+    UNUSED(integration); // TODO
     return false;
 }

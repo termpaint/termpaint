@@ -194,6 +194,7 @@ void termpaint_surface_resize(termpaint_surface *surface, int width, int height)
 
 
 bool termpaint_auto_detect(termpaint_surface *surface) {
+    UNUSED(surface); // TODO
     return false;
 }
 

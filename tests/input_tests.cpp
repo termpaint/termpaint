@@ -24,7 +24,7 @@ void wrap(void (*set_cb)(TYPE1 *ctx, Result (*cb)(void *user_data, Args...), voi
 
 bool parses_as_one(const char *input) {
     enum { START, OK, ERROR } state = START;
-    std::function<_Bool(const char*, int)> callback = [input, &state] (const char *data, int length) -> _Bool {
+    std::function<_Bool(const char*, unsigned)> callback = [input, &state] (const char *data, unsigned length) -> _Bool {
         if (state == START) {
             if (length == strlen(input) && memcmp(input, data, length) == 0) {
                 state = OK;

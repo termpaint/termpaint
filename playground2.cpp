@@ -23,7 +23,15 @@ time_t last_q;
 bool quit;
 
 
-_Bool raw_filter(void *user_data, const char *data, int length) {
+template <typename X>
+unsigned char u8(X); // intentionally undefined
+
+template <>
+unsigned char u8(char ch) {
+    return ch;
+}
+
+_Bool raw_filter(void *user_data, const char *data, unsigned length) {
     (void)user_data;
     std::string event { data, length };
     ring.emplace_back(event);
@@ -41,6 +49,7 @@ _Bool raw_filter(void *user_data, const char *data, int length) {
 }
 
 void event_handler(void *user_data, termpaint_input_event *event) {
+    (void)user_data;
     std::string pretty;
 
     if (event->type == 0) {
@@ -67,31 +76,31 @@ void event_handler(void *user_data, termpaint_input_event *event) {
 }
 
 void display_esc(int x, int y, const std::string &data) {
-    for (int i = 0; i < data.length(); i++) {
-        if (data[i] == '\e') {
+    for (unsigned i = 0; i < data.length(); i++) {
+        if (u8(data[i]) == '\e') {
             termpaint_surface_write_with_colors(surface, x, y, "^[", 0xffffff, 0x7f0000);
             x+=2;
-        } else if (0xfc == (0xfe & data[i]) && i+5 < data.length()) {
+        } else if (0xfc == (0xfe & u8(data[i])) && i+5 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], data[i+3], data[i+4], data[i+5], 0};
             termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
             x += 1;
             i += 5;
-        } else if (0xf8 == (0xfc & data[i]) && i+4 < data.length()) {
+        } else if (0xf8 == (0xfc & u8(data[i])) && i+4 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], data[i+3], data[i+4], 0};
             termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
             x += 1;
             i += 4;
-        } else if (0xf0 == (0xf8 & data[i]) && i+3 < data.length()) {
+        } else if (0xf0 == (0xf8 & u8(data[i])) && i+3 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], data[i+3], 0};
             termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
             x += 1;
             i += 3;
-        } else if (0xe0 == (0xf0 & data[i]) && i+2 < data.length()) {
+        } else if (0xe0 == (0xf0 & u8(data[i])) && i+2 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], 0};
             termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
             x += 1;
             i += 2;
-        } else if (0xc0 == (0xe0 & data[i]) && i+1 < data.length()) {
+        } else if (0xc0 == (0xe0 & u8(data[i])) && i+1 < data.length()) {
             if (((unsigned char)data[i]) == 0xc2 && ((unsigned char)data[i+1]) < 0xa0) { // C1 and non breaking space
                 char x = ((unsigned char)data[i+1]) >> 4;
                 char a = char(x < 10 ? '0' + x : 'a' + x - 10);
