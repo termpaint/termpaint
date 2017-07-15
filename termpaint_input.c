@@ -14,6 +14,7 @@
  *  * in modOther mode: ctrl-backspace misidentfies as ctrl-H (ctrl-H has other code)
  *  * similar for tab, esc, return
  *  * in modOther ctrl-? strange (utf 8 converter?)
+ *  * needs to detect utf-8 encoded C1 chars
  */
 
 
@@ -364,8 +365,9 @@ struct termpaint_input_ {
     unsigned char buff[MAX_SEQ_LENGTH];
     int used;
     enum termpaint_input_state state;
+    _Bool overflow;
 
-    _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length);
+    _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
 
     void (*event_cb)(void *, termpaint_input_event *);
@@ -375,14 +377,14 @@ struct termpaint_input_ {
 
 
 static void termpaintp_input_reset(termpaint_input *ctx) {
-    ctx->buff[0] = 0;
     ctx->used = 0;
+    ctx->overflow = 0;
     ctx->state = tpis_base;
 }
 
-static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data, size_t length) {
+static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data, size_t length, _Bool overflow) {
     if (ctx->raw_filter_cb) {
-        if (ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)data, length)) {
+        if (ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)data, length, overflow)) {
             return;
         }
     }
@@ -394,7 +396,12 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
 
     termpaint_input_event event;
     event.type = 0;
-    if (length == 1 && data[0] == 0) {
+    if (overflow) {
+        event.type = TERMPAINT_EV_OVERFLOW;
+        event.length = 0;
+        event.atom_or_string = 0;
+        event.modifier = 0;
+    } else if (length == 1 && data[0] == 0) {
         event.type = TERMPAINT_EV_KEY;
         event.length = 0;
         event.atom_or_string = ATOM_space;
@@ -474,9 +481,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
             }
         }
-        if (!event.type && length > 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
-            // tokenizer should ensure that this is exactly one valid utf8 codepoint
-            event.type = TERMPAINT_EV_CHAR;
+        if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
+            // bogus: tokenizer should ensure that this is exactly one valid utf8 codepoint
+            event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
             event.length = length-1;
             event.atom_or_string = (const char*)data+1;
             event.modifier = MOD_ALT;
@@ -487,9 +494,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.atom_or_string = (const char*)data+1;
             event.modifier = MOD_ALT;
         }
-        if (!event.type && length > 1 && (0xc0 == (0xc0 & data[0]))) {
+        if (!event.type && length >= 1 && (0xc0 == (0xc0 & data[0]))) {
             // tokenizer should ensure that this is exactly one valid utf8 codepoint
-            event.type = TERMPAINT_EV_CHAR;
+            event.type = termpaintp_check_valid_sequence(data, length) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
             event.length = length;
             event.atom_or_string = (const char*)data;
             event.modifier = 0;
@@ -513,7 +520,7 @@ termpaint_input *termpaint_input_new() {
     return ctx;
 }
 
-void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length), void *user_data) {
+void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data) {
     ctx->raw_filter_cb = cb;
     ctx->raw_filter_user_data = user_data;
 }
@@ -525,13 +532,17 @@ void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *, termp
 
 bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned length) {
     const unsigned char *data = (const unsigned char*)data_s;
-    if (length + ctx->used >= MAX_SEQ_LENGTH) {
-        // bail out
-        termpaintp_input_reset(ctx);
-        return false;
-    }
+
     // TODO utf8
     for (unsigned i = 0; i < length; i++) {
+        // Protect against overlong sequences
+        if (ctx->used == MAX_SEQ_LENGTH) {
+            // go to error recovery
+            ctx->buff[0] = 0;
+            ctx->used = 0;
+            ctx->overflow = 1;
+        }
+
         ctx->buff[ctx->used] = data[i];
         ++ctx->used;
 
@@ -617,12 +628,14 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpis_cmd_str:
                 if (data[i] == '\e') {
                     ctx->state = tpis_str_terminator_esc;
+                } else if (data[i] == 0x9c) {
+                    finished = true;
                 }
                 break;
             case tpis_str_terminator_esc:
                 // we expect a '\\' here. But every other char also aborts parsing
-                // as a workaround for retriggering:
                 if (data[i] == '[') {
+                    // as a workaround for retriggering:
                     retrigger2 = true;
                 } else {
                     finished = true;
@@ -631,7 +644,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpid_utf8_5:
                 if ((data[i] & 0xc0) != 0x80) {
                     // encoding error, abort sequence
-                    finished = true;
+                    retrigger = true;
                 } else {
                     ctx->state = tpid_utf8_4;
                 }
@@ -639,7 +652,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpid_utf8_4:
                 if ((data[i] & 0xc0) != 0x80) {
                     // encoding error, abort sequence
-                    finished = true;
+                    retrigger = true;
                 } else {
                     ctx->state = tpid_utf8_3;
                 }
@@ -647,7 +660,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpid_utf8_3:
                 if ((data[i] & 0xc0) != 0x80) {
                     // encoding error, abort sequence
-                    finished = true;
+                    retrigger = true;
                 } else {
                     ctx->state = tpid_utf8_2;
                 }
@@ -655,7 +668,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpid_utf8_2:
                 if ((data[i] & 0xc0) != 0x80) {
                     // encoding error, abort sequence
-                    finished = true;
+                    retrigger = true;
                 } else {
                     ctx->state = tpid_utf8_1;
                 }
@@ -663,18 +676,22 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpid_utf8_1:
                 if ((data[i] & 0xc0) != 0x80) {
                     // encoding error, abort sequence
-                    finished = true;
+                    retrigger = true;
                 } else {
                     finished = true;
                 }
                 break;
         }
         if (finished) {
-            termpaintp_input_raw(ctx, ctx->buff, ctx->used);
+            termpaintp_input_raw(ctx, ctx->buff, ctx->used, ctx->overflow);
             termpaintp_input_reset(ctx);
         } else if (retrigger2) {
             // current and previous char is not part of sequence
-            termpaintp_input_raw(ctx, ctx->buff, ctx->used - 2);
+            if (ctx->used >= 2) {
+                termpaintp_input_raw(ctx, ctx->buff, ctx->used - 2, ctx->overflow);
+            } else {
+                termpaintp_input_raw(ctx, ctx->buff, 0, ctx->overflow);
+            }
             termpaintp_input_reset(ctx);
             ctx->buff[ctx->used] = '\e';
             ++ctx->used;
@@ -683,7 +700,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             ctx->state = tpis_csi;
         } else if (retrigger) {
             // current char is not part of sequence
-            termpaintp_input_raw(ctx, ctx->buff, ctx->used - 1);
+            termpaintp_input_raw(ctx, ctx->buff, ctx->used - 1, ctx->overflow);
             termpaintp_input_reset(ctx);
             --i; // process this char again
         }

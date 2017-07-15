@@ -31,7 +31,7 @@ unsigned char u8(char ch) {
     return ch;
 }
 
-_Bool raw_filter(void *user_data, const char *data, unsigned length) {
+_Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overflow) {
     (void)user_data;
     std::string event { data, length };
     ring.emplace_back(event);

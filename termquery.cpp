@@ -46,7 +46,7 @@ void kick() {
     finished = true;
 }
 
-_Bool raw_filter(void *user_data, const char *data, unsigned length) {
+_Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overflow) {
     (void)user_data;
     std::string event { data, length };
     info &i = *current_query;
