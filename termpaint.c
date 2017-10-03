@@ -130,6 +130,15 @@ void termpaint_surface_flush(termpaint_surface *surface) {
     }
 }
 
+static int replace_norenderable_codepoints(int codepoint) {
+    if (codepoint < 32
+       || (codepoint >= 0x7f && codepoint < 0xa0)) {
+        return ' ';
+    } else {
+        return codepoint;
+    }
+}
+
 void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg) {
     const unsigned char *string = (const unsigned char *)string_s;
     while (*string) {
@@ -142,6 +151,7 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
         c->bg_color = bg;
 
         int size = termpaintp_utf8_len(string[0]);
+#if 0 // fast but not very robust
 
         for (int i = 0; i < size; i++) {
             if (string[i] == 0) {
@@ -151,11 +161,23 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
             c->text[i] = string[i];
         }
         c->text[size] = 0;
+#else
+        // check termpaintp_utf8_decode_from_utf8 precondition
+        for (int i = 0; i < size; i++) {
+            if (string[i] == 0) {
+                // bogus, bail
+                return;
+            }
+        }
+        int codepoint = termpaintp_utf8_decode_from_utf8(string, size);
+        codepoint = replace_norenderable_codepoints(codepoint);
+        int written = termpaintp_encode_to_utf8(codepoint, c->text);
+        c->text[written] = 0;
+#endif
         string += size;
 
         ++x;
     }
-
 }
 
 
