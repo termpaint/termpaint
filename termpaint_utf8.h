@@ -45,6 +45,42 @@ static inline int termpaintp_utf8_len(unsigned char first_byte) {
     return size;
 }
 
+// Decodes a utf8 encoded unicode codepoint.
+// input MUST point to at least length readable bytes.
+// length MUST be the return of termpaintp_utf8_len(*input)
+static inline int termpaintp_utf8_decode_from_utf8(const unsigned char *input, int length) {
+    if (length == 1) {
+        return *input;
+    } else if (length == 2) {
+        return ((input[0] & 0x1f) << 6)
+                | (input[1] & 0x3f);
+    } else if (length == 3) {
+        return ((input[0] & 0x0f) << (6*2))
+                | ((input[1] & 0x3f) << 6)
+                | (input[2] & 0x3f);
+    } else if (length == 4) {
+        return ((input[0] & 0x07) << (6*3))
+                | ((input[1] & 0x3f) << (6*2))
+                | ((input[2] & 0x3f) << 6)
+                | (input[3] & 0x3f);
+    } else if (length == 5) {
+        return ((input[0] & 0x03) << (6*3))
+                | ((input[1] & 0x3f) << (6*3))
+                | ((input[2] & 0x3f) << (6*2))
+                | ((input[3] & 0x3f) << 6)
+                | (input[4] & 0x3f);
+    } else if (length == 6) {
+        return ((input[0] & 0x01) << (6*5))
+                | ((input[1] & 0x3f) << (6*4))
+                | ((input[2] & 0x3f) << (6*3))
+                | ((input[3] & 0x3f) << (6*2))
+                | ((input[4] & 0x3f) << 6)
+                | (input[5] & 0x3f);
+    } else {
+        return 0;
+    }
+}
+
 static inline _Bool termpaintp_check_valid_sequence(const unsigned char *input, unsigned length) {
 #define CHECK_CONTINUATION_BYTE(index) if ((input[index] & 0xc0) != 0x80) return false;
     if (length == 0) {
