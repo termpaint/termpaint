@@ -10,7 +10,7 @@
 #include "termpaint_utf8.h"
 
 /* Known problems:
- *  * alt-ESC is seen as ESC ESC
+ *  * Massivly depends on resync trick. Non resync mode currently no longer supported
  *  * in modOther mode: ctrl-backspace misidentfies as ctrl-H (ctrl-H has other code)
  *  * similar for tab, esc, return
  *  * in modOther ctrl-? strange (utf 8 converter?)
@@ -244,9 +244,10 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eO4y", ATOM_numpad9,                   MOD_ALT | MOD_SHIFT },
     { "\eO8y", ATOM_numpad9,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
 
-    // ESC ---> same as Ctrl-[
+    // { "\e", ATOM_escape, }, via special case in code (also Ctrl-[ in traditional mode)
     XTERM_MODS("\e[27;", ";27~", ATOM_escape), // modifiy other keys mode
     XTERM_MODS("\e[27;", "u", ATOM_escape), // modifiy other keys mode
+    { "\e\e", ATOM_escape,                                 MOD_ALT },
 
 
     { "\eOP", ATOM_f1, 0 },
@@ -313,7 +314,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\x18", "x", MOD_PRINT },
     { "\x19", "y", MOD_PRINT },
     { "\x1a", "z", MOD_PRINT },
-    { "\x1b", "[", MOD_PRINT },
+    //{ "\x1b",   "[", MOD_CTRL |           MOD_PRINT },
     //+ also ESC
     //+ also ctrl-3
     { "\x1c", "\\", MOD_PRINT },
@@ -366,6 +367,7 @@ struct termpaint_input_ {
     int used;
     enum termpaint_input_state state;
     _Bool overflow;
+    _Bool esc_pending;
 
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
@@ -383,6 +385,39 @@ static void termpaintp_input_reset(termpaint_input *ctx) {
 }
 
 static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data, size_t length, _Bool overflow) {
+    // First handle double escape for alt-ESC
+    if (overflow) {
+        // overflow just reset to base state.
+        ctx->esc_pending = false;
+    } else {
+        if (!ctx->esc_pending) {
+            if (length == 1 && data[0] == '\e') {
+                // skip processing this, either next key or resync will trigger real handling
+                ctx->esc_pending = true;
+                return;
+            }
+        } else {
+            ctx->esc_pending = false;
+            if (length == 1 && data[0] == '\e') {
+                // alt-ESC, this is just one event
+                length = 2;
+                data = (unsigned char*)"\e\e";
+            } else {
+                // something else, two events
+                if (ctx->raw_filter_cb && ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)"\e", 1, false)) {
+                    ; // skipped by raw filter
+                } else if (ctx->event_cb) {
+                    termpaint_input_event event;
+                    event.type = TERMPAINT_EV_KEY;
+                    event.length = 0;
+                    event.atom_or_string = ATOM_escape;
+                    event.modifier = 0;
+                    ctx->event_cb(ctx->event_user_data, &event);
+                }
+            }
+        }
+    }
+
     if (ctx->raw_filter_cb) {
         if (ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)data, length, overflow)) {
             return;
@@ -515,6 +550,7 @@ termpaint_input *termpaint_input_new() {
     termpaintp_input_selfcheck();
     termpaint_input *ctx = calloc(1, sizeof(termpaint_input));
     termpaintp_input_reset(ctx);
+    ctx->esc_pending = false;
     ctx->raw_filter_cb = nullptr;
     ctx->event_cb = nullptr;
     return ctx;
