@@ -12,7 +12,8 @@
 /* Known problems:
  *  * Massivly depends on resync trick. Non resync mode currently no longer supported
  *  * in modOther ctrl-? strange (utf 8 converter?)
- *  * needs to detect utf-8 encoded C1 chars
+ *  * needs to detect utf-8 encoded C1 chars? Or maybe that not used in the wild at all?
+ *  * numpad 5 without numlock has unique code in linux vt, what should be termpaint's atom for this?
  */
 
 
@@ -103,7 +104,6 @@ typedef struct key_mapping_entry_ key_mapping_entry;
     { PREFIX "6" POSTFIX, ATOM, MOD_CTRL           | MOD_SHIFT },   \
     { PREFIX "7" POSTFIX, ATOM, MOD_CTRL | MOD_ALT             },   \
     { PREFIX "8" POSTFIX, ATOM, MOD_CTRL | MOD_ALT | MOD_SHIFT }
-
 
 // keyboard settings to consider:
 // xterm:
