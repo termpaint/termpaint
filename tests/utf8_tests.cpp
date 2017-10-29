@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "catch.hpp"
+#include "../third-party/catch.hpp"
 
 typedef bool _Bool;
 #include <termpaint_utf8.h>

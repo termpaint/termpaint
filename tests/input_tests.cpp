@@ -1,7 +1,7 @@
 #include <string.h>
 #include <functional>
 
-#include "catch.hpp"
+#include "../third-party/catch.hpp"
 
 typedef bool _Bool;
 
