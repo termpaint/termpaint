@@ -139,11 +139,19 @@ static int replace_norenderable_codepoints(int codepoint) {
     }
 }
 
-void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg) {
+void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg) {
+    termpaint_surface_write_with_colors_clipped(surface, x, y, string, fg, bg, 0, surface->width-1);
+}
+
+void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg, int clip_x0, int clip_x1) {
     const unsigned char *string = (const unsigned char *)string_s;
     if (y < 0) return;
+    if (clip_x0 < 0) clip_x0 = 0;
+    if (clip_x1 >= surface->width) {
+        clip_x1 = surface->width-1;
+    }
     while (*string) {
-        if (x >= surface->width || y >= surface->height) {
+        if (x > clip_x1 || y >= surface->height) {
             return;
         }
 
@@ -159,7 +167,7 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
         int codepoint = termpaintp_utf8_decode_from_utf8(string, size);
         codepoint = replace_norenderable_codepoints(codepoint);
 
-        if (x >= 0) {
+        if (x >= clip_x0) {
             cell *c = termpaintp_getcell(surface, x, y);
             c->fg_color = fg;
             c->bg_color = bg;
