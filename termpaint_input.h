@@ -66,6 +66,7 @@ const char *termpaint_input_f12();
 #define TERMPAINT_MOD_SHIFT 1
 #define TERMPAINT_MOD_CTRL 2
 #define TERMPAINT_MOD_ALT 4
+#define TERMPAINT_MOD_ALTGR 8
 
 struct termpaint_input_event_ {
     int type;

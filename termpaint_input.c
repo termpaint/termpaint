@@ -82,6 +82,7 @@ DEF_ATOM(f12, "F12")
 #define MOD_CTRL TERMPAINT_MOD_CTRL
 #define MOD_ALT TERMPAINT_MOD_ALT
 #define MOD_SHIFT TERMPAINT_MOD_SHIFT
+#define MOD_ALTGR TERMPAINT_MOD_ALTGR
 
 #define MOD_PRINT (1u << 31)
 #define MOD_ENTER (1 << 31 + 1 << 30)
@@ -151,25 +152,35 @@ static key_mapping_entry key_mapping_table[] = {
 
     { "\e[3~", ATOM_delete, 0 },
     XTERM_MODS("\e[3;", "~", ATOM_delete),
+    { "\e[3;1~", ATOM_delete, MOD_ALTGR },
     { "\e[F", ATOM_end, 0},
     XTERM_MODS("\e[1;", "F", ATOM_end),
+    { "\e[1;1F", ATOM_end, MOD_ALTGR},
     { "\e[H", ATOM_home, 0},
     XTERM_MODS("\e[1;", "H", ATOM_home),
+    { "\e[1;1H", ATOM_home, MOD_ALTGR},
     { "\e[2~", ATOM_insert, 0},
     XTERM_MODS("\e[2;", "~", ATOM_insert),
+    { "\e[2;1~", ATOM_insert, MOD_ALTGR},
     { "\e[6~", ATOM_page_down, 0},
     XTERM_MODS("\e[6;", "~", ATOM_page_down),
+    { "\e[6;1~", ATOM_page_down, MOD_ALTGR},
     { "\e[5~", ATOM_page_up, 0},
     XTERM_MODS("\e[5;", "~", ATOM_page_up), // shift combinations only available when scroll bindings are removed in xterm
+    { "\e[5;1~", ATOM_page_up, MOD_ALTGR},
 
     { "\e[B", ATOM_arrow_down, 0 },
     XTERM_MODS("\e[1;", "B", ATOM_arrow_down),
+    { "\e[1;1B", ATOM_arrow_down, MOD_ALTGR },
     { "\e[D", ATOM_arrow_left, 0 },
     XTERM_MODS("\e[1;", "D", ATOM_arrow_left),
+    { "\e[1;1D", ATOM_arrow_left, MOD_ALTGR },
     { "\e[C", ATOM_arrow_right, 0 },
     XTERM_MODS("\e[1;", "C", ATOM_arrow_right),
+    { "\e[1;1C", ATOM_arrow_right, MOD_ALTGR },
     { "\e[A", ATOM_arrow_up, 0 },
     XTERM_MODS("\e[1;", "A", ATOM_arrow_up),
+    { "\e[1;1A", ATOM_arrow_up, MOD_ALTGR },
 
     // non application mode
     { "\e[E", ATOM_numpad5, 0 },
@@ -253,32 +264,43 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eOP", ATOM_f1, 0 },
     XTERM_MODS("\e[1;", "P", ATOM_f1),
     XTERM_MODS("\eO", "P", ATOM_f1),
+    { "\eO1P", ATOM_f1, MOD_ALTGR },
     { "\eOQ", ATOM_f2, 0 },
     XTERM_MODS("\e[1;", "Q", ATOM_f2),
     XTERM_MODS("\eO", "Q", ATOM_f2),
+    { "\eO1Q", ATOM_f2, MOD_ALTGR },
     { "\eOR", ATOM_f3, 0 },
     XTERM_MODS("\e[1;", "R", ATOM_f3),
     XTERM_MODS("\eO", "R", ATOM_f3),
+    { "\eO1R", ATOM_f3, MOD_ALTGR },
     { "\eOS", ATOM_f4, 0 },
     XTERM_MODS("\e[1;", "S", ATOM_f4),    
     XTERM_MODS("\eO", "S", ATOM_f4),
-
+    { "\eO1S", ATOM_f4, MOD_ALTGR },
     { "\e[15~", ATOM_f5, 0 },
     XTERM_MODS("\e[15;", "~", ATOM_f5),
+    { "\e[15;1~", ATOM_f5, MOD_ALTGR },
     { "\e[17~", ATOM_f6, 0 },
     XTERM_MODS("\e[17;", "~", ATOM_f6),
+    { "\e[17;1~", ATOM_f6, MOD_ALTGR },
     { "\e[18~", ATOM_f7, 0 },
     XTERM_MODS("\e[18;", "~", ATOM_f7),
+    { "\e[18;1~", ATOM_f7, MOD_ALTGR },
     { "\e[19~", ATOM_f8, 0 },
     XTERM_MODS("\e[19;", "~", ATOM_f8),
+    { "\e[19;1~", ATOM_f8, MOD_ALTGR },
     { "\e[20~", ATOM_f9, 0 },
     XTERM_MODS("\e[20;", "~", ATOM_f9),
+    { "\e[20;1~", ATOM_f9, MOD_ALTGR },
     { "\e[21~", ATOM_f10, 0 },
     XTERM_MODS("\e[21;", "~", ATOM_f10),
+    { "\e[21;1~", ATOM_f10, MOD_ALTGR },
     { "\e[23~", ATOM_f11, 0 },
     XTERM_MODS("\e[23;", "~", ATOM_f11),
+    { "\e[23;1~", ATOM_f11, MOD_ALTGR },
     { "\e[24~", ATOM_f12, 0 },
     XTERM_MODS("\e[24;", "~", ATOM_f12),
+    { "\e[24;1~", ATOM_f12, MOD_ALTGR },
 
 
     //{ "", ATOM_, 0 },
