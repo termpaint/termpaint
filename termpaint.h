@@ -1,7 +1,11 @@
 #ifndef TERMPAINT_TERMPAINT_INCLUDED
 #define TERMPAINT_TERMPAINT_INCLUDED
 
-#include <stdbool.h>
+#ifdef __cplusplus
+#ifndef _Bool
+#define _Bool bool
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {

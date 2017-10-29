@@ -2,6 +2,12 @@
 #define TERMPAINT_TERMPAINT_INPUT_INCLUDED
 
 #ifdef __cplusplus
+#ifndef _Bool
+#define _Bool bool
+#endif
+#endif
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
