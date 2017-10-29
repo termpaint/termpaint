@@ -126,7 +126,7 @@ void termpaint_surface_flush(termpaint_surface *surface) {
             int_puts(integration, "m");
             int_puts(integration, (char*)c->text);
         }
-        int_puts(integration, "\n");
+        if (y+1 < surface->height) int_puts(integration, "\n");
     }
 }
 
