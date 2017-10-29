@@ -11,8 +11,6 @@
 
 /* Known problems:
  *  * Massivly depends on resync trick. Non resync mode currently no longer supported
- *  * in modOther mode: ctrl-backspace misidentfies as ctrl-H (ctrl-H has other code)
- *  * similar for tab, esc, return
  *  * in modOther ctrl-? strange (utf 8 converter?)
  *  * needs to detect utf-8 encoded C1 chars
  */
@@ -129,12 +127,12 @@ typedef struct key_mapping_entry_ key_mapping_entry;
 //    ?1061  ???
 
 static key_mapping_entry key_mapping_table[] = {
-    //{ "\x0a", ATOM_enter, 0 }, also ctrl_something
+    { "\x0d", ATOM_enter, 0 }, // also ctrl-m in traditional mode
     // no modifiers for enter in xterm normal mode
     XTERM_MODS("\e[27;", ";13~", ATOM_enter), // modifiy other keys mode
     XTERM_MODS("\e[13;", "u", ATOM_enter), // modifiy other keys mode
 
-    //{ "\x09", ATOM_tab, 0 }, also ctrl_something
+    { "\x09", ATOM_tab, 0 }, //also ctrl_i
     { "\e[Z", ATOM_tab, MOD_SHIFT }, // xterm, normal mode
     XTERM_MODS("\e[27;", ";9~", ATOM_tab), // modifiy other keys mode
     XTERM_MODS("\e[9;", "u", ATOM_tab), // modifiy other keys mode
@@ -292,15 +290,15 @@ static key_mapping_entry key_mapping_table[] = {
     { "\x05", "e", MOD_PRINT },
     { "\x06", "f", MOD_PRINT },
     { "\x07", "g", MOD_PRINT },
-    { "\x08", "h", MOD_PRINT },
+    //{ "\x08",   "h", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-Backspace
-    { "\x09", "i", MOD_PRINT },
+    //{ "\x09",   "i",                      MOD_PRINT },
     //+ also Tab, Ctrl-Tab
     { "\x0a", "j", MOD_PRINT },
-    //+ also Return, Ctrl-Return
     { "\x0b", "k", MOD_PRINT },
     { "\x0c", "l", MOD_PRINT },
-    { "\x0d", "m", MOD_PRINT },
+    //{ "\x0d", "m", MOD_PRINT },
+    //+ also Return, Ctrl-Return
     { "\x0e", "n", MOD_PRINT },
     { "\x0f", "o", MOD_PRINT },
     { "\x10", "p", MOD_PRINT },
@@ -326,6 +324,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\x1f", "?", MOD_PRINT },
     //+ also ctrl-7
     { "\x7f", ATOM_backspace, 0 },
+    { "\x08", ATOM_backspace, MOD_CTRL },
     XTERM_MODS("\e[27;", ";127~", ATOM_backspace), // modifiy other keys mode
     XTERM_MODS("\e[127;", "u", ATOM_backspace), // modifiy other keys mode
 
