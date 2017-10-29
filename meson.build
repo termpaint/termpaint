@@ -32,6 +32,7 @@ import('pkgconfig').generate(
 )
 
 executable('playground', 'playground2.cpp', link_with: [main_lib])
+executable('keyboardcollector', 'tools/keyboardcollector.cpp', link_with: [main_lib])
 executable('termquery', 'termquery.cpp', link_with: [main_lib])
 
 testlib = static_library('testlib', 'tests/catch_main.cpp')

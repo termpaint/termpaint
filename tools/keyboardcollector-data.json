@@ -1,0 +1,164 @@
+{
+    "testsets": [
+        {
+            "name": "105_de_full",
+            "prompts": [
+                { "keyId": "Escape",        "prompt": "esc", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F1",            "prompt": "F1", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F2",            "prompt": "F2", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F3",            "prompt": "F3", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F4",            "prompt": "F4", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F5",            "prompt": "F5", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F6",            "prompt": "F6", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F7",            "prompt": "F7", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F8",            "prompt": "F8", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F9",            "prompt": "F9", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F10",           "prompt": "F10", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F11",           "prompt": "F11", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "F12",           "prompt": "F12", "skipMods": ["Ctrl+Alt"] },
+
+                { "keyId": "asciicircum",   "prompt": "^ / °", "skipMods": [], "note": "may need space after pressing the key." },
+                { "keyId": "1",             "prompt": "1", "skipMods": [] },
+                { "keyId": "2",             "prompt": "2", "skipMods": [] },
+                { "keyId": "3",             "prompt": "3", "skipMods": [] },
+                { "keyId": "4",             "prompt": "4", "skipMods": [] },
+                { "keyId": "5",             "prompt": "5", "skipMods": [] },
+                { "keyId": "6",             "prompt": "6", "skipMods": [] },
+                { "keyId": "7",             "prompt": "7", "skipMods": [] },
+                { "keyId": "8",             "prompt": "8", "skipMods": [] },
+                { "keyId": "9",             "prompt": "9", "skipMods": [] },
+                { "keyId": "0",             "prompt": "0", "skipMods": [] },
+                { "keyId": "ssharp",        "prompt": "ß", "skipMods": [] },
+                { "keyId": "acute",         "prompt": "' / `", "skipMods": [] },
+                { "keyId": "BackSpace",     "prompt": "Backspace", "skipMods": ["Ctrl+Alt"] },
+
+                { "keyId": "Tab",           "prompt": "Tab", "skipMods": ["Alt"] },
+                { "keyId": "q",             "prompt": "Q", "skipMods": [] },
+                { "keyId": "w",             "prompt": "W", "skipMods": [] },
+                { "keyId": "e",             "prompt": "E", "skipMods": [] },
+                { "keyId": "r",             "prompt": "R", "skipMods": [] },
+                { "keyId": "t",             "prompt": "T", "skipMods": [] },
+                { "keyId": "z",             "prompt": "Z", "skipMods": ["Ctrl"] },
+                { "keyId": "u",             "prompt": "U", "skipMods": [] },
+                { "keyId": "i",             "prompt": "I", "skipMods": [] },
+                { "keyId": "o",             "prompt": "O", "skipMods": [] },
+                { "keyId": "p",             "prompt": "P", "skipMods": [] },
+                { "keyId": "udiaeresis",    "prompt": "Ü", "skipMods": [] },
+                { "keyId": "plus",          "prompt": "+", "skipMods": [] },
+                { "keyId": "Return",        "prompt": "Enter", "skipMods": ["Alt"] },
+
+                { "keyId": "a",             "prompt": "A", "skipMods": [] },
+                { "keyId": "s",             "prompt": "S", "skipMods": [] },
+                { "keyId": "d",             "prompt": "D", "skipMods": [] },
+                { "keyId": "f",             "prompt": "F", "skipMods": [] },
+                { "keyId": "g",             "prompt": "G", "skipMods": [] },
+                { "keyId": "h",             "prompt": "H", "skipMods": [] },
+                { "keyId": "j",             "prompt": "J", "skipMods": [] },
+                { "keyId": "k",             "prompt": "K", "skipMods": [] },
+                { "keyId": "l",             "prompt": "L", "skipMods": [] },
+                { "keyId": "odiaeresis",    "prompt": "Ö", "skipMods": [] },
+                { "keyId": "adiaeresis",    "prompt": "Ä", "skipMods": [] },
+                { "keyId": "numbersign",    "prompt": "#", "skipMods": [] },
+
+                { "keyId": "less",          "prompt": "<", "skipMods": [] },
+                { "keyId": "y",             "prompt": "Y", "skipMods": [] },
+                { "keyId": "x",             "prompt": "X", "skipMods": [] },
+                { "keyId": "c",             "prompt": "C", "skipMods": ["Ctrl"] },
+                { "keyId": "v",             "prompt": "V", "skipMods": [], "note": "Watch out for paste shortcut, press F12 if terminal would trigger paste" },
+                { "keyId": "b",             "prompt": "B", "skipMods": [] },
+                { "keyId": "n",             "prompt": "N", "skipMods": [] },
+                { "keyId": "m",             "prompt": "M", "skipMods": [] },
+                { "keyId": "comma",         "prompt": ",", "skipMods": [] },
+                { "keyId": "period",        "prompt": ".", "skipMods": [] },
+                { "keyId": "minus",         "prompt": "-", "skipMods": [] },
+
+                { "keyId": "space",         "prompt": "Space", "skipMods": [] },
+
+                { "keyId": "Insert",        "prompt": "Insert / Einfg", "skipMods": [], "note": "Watch out for paste shortcut, press F12 if terminal would trigger paste" },
+                { "keyId": "Home",          "prompt": "Home / Pos1", "skipMods": [] },
+                { "keyId": "Prior",         "prompt": "Page Up", "skipMods": [] },
+
+                { "keyId": "Delete",        "prompt": "Del / Entf", "skipMods": [], "note": "Remember ctrl-alt-del might reboot on console" },
+                { "keyId": "End",           "prompt": "End / Ende", "skipMods": [] },
+                { "keyId": "Next",          "prompt": "Page Down", "skipMods": [] },
+
+                { "keyId": "Up",            "prompt": "Arrow Up", "skipMods": [] },
+                { "keyId": "Left",          "prompt": "Arrow Left", "skipMods": [] },
+                { "keyId": "Down",          "prompt": "Arrow Down", "skipMods": [] },
+                { "keyId": "Right",         "prompt": "Arrow Right", "skipMods": [] },
+
+                { "keyId": "KP_Divide",     "prompt": "Numblock(off) /", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_Multiply",   "prompt": "Numblock(off) *", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_Subtract",   "prompt": "Numblock(off) -", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_Home",       "prompt": "Numblock(off) 7", "skipMods": [] },
+                { "keyId": "KP_Up",         "prompt": "Numblock(off) 8", "skipMods": [] },
+                { "keyId": "KP_Prior",      "prompt": "Numblock(off) 9", "skipMods": [] },
+                { "keyId": "KP_Add",        "prompt": "Numblock(off) +", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_Left",       "prompt": "Numblock(off) 4", "skipMods": [] },
+                { "keyId": "KP_Begin",      "prompt": "Numblock(off) 5", "skipMods": [] },
+                { "keyId": "KP_Right",      "prompt": "Numblock(off) 6", "skipMods": [] },
+                { "keyId": "KP_End",        "prompt": "Numblock(off) 1", "skipMods": [] },
+                { "keyId": "KP_Down",       "prompt": "Numblock(off) 2", "skipMods": [] },
+                { "keyId": "KP_Next",       "prompt": "Numblock(off) 3", "skipMods": [] },
+                { "keyId": "KP_Enter",      "prompt": "Numblock(off) Enter", "skipMods": [] },
+                { "keyId": "KP_Insert",     "prompt": "Numblock(off) 0 /Insert / Einfg", "skipMods": [], "note": "Watch out for paste shortcut, press F12 if terminal would trigger paste" },
+                { "keyId": "KP_Delete",     "prompt": "Numblock(off) , / Entf / Del", "skipMods": [], "note": "Remember ctrl-alt-del might reboot on console" },
+
+                { "keyId": "KP_Divide-N",   "prompt": "Numblock(on) /", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_Multiply-N", "prompt": "Numblock(on) *", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_Subtract-N", "prompt": "Numblock(on) -", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_7",          "prompt": "Numblock(on) 7", "skipMods": [] },
+                { "keyId": "KP_8",          "prompt": "Numblock(on) 8", "skipMods": [] },
+                { "keyId": "KP_9",          "prompt": "Numblock(on) 9", "skipMods": [] },
+                { "keyId": "KP_Add-N",      "prompt": "Numblock(on) +", "skipMods": ["Ctrl+Alt"] },
+                { "keyId": "KP_4",          "prompt": "Numblock(on) 4", "skipMods": [] },
+                { "keyId": "KP_5",          "prompt": "Numblock(on) 5", "skipMods": [] },
+                { "keyId": "KP_6",          "prompt": "Numblock(on) 6", "skipMods": [] },
+                { "keyId": "KP_1",          "prompt": "Numblock(on) 1", "skipMods": [] },
+                { "keyId": "KP_2",          "prompt": "Numblock(on) 2", "skipMods": [] },
+                { "keyId": "KP_3",          "prompt": "Numblock(on) 3", "skipMods": [] },
+                { "keyId": "KP_Enter-N",    "prompt": "Numblock(on) Enter", "skipMods": [] },
+                { "keyId": "KP_0",          "prompt": "Numblock(on) 0", "skipMods": [], "note": "Watch out for paste shortcut, press F12 if terminal would trigger paste" },
+                { "keyId": "KP_Separator",  "prompt": "Numblock(on) ,", "skipMods": [] }
+            ]
+        },
+        {
+            "name": "fixup",
+            "prompts": [
+                { "keyId": "KP_Separator",  "prompt": "Numblock(on) ,", "skipMods": [] }
+            ]
+        }
+    ],
+    "modes": [
+        {
+            "name": "Compat",
+            "set": "\\e[?66h\\e[?1034l\\e[?1036h",
+            "reset": "\\e[?66l"
+        },
+        {
+            "name": "modify other characters",
+            "set": "\\e[?66h\\e[?1034l\\e[?1036h\\e[>4;2m",
+            "reset": "\\e[?66l\\e[>4n"
+        },
+        {
+            "name": "66+67",
+            "set": "\\e[?66h\\e[?67h\\e[?1034l\\e[?1036h",
+            "reset": "\\e[?66l\\e[?67l"
+        }
+
+    ],
+    "terminals": [
+        {
+            "name": "xterm"
+        },
+        {
+            "name": "gnome-terminal"
+        },
+        {
+            "name": "konsole"
+        },
+        {
+            "name": "linux vt"
+        }
+    ]
+}
