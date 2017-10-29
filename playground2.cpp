@@ -56,9 +56,15 @@ void event_handler(void *user_data, termpaint_input_event *event) {
         pretty = "unknown";
     } else if (event->type == TERMPAINT_EV_KEY) {
         pretty = "K: ";
-        pretty += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
-        pretty += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
-        pretty += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        if ((event->modifier & ~(TERMPAINT_MOD_SHIFT|TERMPAINT_MOD_ALT|TERMPAINT_MOD_CTRL)) == 0) {
+            pretty += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+            pretty += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+            pretty += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        } else {
+            char buf[100];
+            snprintf(buf, 100, "%03d", event->modifier);
+            pretty += buf;
+        }
         pretty += " ";
         pretty += event->atom_or_string;
     } else if (event->type == TERMPAINT_EV_CHAR) {
