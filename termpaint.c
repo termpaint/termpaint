@@ -141,27 +141,14 @@ static int replace_norenderable_codepoints(int codepoint) {
 
 void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg) {
     const unsigned char *string = (const unsigned char *)string_s;
+    if (y < 0) return;
     while (*string) {
         if (x >= surface->width || y >= surface->height) {
             return;
         }
 
-        cell *c = termpaintp_getcell(surface, x, y);
-        c->fg_color = fg;
-        c->bg_color = bg;
-
         int size = termpaintp_utf8_len(string[0]);
-#if 0 // fast but not very robust
 
-        for (int i = 0; i < size; i++) {
-            if (string[i] == 0) {
-                // bogus, bail
-                return;
-            }
-            c->text[i] = string[i];
-        }
-        c->text[size] = 0;
-#else
         // check termpaintp_utf8_decode_from_utf8 precondition
         for (int i = 0; i < size; i++) {
             if (string[i] == 0) {
@@ -171,9 +158,14 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
         }
         int codepoint = termpaintp_utf8_decode_from_utf8(string, size);
         codepoint = replace_norenderable_codepoints(codepoint);
-        int written = termpaintp_encode_to_utf8(codepoint, c->text);
-        c->text[written] = 0;
-#endif
+
+        if (x >= 0) {
+            cell *c = termpaintp_getcell(surface, x, y);
+            c->fg_color = fg;
+            c->bg_color = bg;
+            int written = termpaintp_encode_to_utf8(codepoint, c->text);
+            c->text[written] = 0;
+        }
         string += size;
 
         ++x;
