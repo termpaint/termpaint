@@ -30,6 +30,7 @@ int termpaint_surface_height(termpaint_surface *surface);
 void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg);
 void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1);
 void termpaint_surface_clear(termpaint_surface *surface, int bg);
+void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int bg);
 
 // May only be called on terminal surfaces
 void termpaint_surface_reset_attributes(termpaint_surface *surface);

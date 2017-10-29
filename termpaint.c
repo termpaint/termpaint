@@ -180,11 +180,26 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     }
 }
 
-
 void termpaint_surface_clear(termpaint_surface *surface, int bg) {
-    for (int y = 0; y < surface->height; y++) {
-        for (int x = 0; x < surface->width; x++) {
-            cell* c = termpaintp_getcell(surface, x, y);
+    termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, bg);
+}
+
+void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int bg) {
+    if (x < 0) {
+        width += x;
+        x = 0;
+    }
+    if (y < 0) {
+        height += y;
+        y = 0;
+    }
+    if (x >= surface->width) return;
+    if (y >= surface->height) return;
+    if (x+width > surface->width) width = surface->width - x;
+    if (y+height > surface->height) height = surface->height - y;
+    for (int y1 = y; y1 < y + height; y1++) {
+        for (int x1 = x; x1 < x + width; x1++) {
+            cell* c = termpaintp_getcell(surface, x1, y1);
             c->text[0] = ' ';
             c->text[1] = 0;
             c->bg_color = bg;
@@ -192,7 +207,6 @@ void termpaint_surface_clear(termpaint_surface *surface, int bg) {
         }
     }
 }
-
 
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
     if (width < 0 || height < 0) {
