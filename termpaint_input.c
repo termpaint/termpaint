@@ -128,18 +128,20 @@ typedef struct key_mapping_entry_ key_mapping_entry;
 
 static key_mapping_entry key_mapping_table[] = {
     { "\x0d", ATOM_enter, 0 }, // also ctrl-m in traditional mode
-    // no modifiers for enter in xterm normal mode
+    { "\e\x0d", ATOM_enter, MOD_ALT },
     XTERM_MODS("\e[27;", ";13~", ATOM_enter), // modifiy other keys mode
     XTERM_MODS("\e[13;", "u", ATOM_enter), // modifiy other keys mode
 
     { "\x09", ATOM_tab, 0 }, //also ctrl_i
+    { "\e\x09", ATOM_tab, MOD_ALT }, //also ctrl-alt-i
     { "\e[Z", ATOM_tab, MOD_SHIFT }, // xterm, normal mode
     XTERM_MODS("\e[27;", ";9~", ATOM_tab), // modifiy other keys mode
     XTERM_MODS("\e[9;", "u", ATOM_tab), // modifiy other keys mode
 
-    // TODO check other modifiers without WM
     { " ", ATOM_space, 0 },
+    { "\e ", ATOM_space, MOD_ALT },
     // { "\x00", ATOM_SPACE, MOD_CTRL } via special case in code
+    // { "\e\x00", ATOM_space, MOD_CTRL | MOD_ALT} via special case in code
     XTERM_MODS("\e[27;", ";32~", ATOM_space), // modifiy other keys mode
     XTERM_MODS("\e[32;", "u", ATOM_space), // modifiy other keys mode
     //+ also ctrl-2
@@ -283,48 +285,85 @@ static key_mapping_entry key_mapping_table[] = {
     //{ "", ATOM_, 0 },
     //{ "", ATOM_, 0 },
 
-    { "\x01", "a", MOD_PRINT},
-    { "\x02", "b", MOD_PRINT },
-    { "\x03", "c", MOD_PRINT },
-    { "\x04", "d", MOD_PRINT },
-    { "\x05", "e", MOD_PRINT },
-    { "\x06", "f", MOD_PRINT },
-    { "\x07", "g", MOD_PRINT },
+    { "\x01",   "a", MOD_CTRL |           MOD_PRINT },
+    { "\e\x01", "a", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x02",   "b", MOD_CTRL |           MOD_PRINT },
+    { "\e\x02", "b", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x03",   "c", MOD_CTRL |           MOD_PRINT },
+    { "\e\x03", "c", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x04",   "d", MOD_CTRL |           MOD_PRINT },
+    { "\e\x04", "d", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x05",   "e", MOD_CTRL |           MOD_PRINT },
+    { "\e\x05", "e", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x06",   "f", MOD_CTRL |           MOD_PRINT },
+    { "\e\x06", "f", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x07",   "g", MOD_CTRL |           MOD_PRINT },
+    { "\e\x07", "g", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //{ "\x08",   "h", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-Backspace
+    //{ "\e\x08", "h", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //+ also ctrl-alt-Backspace (which might not be usable as xorg binds zap to it)
     //{ "\x09",   "i",                      MOD_PRINT },
     //+ also Tab, Ctrl-Tab
-    { "\x0a", "j", MOD_PRINT },
-    { "\x0b", "k", MOD_PRINT },
-    { "\x0c", "l", MOD_PRINT },
-    //{ "\x0d", "m", MOD_PRINT },
+    //{ "\e\x09", "i",            MOD_ALT | MOD_PRINT },
+    //+ also Alt-Tab
+    { "\x0a",   "j", MOD_CTRL |           MOD_PRINT },
+    { "\e\x0a", "j", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x0b",   "k", MOD_CTRL |           MOD_PRINT },
+    { "\e\x0b", "k", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x0c",   "l", MOD_CTRL |           MOD_PRINT },
+    { "\e\x0c", "l", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //{ "\x0d",   "m", MOD_CTRL |           MOD_PRINT },
     //+ also Return, Ctrl-Return
-    { "\x0e", "n", MOD_PRINT },
-    { "\x0f", "o", MOD_PRINT },
-    { "\x10", "p", MOD_PRINT },
-    { "\x11", "q", MOD_PRINT },
-    { "\x12", "r", MOD_PRINT },
-    { "\x13", "s", MOD_PRINT },
-    { "\x14", "t", MOD_PRINT },
-    { "\x15", "u", MOD_PRINT },
-    { "\x16", "v", MOD_PRINT },
-    { "\x17", "w", MOD_PRINT },
-    { "\x18", "x", MOD_PRINT },
-    { "\x19", "y", MOD_PRINT },
-    { "\x1a", "z", MOD_PRINT },
+    //{ "\e\x0d", "m", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //+ also alt-Return, alt-Ctrl-Return
+    { "\x0e",   "n", MOD_CTRL |           MOD_PRINT },
+    { "\e\x0e", "n", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x0f",   "o", MOD_CTRL |           MOD_PRINT },
+    { "\e\x0f", "o", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x10",   "p", MOD_CTRL |           MOD_PRINT },
+    { "\e\x10", "p", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x11",   "q", MOD_CTRL |           MOD_PRINT },
+    { "\e\x11", "q", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x12",   "r", MOD_CTRL |           MOD_PRINT },
+    { "\e\x12", "r", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x13",   "s", MOD_CTRL |           MOD_PRINT },
+    { "\e\x13", "s", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x14",   "t", MOD_CTRL |           MOD_PRINT },
+    { "\e\x14", "t", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x15",   "u", MOD_CTRL |           MOD_PRINT },
+    { "\e\x15", "u", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x16",   "v", MOD_CTRL |           MOD_PRINT },
+    { "\e\x16", "v", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x17",   "w", MOD_CTRL |           MOD_PRINT },
+    { "\e\x17", "w", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x18",   "x", MOD_CTRL |           MOD_PRINT },
+    { "\e\x18", "x", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x19",   "y", MOD_CTRL |           MOD_PRINT },
+    { "\e\x19", "y", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\x1a",   "z", MOD_CTRL |           MOD_PRINT },
+    { "\e\x1a", "z", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //{ "\x1b",   "[", MOD_CTRL |           MOD_PRINT },
     //+ also ESC
     //+ also ctrl-3
-    { "\x1c", "\\", MOD_PRINT },
+    { "\x1c",   "\\", MOD_CTRL |           MOD_PRINT },
+    { "\e\x1c", "\\", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also ctrl-4
-    { "\x1d", "]", MOD_PRINT },
+    { "\x1d",   "]", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-5
-    { "\x1e", "~", MOD_PRINT },
+    { "\e\x1d", "]", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //+ also alt-ctrl-5
+    { "\x1e",   "~", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-6
-    { "\x1f", "?", MOD_PRINT },
+    { "\e\x1e", "~", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //+ also alt-ctrl-6
+    { "\x1f",   "?", MOD_CTRL |           MOD_PRINT },
+    { "\e\x1f", "?", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also ctrl-7
     { "\x7f", ATOM_backspace, 0 },
     { "\x08", ATOM_backspace, MOD_CTRL },
+    { "\e\x08", ATOM_backspace, MOD_CTRL | MOD_ALT },
+    { "\e\x7f", ATOM_backspace, MOD_ALT },
     XTERM_MODS("\e[27;", ";127~", ATOM_backspace), // modifiy other keys mode
     XTERM_MODS("\e[127;", "u", ATOM_backspace), // modifiy other keys mode
 
@@ -452,14 +491,16 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 if (entry->modifiers & MOD_PRINT) {
                     // special case for ctrl-X which is in the table but a modified printable
                     event.type = TERMPAINT_EV_CHAR;
-                    event.length = length;
+                    event.length = strlen(entry->atom);
                     event.atom_or_string = entry->atom;
-                    event.modifier = MOD_CTRL;
+                    event.modifier = entry->modifiers & ~MOD_PRINT;
+                    break;
                 } else {
                     event.type = TERMPAINT_EV_KEY;
                     event.length = 0;
                     event.atom_or_string = entry->atom;
                     event.modifier = entry->modifiers;
+                    break;
                 }
             }
         }
