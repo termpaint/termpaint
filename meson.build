@@ -36,4 +36,4 @@ executable('keyboardcollector', 'tools/keyboardcollector.cpp', link_with: [main_
 executable('termquery', 'termquery.cpp', link_with: [main_lib])
 
 testlib = static_library('testlib', 'tests/catch_main.cpp')
-test('input', executable('input', 'tests/input_tests.cpp', 'tests/utf8_tests.cpp', link_with: [main_lib, testlib]))
+test('testtermpaint', executable('testtermpaint', 'tests/input_tests.cpp', 'tests/utf8_tests.cpp', link_with: [main_lib, testlib]))
