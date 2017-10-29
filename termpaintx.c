@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 #include <malloc.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -140,4 +142,17 @@ termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_clo
 _Bool termpaint_full_integration_poll_ready(termpaint_integration *integration) {
     UNUSED(integration); // TODO
     return false;
+}
+
+bool termpaint_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height) {
+    if (fd_is_bad(integration) || !isatty(FDPTR(integration)->fd)) {
+        return false;
+    }
+    struct winsize s;
+    if (ioctl(FDPTR(integration)->fd, TIOCGWINSZ, &s) < 0) {
+        return false;
+    }
+    *width = s.ws_col;
+    *height = s.ws_row;
+    return true;
 }
