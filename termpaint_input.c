@@ -83,14 +83,14 @@ DEF_ATOM(f12, "F12")
 #define MOD_ALT TERMPAINT_MOD_ALT
 #define MOD_SHIFT TERMPAINT_MOD_SHIFT
 
-#define MOD_PRINT (1 << 31)
+#define MOD_PRINT (1u << 31)
 #define MOD_ENTER (1 << 31 + 1 << 30)
 //#define MOD_PRINT (1 << 31)
 
 struct key_mapping_entry_ {
     const char *sequence;
     const char *atom;
-    int modifiers;
+    unsigned int modifiers;
 };
 typedef struct key_mapping_entry_ key_mapping_entry;
 
