@@ -1,9 +1,14 @@
 #include <string.h>
 #include <functional>
+#include <fstream>
 
 #include "../third-party/catch.hpp"
+#include "../third-party/picojson.h"
 
 typedef bool _Bool;
+
+using jarray = picojson::value::array;
+using jobject = picojson::value::object;
 
 #include "../termpaint_input.h"
 
@@ -194,4 +199,122 @@ TEST_CASE( "Overflow is handled correctly", "[overflow]" ) {
         runTest();
     }
 
+}
+
+static int hexToInt(char input) {
+    if ('0' <= input && input <= '9') {
+        return input - '0';
+    } else if ('a' <= input && input <= 'f') {
+        return input - 'a' + 10;
+    } else if ('A' <= input && input <= 'F') {
+        return input - 'A' + 10;
+    } else {
+        FAIL("fixture file is broken");
+    }
+    return -1;
+}
+
+TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
+    std::ifstream istrm("../tests/input_tests.json", std::ios::binary);
+    picojson::value rootval;
+    istrm >> rootval;
+    if (istrm.fail()) {
+        FAIL("Error while reading input_tests.json:" << picojson::get_last_error());
+    }
+    jarray cases = rootval.get<jarray>();
+
+    for (auto caseval: cases) {
+        jobject caseobj = caseval.get<jobject>();
+        std::string sectionName = caseobj["keyId"].get<std::string>();
+
+        SECTION( sectionName ) {
+            std::string rawInputHex = caseobj["raw"].get<std::string>();
+            CAPTURE(rawInputHex);
+            std::string rawInput;
+            for (int i=0; i < rawInputHex.size(); i+=2) {
+                unsigned char ch;
+                ch = (hexToInt(rawInputHex[i]) << 4) + hexToInt(rawInputHex[i+1]);
+                rawInput.push_back(static_cast<char>(ch));
+            }
+
+            std::string expectedType = caseobj["type"].get<std::string>();
+            std::string expectedValue;
+            if (expectedType == "key") {
+                expectedValue = caseobj["key"].get<std::string>();
+            } else if (expectedType == "char") {
+                expectedValue = caseobj["chars"].get<std::string>();
+            } else {
+                FAIL("Type in fixture not right: " + expectedType);
+            }
+            std::string expectedModStr = caseobj["mod"].get<std::string>();
+            CAPTURE(expectedType);
+            CAPTURE(expectedModStr);
+            CAPTURE(expectedValue);
+
+            enum { START, GOT_EVENT, GOT_SYNC } state = START;
+            bool expectSync = false;
+
+            std::function<void(termpaint_input_event* event)> event_callback
+                    = [&] (termpaint_input_event* event) -> void {
+                if (state == GOT_EVENT && !expectSync) {
+                    FAIL("more events than expected");
+                } else if (state == START) {
+                    std::string actualType;
+                    std::string actualValue;
+                    if (event->type == TERMPAINT_EV_CHAR) {
+                        actualType = "char";
+                        actualValue = std::string(event->atom_or_string, event->length);
+                    } else if (event->type == TERMPAINT_EV_KEY) {
+                        actualType = "key";
+                        actualValue = std::string(event->atom_or_string);
+                    } else {
+                        actualType = "???";
+                    }
+                    int expectedMod = 0;
+                    if (expectedModStr.find('S') != std::string::npos) {
+                        expectedMod |= TERMPAINT_MOD_SHIFT;
+                    }
+                    if (expectedModStr.find('A') != std::string::npos) {
+                        expectedMod |= TERMPAINT_MOD_ALT;
+                    }
+                    if (expectedModStr.find('C') != std::string::npos) {
+                        expectedMod |= TERMPAINT_MOD_CTRL;
+                    }
+                    CAPTURE(event->atom_or_string);
+                    REQUIRE(expectedType == actualType);
+                    if (event->type == TERMPAINT_EV_CHAR) {
+                        REQUIRE(expectedValue.size() == event->length);
+                    }
+                    REQUIRE(expectedValue == actualValue);
+                    REQUIRE(expectedMod == event->modifier);
+                    state = GOT_EVENT;
+                } else if (state == GOT_EVENT) {
+                    bool wasSync = event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync();
+                    REQUIRE(wasSync);
+                    state = GOT_SYNC;
+                } else {
+                    FAIL("unexpected state" << state);
+                }
+            };
+
+            if (rawInputHex == "1b"
+                    || rawInputHex == "1b1b"
+                    || rawInputHex == "1b50"
+                    || rawInputHex == "1b4f") {
+                expectSync = true;
+            }
+
+            termpaint_input *input_ctx = termpaint_input_new();
+            wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+            std::string input;
+            termpaint_input_add_data(input_ctx, rawInput.data(), rawInput.size());
+            if (!expectSync) {
+                REQUIRE(state == GOT_EVENT);
+            } else {
+                REQUIRE(state == START);
+                termpaint_input_add_data(input_ctx, "\e[0n", 4);
+                REQUIRE(state == GOT_SYNC);
+            }
+        }
+    }
 }
