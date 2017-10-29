@@ -441,6 +441,11 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         event.length = 0;
         event.atom_or_string = ATOM_space;
         event.modifier = MOD_CTRL;
+    } else if (length == 2 && data[0] == '\e' && data[1] == 0) {
+        event.type = TERMPAINT_EV_KEY;
+        event.length = 0;
+        event.atom_or_string = ATOM_space;
+        event.modifier = MOD_CTRL | MOD_ALT;
     } else {
         // TODO optimize
         for (key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
