@@ -203,6 +203,13 @@ void termpaint_surface_resize(termpaint_surface *surface, int width, int height)
     }
 }
 
+int termpaint_surface_width(termpaint_surface *surface) {
+    return surface->width;
+}
+
+int termpaint_surface_height(termpaint_surface *surface) {
+    return surface->height;
+}
 
 bool termpaint_auto_detect(termpaint_surface *surface) {
     UNUSED(surface); // TODO
