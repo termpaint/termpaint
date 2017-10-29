@@ -148,6 +148,7 @@ static key_mapping_entry key_mapping_table[] = {
     //+ also ctrl-2
 
     { "\e[29~", ATOM_context_menu, 0 },
+    // + also shift F4 in linux vt
     XTERM_MODS("\e[29;", "~", ATOM_context_menu),
 
     { "\e[3~", ATOM_delete, 0 },
@@ -155,9 +156,11 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[3;1~", ATOM_delete, MOD_ALTGR },
     { "\e[F", ATOM_end, 0},
     XTERM_MODS("\e[1;", "F", ATOM_end),
+    { "\e[4~", ATOM_end, 0},
     { "\e[1;1F", ATOM_end, MOD_ALTGR},
     { "\e[H", ATOM_home, 0},
     XTERM_MODS("\e[1;", "H", ATOM_home),
+    { "\e[1~", ATOM_home, 0},
     { "\e[1;1H", ATOM_home, MOD_ALTGR},
     { "\e[2~", ATOM_insert, 0},
     XTERM_MODS("\e[2;", "~", ATOM_insert),
@@ -264,30 +267,42 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eOP", ATOM_f1, 0 },
     XTERM_MODS("\e[1;", "P", ATOM_f1),
     XTERM_MODS("\eO", "P", ATOM_f1),
+    { "\e[[A", ATOM_f1, 0 },
+    { "\e[25~", ATOM_f1, MOD_SHIFT },
     { "\eO1P", ATOM_f1, MOD_ALTGR },
     { "\eOQ", ATOM_f2, 0 },
     XTERM_MODS("\e[1;", "Q", ATOM_f2),
     XTERM_MODS("\eO", "Q", ATOM_f2),
+    { "\e[[B", ATOM_f2, 0 },
+    { "\e[26~", ATOM_f2, MOD_SHIFT },
     { "\eO1Q", ATOM_f2, MOD_ALTGR },
     { "\eOR", ATOM_f3, 0 },
     XTERM_MODS("\e[1;", "R", ATOM_f3),
     XTERM_MODS("\eO", "R", ATOM_f3),
+    { "\e[[C", ATOM_f3, 0 },
+    { "\e[28~", ATOM_f3, MOD_SHIFT },
     { "\eO1R", ATOM_f3, MOD_ALTGR },
     { "\eOS", ATOM_f4, 0 },
     XTERM_MODS("\e[1;", "S", ATOM_f4),    
     XTERM_MODS("\eO", "S", ATOM_f4),
+    { "\e[[D", ATOM_f4, 0 },
     { "\eO1S", ATOM_f4, MOD_ALTGR },
     { "\e[15~", ATOM_f5, 0 },
     XTERM_MODS("\e[15;", "~", ATOM_f5),
+    { "\e[[E", ATOM_f5, 0 },
+    { "\e[31~", ATOM_f5, MOD_SHIFT },
     { "\e[15;1~", ATOM_f5, MOD_ALTGR },
     { "\e[17~", ATOM_f6, 0 },
     XTERM_MODS("\e[17;", "~", ATOM_f6),
+    { "\e[32~", ATOM_f6, MOD_SHIFT },
     { "\e[17;1~", ATOM_f6, MOD_ALTGR },
     { "\e[18~", ATOM_f7, 0 },
     XTERM_MODS("\e[18;", "~", ATOM_f7),
+    { "\e[33~", ATOM_f7, MOD_SHIFT },
     { "\e[18;1~", ATOM_f7, MOD_ALTGR },
     { "\e[19~", ATOM_f8, 0 },
     XTERM_MODS("\e[19;", "~", ATOM_f8),
+    { "\e[34~", ATOM_f8, MOD_SHIFT },
     { "\e[19;1~", ATOM_f8, MOD_ALTGR },
     { "\e[20~", ATOM_f9, 0 },
     XTERM_MODS("\e[20;", "~", ATOM_f9),
@@ -722,7 +737,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpis_csi:
-                if (data[i] >= '@' && data[i] <= '~') {
+                if (data[i] >= '@' && data[i] <= '~' && (data[i] != '[' || ctx->used != 3 /* linux vt*/)) {
                     finished = true;
                 } else if (data[i] == '\e') {
                     retrigger = true;
