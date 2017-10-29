@@ -206,6 +206,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eO6l", ATOM_numpad_decimal, MOD_CTRL           | MOD_SHIFT },
     { "\eO4l", ATOM_numpad_decimal,            MOD_ALT | MOD_SHIFT },
     { "\eO8l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\eOl",  ATOM_numpad_decimal, MOD_CTRL                       },
 
     { "\eO2p", ATOM_numpad0,                             MOD_SHIFT },
     { "\eO6p", ATOM_numpad0,        MOD_CTRL           | MOD_SHIFT },
