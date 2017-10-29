@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+const char *termpaint_input_i_resync();
+
 const char *termpaint_input_enter();
 const char *termpaint_input_space();
 const char *termpaint_input_tab();
