@@ -52,7 +52,10 @@ int main(int argc, char **argv) {
     struct termios tattr;
 
     tcgetattr (STDIN_FILENO, &tattr);
-    tattr.c_lflag &= ~(ICANON|ECHO); /* Clear ICANON and ECHO. */
+    tattr.c_iflag |= IGNBRK|IGNPAR;
+    tattr.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
+    tattr.c_oflag &= ~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
+    tattr.c_lflag &= ~(ICANON|IEXTEN|ECHO);
     tattr.c_cc[VMIN] = 1;
     tattr.c_cc[VTIME] = 0;
     tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
