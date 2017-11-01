@@ -235,3 +235,12 @@ void termpaint_surface_reset_attributes(termpaint_surface *surface) {
     termpaint_integration *integration = TERMPTR(surface)->integration;
     int_puts(integration, "\e[0m");
 }
+
+void termpaint_surface_set_cursor(termpaint_surface *surface, int x, int y) {
+    termpaint_integration *integration = TERMPTR(surface)->integration;
+    int_puts(integration, "\e[");
+    int_put_num(integration, y+1);
+    int_puts(integration, ";");
+    int_put_num(integration, x+1);
+    int_puts(integration, "H");
+}

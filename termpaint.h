@@ -39,6 +39,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
 // May only be called on terminal surfaces
 void termpaint_surface_reset_attributes(termpaint_surface *surface);
 void termpaint_surface_flush(termpaint_surface *surface);
+void termpaint_surface_set_cursor(termpaint_surface *surface, int x, int y);
 _Bool termpaint_auto_detect(termpaint_surface *surface);
 
 #ifdef __cplusplus
