@@ -58,6 +58,7 @@ const char *termpaint_input_f10();
 const char *termpaint_input_f11();
 const char *termpaint_input_f12();
 
+#define TERMPAINT_EV_UNKNOWN 0
 #define TERMPAINT_EV_CHAR 1
 #define TERMPAINT_EV_KEY 2
 #define TERMPAINT_EV_OVERFLOW 3
