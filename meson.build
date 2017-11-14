@@ -39,6 +39,9 @@ if get_option('ssh')
     link_with: [main_lib],
     dependencies: dependency('libssh'))
 endif
+docopt_lib = static_library('libdocopt', 'third-party/docopt/docopt.cpp', cpp_args: ['-Wno-unknown-pragmas'])
+fmt_lib = static_library('libfmt', 'third-party/format.cc')
+executable('mcheck', 'tools/mcheck.cpp', link_with: [main_lib, docopt_lib, fmt_lib])
 executable('termquery', 'termquery.cpp', link_with: [main_lib])
 
 testlib = static_library('testlib', 'tests/catch_main.cpp')
