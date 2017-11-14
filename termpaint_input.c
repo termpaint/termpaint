@@ -587,6 +587,14 @@ void termpaintp_input_selfcheck() {
     }
 }
 
+void termpaintp_input_dump_table() {
+    FILE * f = fopen("input.dump", "w");
+    for (key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
+        fputs(entry_a->sequence, f);
+        fputs("\n", f);
+    }
+    fclose(f);
+}
 
 #define MAX_SEQ_LENGTH 1024
 
@@ -904,8 +912,8 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpis_ss3:
                 // this ss3 stuff is totally undocumented. But various codes
                 // are seen in the wild that extend these codes by embedding
-                // one digit
-                if (data[i] >= '0' && data[i] <= '9') {
+                // parameters
+                if ((data[i] >= '0' && data[i] <= '9') || data[i] == ';') {
                     ;
                 } else if (data[i] == '\e') {
                     retrigger = true;
