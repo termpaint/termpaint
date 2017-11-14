@@ -251,11 +251,6 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\eOa", ATOM_arrow_up, MOD_CTRL | MOD_ALT },
     { "\e[1;1A", ATOM_arrow_up, MOD_ALTGR },
 
-    // non application mode
-    { "\e[E", ATOM_numpad5, 0 },
-    XTERM_MODS("\e[1;", "E", ATOM_arrow_up), // shift combinations not reachable in xterm
-
-    // application mode (?66)
     { "\eOo", ATOM_numpad_divide, 0 },
     { "\e\eOo", ATOM_numpad_divide, MOD_ALT },
     XTERM_MODS("\eO", "o", ATOM_numpad_divide), // ctrl-alt (not shifted) not reachable in xterm
@@ -323,6 +318,8 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eO8u", ATOM_numpad5,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
     { "\eOu",  ATOM_numpad5,                                     0 },
     { "\e\eOu",ATOM_numpad5,                   MOD_ALT             },
+    { "\e[E", ATOM_numpad5, 0 },
+    XTERM_MODS("\e[1;", "E", ATOM_arrow_up), // shift combinations not reachable in xterm
 
     { "\eO2v", ATOM_numpad6,                             MOD_SHIFT },
     { "\eO6v", ATOM_numpad6,        MOD_CTRL           | MOD_SHIFT },
