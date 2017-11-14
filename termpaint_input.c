@@ -13,7 +13,6 @@
  *  * Massivly depends on resync trick. Non resync mode currently no longer supported
  *  * in modOther ctrl-? strange (utf 8 converter?)
  *  * needs to detect utf-8 encoded C1 chars? Or maybe that not used in the wild at all?
- *  * numpad 5 without numlock has unique code in linux vt, what should be termpaint's atom for this?
  */
 
 
@@ -320,6 +319,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\eOu",ATOM_numpad5,                   MOD_ALT             },
     { "\e[E", ATOM_numpad5, 0 },
     XTERM_MODS("\e[1;", "E", ATOM_arrow_up), // shift combinations not reachable in xterm
+    { "\e[G",  ATOM_numpad5,                                     0 },
 
     { "\eO2v", ATOM_numpad6,                             MOD_SHIFT },
     { "\eO6v", ATOM_numpad6,        MOD_CTRL           | MOD_SHIFT },
