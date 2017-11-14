@@ -159,6 +159,9 @@
         },
         {
             "name": "linux vt"
+        },
+        {
+            "name": "urxvt"
         }
     ]
 }
