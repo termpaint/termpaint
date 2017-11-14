@@ -6,12 +6,17 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 #include <fstream>
 #include <iostream>
 
 #include "termpaint.h"
 #include "termpaintx.h"
 #include "termpaint_input.h"
+
+#ifdef USE_SSH
+#include "SshServer.h"
+#endif
 
 #include "../third-party/picojson.h"
 
@@ -284,8 +289,94 @@ jobject menu(jarray options) {
     return options[choice-1].get<jobject>();
 }
 
+#ifdef USE_SSH
+class Main : public SshServer {
+public:
+    Main() : SshServer(2222, "collector.id_rsa") {}
+    int main(std::function<bool()> poll) override;
+
+    jobject menu(jarray options, std::function<bool()> poll) {
+        int index = 1;
+        for (auto &element : options) {
+            outStr(std::to_string(index).c_str());
+            outStr(": ");
+            outStr(element.get<jobject>()["name"].get<std::string>().c_str());
+            outStr("\r\n");
+            ++index;
+        }
+        int choice = -1;
+        std::string data;
+        while (1 > choice || choice >= index) {
+            std::string inputChars;
+            termpaint_input_set_event_cb(input, [] (void * p, termpaint_input_event *event) {
+                std::string *inputChars = static_cast<std::string*>(p);
+                if (event->type == TERMPAINT_EV_CHAR) {
+                    *inputChars += std::string(event->atom_or_string, event->length);
+                }
+                if (event->type == TERMPAINT_EV_KEY) {
+                    if (event->atom_or_string == termpaint_input_enter()) {
+                        *inputChars += "\n";
+                    }
+                }
+            }, &inputChars);
+            poll();
+
+            if (inputChars.size()) {
+                data.append(inputChars);
+                outStr(inputChars.c_str());
+                inputChars = "";
+            }
+
+            if (data.find('\n') != std::string::npos) {
+                try {
+                    choice = stoi(data);
+                } catch (std::invalid_argument&) {
+                };
+                data = "";
+                outStr("\r");
+            }
+        }
+        return options[choice-1].get<jobject>();
+    }
+
+#else
+class Main {
+public:
+    int main();
+    int run() { return main(); }
+    void outStr(const char *s) {
+        write(0, s, strlen(s));
+    }
+
+    jobject menu(jarray options, std::function<bool()> /* not valid in this variant */) {
+        int index = 1;
+        for (auto &element : options) {
+            std::cout << index << ": " << element.get<jobject>()["name"].get<std::string>() << std::endl;
+            ++index;
+        }
+        int choice = -1;
+        while (1 > choice || choice >= index) {
+            std::cin >> choice;
+        }
+        return options[choice-1].get<jobject>();
+    }
+#endif
+};
+
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
+
+    Main m;
+    m.run();
+}
+
+#ifdef USE_SSH
+int Main::main(std::function<bool()> poll) {
+#else
+int Main::main() {
+    std::function<bool()> poll;
+#endif
 
     std::ifstream istrm("keyboardcollector-data.json", std::ios::binary);
     picojson::value rootval;
@@ -299,29 +390,20 @@ int main(int argc, char **argv) {
 
     jobject result;
 
-    std::cout << "What terminal are you using: " << std::endl;
-    result["terminal"] = picojson::value(menu(root["terminals"].get<jarray>())["name"].get<std::string>());
+    outStr("What terminal are you using: \r\n");
+    result["terminal"] = picojson::value(menu(root["terminals"].get<jarray>(), poll)["name"].get<std::string>());
 
-    std::cout << "What test set would you like to use: " << std::endl;
-    jobject testset = menu(root["testsets"].get<jarray>());
+    outStr("What test set would you like to use: \r\n");
+    jobject testset = menu(root["testsets"].get<jarray>(), poll);
     result["testset"] = picojson::value(testset["name"].get<std::string>());
 
     prompts = testset["prompts"].get<jarray>();
     //prompts.erase(prompts.begin()+2, prompts.end());
 
-    std::cout << "What terminal configuration would you like to use: " << std::endl;
-    jobject mode = menu(root["modes"].get<jarray>());
+    outStr("What terminal configuration would you like to use: \r\n");
+    jobject mode = menu(root["modes"].get<jarray>(), poll);
     result["mode"] = picojson::value(mode["name"].get<std::string>());
 
-    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0);
-    if (!integration) {
-        puts("Could not init!");
-        return 1;
-    }
-
-    surface = termpaint_surface_new(integration);
-    termpaint_auto_detect(surface);
-    termpaint_full_integration_poll_ready(integration);
     std::string setup = mode["set"].get<std::string>();
     std::string reset = mode["reset"].get<std::string>();
 
@@ -331,16 +413,34 @@ int main(int argc, char **argv) {
     while (reset.find("\\e") != std::string::npos)
         reset.replace(reset.find("\\e"), 2, "\e");
 
-    puts("\e[?1049h");
-    puts(setup.data());
+    outStr("\e[?1049h");
+    outStr(setup.data());
     fflush(stdout);
 
-    termpaint_surface_resize(surface, 80, 24);
-    termpaint_surface_clear(surface, 0x1000000);
+#ifdef USE_SSH
+    ::surface = this->surface;
+#else
+    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0);
+    if (!integration) {
+        outStr("Could not init!");
+        return 1;
+    }
 
-    termpaint_surface_flush(surface);
-
+    surface = termpaint_surface_new(integration);
+    termpaint_auto_detect(surface);
+    termpaint_full_integration_poll_ready(integration);
     termpaint_input *input = termpaint_input_new();
+
+    poll = [&] {
+        char buff[100];
+        int amount = read (STDIN_FILENO, buff, 99);
+        termpaint_input_add_data(input, buff, amount);
+        peek_buffer = std::string(termpaint_input_peek_buffer(input), termpaint_input_peek_buffer_length(input));
+        if (peek_buffer.size()) {
+            write(0, "\e[5n", 4);
+        }
+        return true;
+    };
 
     struct termios tattr;
 
@@ -376,6 +476,12 @@ int main(int argc, char **argv) {
     tattr.c_cc[VDISCARD] = 0;
 
     tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
+#endif
+
+    termpaint_surface_resize(surface, 80, 24);
+    termpaint_surface_clear(surface, 0x1000000);
+
+    termpaint_surface_flush(surface);
 
     termpaint_input_set_raw_filter_cb(input, raw_filter, 0);
     termpaint_input_set_event_cb(input, event_handler, 0);
@@ -383,18 +489,14 @@ int main(int argc, char **argv) {
     render();
 
     while (!quit) {
-        char buff[100];
-        int amount = read (STDIN_FILENO, buff, 99);
-        termpaint_input_add_data(input, buff, amount);
-        peek_buffer = std::string(termpaint_input_peek_buffer(input), termpaint_input_peek_buffer_length(input));
-        if (peek_buffer.size()) {
-            write(0, "\e[5n", 4);
+        if (!poll()) {
+            break;
         }
         render();
     }
 
-    puts(reset.data());
-    puts("\e[?1049l");fflush(stdout);
+    outStr(reset.data());
+    outStr("\e[?1049l");fflush(stdout);
 
 
     if (currentPrompt >= prompts.size()) {

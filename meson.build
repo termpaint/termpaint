@@ -33,6 +33,12 @@ import('pkgconfig').generate(
 
 executable('playground', 'playground2.cpp', link_with: [main_lib])
 executable('keyboardcollector', 'tools/keyboardcollector.cpp', link_with: [main_lib])
+if get_option('ssh')
+  executable('keyboardcollector-ssh', 'tools/keyboardcollector.cpp', 'tools/SshServer.cpp',
+    cpp_args: ['-DUSE_SSH'],
+    link_with: [main_lib],
+    dependencies: dependency('libssh'))
+endif
 executable('termquery', 'termquery.cpp', link_with: [main_lib])
 
 testlib = static_library('testlib', 'tests/catch_main.cpp')
