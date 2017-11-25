@@ -139,7 +139,7 @@ void display_esc(int x, int y, const std::string &data) {
 void render() {
     termpaint_surface_clear(surface, 0x1000000);
 
-    termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", 0x000000, 0x1000000);
+    termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", 0x1000000, 0x1000000);
 
     if (peek_buffer.length()) {
         termpaint_surface_write_with_colors(surface, 0, 23, "unmatched:", 0xff0000, 0x1000000);

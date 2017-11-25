@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     termpaint_full_integration_poll_ready(integration);
 
     termpaint_surface_resize(surface, 80, 24);
-    termpaint_surface_clear(surface, 0x1000000);
+    termpaint_surface_clear(surface, 0xffffff, 0x1000000);
     termpaint_surface_write_with_colors(surface, 0, 0, "Hallo müde", 0xff0000, 0x00ff00);
 
     termpaint_surface_flush(surface);
