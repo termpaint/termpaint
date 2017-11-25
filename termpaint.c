@@ -121,7 +121,7 @@ void termpaint_surface_flush(termpaint_surface *surface) {
                 int_puts(integration, ";");
                 int_put_num(integration, (c->fg_color) & 0xff);
             } else {
-                int_puts(integration, "39");
+                int_puts(integration, ";39");
             }
             int_puts(integration, "m");
             int_puts(integration, (char*)c->text);
