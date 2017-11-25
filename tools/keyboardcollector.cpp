@@ -218,7 +218,7 @@ void display_esc(int x, int y, const std::string &data) {
 }
 
 void render() {
-    termpaint_surface_clear(surface, 0x1000000);
+    termpaint_surface_clear(surface, 0x1000000, 0x1000000);
 
     termpaint_surface_write_with_colors(surface, 0, 0, "Keyboard collector", 0xa0a0a0, 0x1000000);
 
@@ -479,7 +479,7 @@ int Main::main() {
 #endif
 
     termpaint_surface_resize(surface, 80, 24);
-    termpaint_surface_clear(surface, 0x1000000);
+    termpaint_surface_clear(surface, 0x1000000, 0x1000000);
 
     termpaint_surface_flush(surface);
 

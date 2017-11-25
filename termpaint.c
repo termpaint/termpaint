@@ -180,11 +180,11 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     }
 }
 
-void termpaint_surface_clear(termpaint_surface *surface, int bg) {
-    termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, bg);
+void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
+    termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, fg, bg);
 }
 
-void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int bg) {
+void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg) {
     if (x < 0) {
         width += x;
         x = 0;
@@ -203,7 +203,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
             c->text[0] = ' ';
             c->text[1] = 0;
             c->bg_color = bg;
-            c->fg_color = 0;
+            c->fg_color = fg;
         }
     }
 }
