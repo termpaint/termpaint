@@ -92,6 +92,10 @@ static void int_put_num(termpaint_integration *integration, int num) {
     integration->write(integration, buf, len);
 }
 
+static void int_flush(termpaint_integration *integration) {
+    integration->flush(integration);
+}
+
 void termpaint_surface_flush(termpaint_surface *surface) {
     termpaint_integration *integration = TERMPTR(surface)->integration;
     int_puts(integration, "\e[H");
@@ -134,6 +138,7 @@ void termpaint_surface_flush(termpaint_surface *surface) {
         }
         if (y+1 < surface->height) int_puts(integration, "\r\n");
     }
+    int_flush(integration);
 }
 
 static int replace_norenderable_codepoints(int codepoint) {
