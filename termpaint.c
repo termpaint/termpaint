@@ -96,34 +96,40 @@ void termpaint_surface_flush(termpaint_surface *surface) {
     termpaint_integration *integration = TERMPTR(surface)->integration;
     int_puts(integration, "\e[H");
     for (int y = 0; y < surface->height; y++) {
+        int current_fg = -1;
+        int current_bg = -1;
         for (int x = 0; x < surface->width; x++) {
             cell* c = termpaintp_getcell(surface, x, y);
             if (*c->text == 0) {
                 c->text[0] = ' ';
                 c->text[1] = 0;
             }
-            int_puts(integration, "\e[");
-            if ((c->bg_color & 0xff000000) == 0) {
-                int_puts(integration, "48;2;");
-                int_put_num(integration, (c->bg_color >> 16) & 0xff);
-                int_puts(integration, ";");
-                int_put_num(integration, (c->bg_color >> 8) & 0xff);
-                int_puts(integration, ";");
-                int_put_num(integration, (c->bg_color) & 0xff);
-            } else {
-                int_puts(integration, "49");
+            if (c->bg_color != current_bg || c->fg_color != current_fg) {
+                int_puts(integration, "\e[");
+                if ((c->bg_color & 0xff000000) == 0) {
+                    int_puts(integration, "48;2;");
+                    int_put_num(integration, (c->bg_color >> 16) & 0xff);
+                    int_puts(integration, ";");
+                    int_put_num(integration, (c->bg_color >> 8) & 0xff);
+                    int_puts(integration, ";");
+                    int_put_num(integration, (c->bg_color) & 0xff);
+                } else {
+                    int_puts(integration, "49");
+                }
+                if ((c->fg_color & 0xff000000) == 0) {
+                    int_puts(integration, ";38;2;");
+                    int_put_num(integration, (c->fg_color >> 16) & 0xff);
+                    int_puts(integration, ";");
+                    int_put_num(integration, (c->fg_color >> 8) & 0xff);
+                    int_puts(integration, ";");
+                    int_put_num(integration, (c->fg_color) & 0xff);
+                } else {
+                    int_puts(integration, ";39");
+                }
+                int_puts(integration, "m");
+                current_bg = c->bg_color;
+                current_fg = c->fg_color;
             }
-            if ((c->fg_color & 0xff000000) == 0) {
-                int_puts(integration, ";38;2;");
-                int_put_num(integration, (c->fg_color >> 16) & 0xff);
-                int_puts(integration, ";");
-                int_put_num(integration, (c->fg_color >> 8) & 0xff);
-                int_puts(integration, ";");
-                int_put_num(integration, (c->fg_color) & 0xff);
-            } else {
-                int_puts(integration, ";39");
-            }
-            int_puts(integration, "m");
             int_puts(integration, (char*)c->text);
         }
         if (y+1 < surface->height) int_puts(integration, "\r\n");
