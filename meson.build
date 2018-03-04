@@ -12,7 +12,14 @@ add_project_arguments('-std=gnu++14', language : 'cpp')
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'cpp')
 
-main_lib = library('termpaint', 'termpaint.c', 'termpaintx.c', 'termpaint_input.c', install: true)
+#ide:editable-filelist
+main_lib_files = [
+  'termpaint.c',
+  'termpaintx.c',
+  'termpaint_input.c',
+]
+
+main_lib = library('termpaint', main_lib_files, install: true)
 
 main_lib_installed_headers = [
   'termpaint.h',
@@ -31,8 +38,20 @@ import('pkgconfig').generate(
   description : 'A terminal cell display and keyboard abstraction library.',
 )
 
-executable('playground', 'playground2.cpp', link_with: [main_lib])
-executable('keyboardcollector', 'tools/keyboardcollector.cpp', link_with: [main_lib])
+#ide:editable-filelist
+playground_files = [
+  'playground2.cpp',
+]
+
+executable('playground', playground_files, link_with: [main_lib])
+
+#ide:editable-filelist
+keyboardcollector_files = [
+  'tools/keyboardcollector.cpp',
+]
+
+
+executable('keyboardcollector', keyboardcollector_files, link_with: [main_lib])
 if get_option('ssh')
   executable('keyboardcollector-ssh', 'tools/keyboardcollector.cpp', 'tools/SshServer.cpp',
     cpp_args: ['-DUSE_SSH'],
