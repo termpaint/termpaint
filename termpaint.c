@@ -27,6 +27,7 @@ typedef struct cell_ {
 
 struct termpaint_surface_ {
     cell* cells;
+    cell* cells_last_flush;
     int cells_allocated;
     int width;
     int height;
@@ -43,6 +44,7 @@ static void termpaintp_collapse(termpaint_surface *surface) {
     surface->height = 0;
     surface->cells_allocated = 0;
     surface->cells = nullptr;
+    surface->cells_last_flush = nullptr;
 }
 
 static void termpaintp_resize(termpaint_surface *surface, int width, int height) {
@@ -56,9 +58,13 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
      || termpaint_smul_overflow(surface->cells_allocated, sizeof(cell), &bytes)) {
         // collapse and bail
         free(surface->cells);
+        free(surface->cells_last_flush);
         termpaintp_collapse(surface);
         return;
     }
+    free(surface->cells);
+    free(surface->cells_last_flush);
+    surface->cells_last_flush = nullptr;
     surface->cells = calloc(1, bytes);
 }
 
@@ -86,6 +92,10 @@ static void int_puts(termpaint_integration *integration, char *str) {
     integration->write(integration, str, strlen(str));
 }
 
+static void int_write(termpaint_integration *integration, char *str, int len) {
+    integration->write(integration, str, len);
+}
+
 static void int_put_num(termpaint_integration *integration, int num) {
     char buf[12];
     int len = sprintf(buf, "%d", num);
@@ -96,19 +106,94 @@ static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
 
-void termpaint_surface_flush(termpaint_surface *surface) {
+void termpaint_surface_flush(termpaint_surface *surface, bool full_repaint) {
     termpaint_integration *integration = TERMPTR(surface)->integration;
+    if (!surface->cells_last_flush) {
+        full_repaint = true;
+        surface->cells_last_flush = calloc(1, surface->cells_allocated * sizeof(cell));
+    }
     int_puts(integration, "\e[H");
+    char speculation_buffer[30];
+    int speculation_buffer_state = 0; // 0 = cursor position matches current cell, -1 = force move, > 0 bytes to print instead of move
+    int pending_row_move = 0;
+    int pending_colum_move = 0;
+    int pending_colum_move_digits = 1;
+    int pending_colum_move_digits_step = 10;
     for (int y = 0; y < surface->height; y++) {
+        speculation_buffer_state = 0;
+        pending_colum_move = 0;
+        pending_colum_move_digits = 1;
+        pending_colum_move_digits_step = 10;
+
         int current_fg = -1;
         int current_bg = -1;
         for (int x = 0; x < surface->width; x++) {
             cell* c = termpaintp_getcell(surface, x, y);
+            cell* old_c = &surface->cells_last_flush[y*surface->width+x];
             if (*c->text == 0) {
                 c->text[0] = ' ';
                 c->text[1] = 0;
             }
-            if (c->bg_color != current_bg || c->fg_color != current_fg) {
+            int code_units = strlen((char*)c->text);
+            bool needs_paint = full_repaint || c->bg_color != old_c->bg_color || c->fg_color != old_c->fg_color
+                    || (strcmp(c->text, old_c->text) != 0);
+            bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg;
+            *old_c = *c;
+            if (!needs_paint) {
+                pending_colum_move += 1;
+                if (speculation_buffer_state != -1) {
+                    if (needs_attribute_change) {
+                        // needs_attribute_change needs >= 24 chars, so repositioning will likely be cheaper (and easier to implement)
+                        speculation_buffer_state = -1;
+                    } else {
+                        if (pending_colum_move == pending_colum_move_digits_step) {
+                            pending_colum_move_digits += 1;
+                            pending_colum_move_digits_step *= 10;
+                        }
+
+                        if (pending_colum_move_digits + 3 < speculation_buffer_state + code_units) {
+                            // the move sequence is shorter than moving by printing chars
+                            speculation_buffer_state = -1;
+                        } else if (speculation_buffer_state + code_units < sizeof (speculation_buffer)) {
+                            memcpy(speculation_buffer + speculation_buffer_state, (char*)c->text, code_units);
+                        } else {
+                            // speculation buffer to small
+                            speculation_buffer_state = -1;
+                        }
+                    }
+                }
+                continue;
+            } else {
+                if (pending_row_move) {
+                    int_puts(integration, "\r");
+                    if (pending_row_move < 4) {
+                        while (pending_row_move) {
+                            int_puts(integration, "\n");
+                            --pending_row_move;
+                        }
+                    } else {
+                        int_puts(integration, "\e[");
+                        int_put_num(integration, pending_row_move);
+                        int_puts(integration, "B");
+                        pending_row_move = 0;
+                    }
+                }
+                if (pending_colum_move) {
+                    if (speculation_buffer_state > 0) {
+                        int_write(integration, speculation_buffer, speculation_buffer_state);
+                    } else {
+                        int_puts(integration, "\e[");
+                        int_put_num(integration, pending_colum_move);
+                        int_puts(integration, "C");
+                    }
+                    speculation_buffer_state = 0;
+                    pending_colum_move = 0;
+                    pending_colum_move_digits = 1;
+                    pending_colum_move_digits_step = 10;
+                }
+            }
+
+            if (needs_attribute_change) {
                 int_puts(integration, "\e[");
                 if ((c->bg_color & 0xff000000) == 0) {
                     int_puts(integration, "48;2;");
@@ -134,10 +219,37 @@ void termpaint_surface_flush(termpaint_surface *surface) {
                 current_bg = c->bg_color;
                 current_fg = c->fg_color;
             }
-            int_puts(integration, (char*)c->text);
+            int_write(integration, (char*)c->text, code_units);
         }
-        if (y+1 < surface->height) int_puts(integration, "\r\n");
+
+        if (full_repaint) {
+            if (y+1 < surface->height) {
+                int_puts(integration, "\r\n");
+            }
+        } else {
+            pending_row_move += 1;
+        }
     }
+    if (pending_row_move > 1) {
+        --pending_row_move; // don't move after paint rect
+        int_puts(integration, "\r");
+        if (pending_row_move < 4) {
+            while (pending_row_move) {
+                int_puts(integration, "\n");
+                --pending_row_move;
+            }
+        } else {
+            int_puts(integration, "\e[");
+            int_put_num(integration, pending_row_move);
+            int_puts(integration, "B");
+        }
+    }
+    if (pending_colum_move) {
+        int_puts(integration, "\e[");
+        int_put_num(integration, pending_colum_move);
+        int_puts(integration, "C");
+    }
+
     int_flush(integration);
 }
 
@@ -222,6 +334,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
     if (width < 0 || height < 0) {
         free(surface->cells);
+        free(surface->cells_last_flush);
         termpaintp_collapse(surface);
     } else {
         termpaintp_resize(surface, width, height);

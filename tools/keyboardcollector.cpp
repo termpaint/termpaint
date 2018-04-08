@@ -272,7 +272,7 @@ void render() {
         lastPretty.erase(lastPretty.begin());
     }
 
-    termpaint_surface_flush(surface);
+    termpaint_surface_flush(surface, false);
 }
 
 
@@ -481,7 +481,7 @@ int Main::main() {
     termpaint_surface_resize(surface, 80, 24);
     termpaint_surface_clear(surface, 0x1000000, 0x1000000);
 
-    termpaint_surface_flush(surface);
+    termpaint_surface_flush(surface, false);
 
     termpaint_input_set_raw_filter_cb(input, raw_filter, 0);
     termpaint_input_set_event_cb(input, event_handler, 0);

@@ -162,7 +162,7 @@ void render() {
         ring2.erase(ring2.begin());
     }
 
-    termpaint_surface_flush(surface);
+    termpaint_surface_flush(surface, false);
 }
 
 int main(int argc, char **argv) {
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
     termpaint_surface_clear(surface, 0x1ffffff, 0x1000000);
     //termpaint_surface_write_with_colors(surface, 0, 0, "Hallo müde", 0xff0000, 0x00ff00);
 
-    termpaint_surface_flush(surface);
+    termpaint_surface_flush(surface, false);
 
     termpaint_input *input = termpaint_input_new();
     termpaint_input_set_raw_filter_cb(input, raw_filter, 0);
