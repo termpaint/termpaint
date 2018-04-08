@@ -88,6 +88,13 @@ termpaint_surface *termpaint_surface_new(termpaint_integration *integration) {
     return (termpaint_surface*)ret;
 }
 
+void termpaint_surface_free(termpaint_surface *surface) {
+    free(surface->cells);
+    free(surface->cells_last_flush);
+    termpaintp_collapse(surface);
+    free(surface);
+}
+
 static void int_puts(termpaint_integration *integration, char *str) {
     integration->write(integration, str, strlen(str));
 }
@@ -368,3 +375,4 @@ void termpaint_surface_set_cursor(termpaint_surface *surface, int x, int y) {
     int_put_num(integration, x+1);
     int_puts(integration, "H");
 }
+

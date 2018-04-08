@@ -823,6 +823,10 @@ termpaint_input *termpaint_input_new() {
     return ctx;
 }
 
+void termpaint_input_free(termpaint_input *ctx) {
+    free(ctx);
+}
+
 void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data) {
     ctx->raw_filter_cb = cb;
     ctx->raw_filter_user_data = user_data;

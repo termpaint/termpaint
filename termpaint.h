@@ -28,6 +28,7 @@ typedef struct termpaint_integration_ {
 } termpaint_integration;
 
 termpaint_surface *termpaint_surface_new(termpaint_integration *integration);
+void termpaint_surface_free(termpaint_surface *surface);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
 int termpaint_surface_width(termpaint_surface *surface);
 int termpaint_surface_height(termpaint_surface *surface);
