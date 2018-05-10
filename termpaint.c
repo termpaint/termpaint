@@ -37,10 +37,6 @@ typedef struct termpaint_terminal_ {
 } termpaint_terminal;
 
 
-termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
-    return &term->primary;
-}
-
 
 static void termpaintp_collapse(termpaint_surface *surface) {
     surface->width = 0;
@@ -81,24 +77,106 @@ static inline cell* termpaintp_getcell(termpaint_surface *surface, int x, int y)
     }
 }
 
-termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
-    termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
-
-    // start collapsed
-    termpaintp_collapse(&ret->primary);
-    ret->integration = integration;
-
-    return ret;
-}
-
 static void termpaintp_surface_destroy(termpaint_surface *surface) {
     free(surface->cells);
     free(surface->cells_last_flush);
     termpaintp_collapse(surface);
 }
 
-void termpaint_terminal_free(termpaint_terminal *term) {
-    termpaintp_surface_destroy(&term->primary);
+static int replace_norenderable_codepoints(int codepoint) {
+    if (codepoint < 32
+       || (codepoint >= 0x7f && codepoint < 0xa0)) {
+        return ' ';
+    } else {
+        return codepoint;
+    }
+}
+
+void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg) {
+    termpaint_surface_write_with_colors_clipped(surface, x, y, string, fg, bg, 0, surface->width-1);
+}
+
+void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg, int clip_x0, int clip_x1) {
+    const unsigned char *string = (const unsigned char *)string_s;
+    if (y < 0) return;
+    if (clip_x0 < 0) clip_x0 = 0;
+    if (clip_x1 >= surface->width) {
+        clip_x1 = surface->width-1;
+    }
+    while (*string) {
+        if (x > clip_x1 || y >= surface->height) {
+            return;
+        }
+
+        int size = termpaintp_utf8_len(string[0]);
+
+        // check termpaintp_utf8_decode_from_utf8 precondition
+        for (int i = 0; i < size; i++) {
+            if (string[i] == 0) {
+                // bogus, bail
+                return;
+            }
+        }
+        int codepoint = termpaintp_utf8_decode_from_utf8(string, size);
+        codepoint = replace_norenderable_codepoints(codepoint);
+
+        if (x >= clip_x0) {
+            cell *c = termpaintp_getcell(surface, x, y);
+            c->fg_color = fg;
+            c->bg_color = bg;
+            int written = termpaintp_encode_to_utf8(codepoint, c->text);
+            c->text[written] = 0;
+        }
+        string += size;
+
+        ++x;
+    }
+}
+
+void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
+    termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, fg, bg);
+}
+
+void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg) {
+    if (x < 0) {
+        width += x;
+        x = 0;
+    }
+    if (y < 0) {
+        height += y;
+        y = 0;
+    }
+    if (x >= surface->width) return;
+    if (y >= surface->height) return;
+    if (x+width > surface->width) width = surface->width - x;
+    if (y+height > surface->height) height = surface->height - y;
+    for (int y1 = y; y1 < y + height; y1++) {
+        for (int x1 = x; x1 < x + width; x1++) {
+            cell* c = termpaintp_getcell(surface, x1, y1);
+            c->text[0] = ' ';
+            c->text[1] = 0;
+            c->bg_color = bg;
+            c->fg_color = fg;
+        }
+    }
+}
+
+void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
+    if (width < 0 || height < 0) {
+        free(surface->cells);
+        free(surface->cells_last_flush);
+        termpaintp_collapse(surface);
+    } else {
+        termpaintp_resize(surface, width, height);
+    }
+}
+
+int termpaint_surface_width(termpaint_surface *surface) {
+    return surface->width;
+}
+
+int termpaint_surface_height(termpaint_surface *surface) {
+    return surface->height;
 }
 
 
@@ -118,6 +196,25 @@ static void int_put_num(termpaint_integration *integration, int num) {
 
 static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
+}
+
+
+termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
+    termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
+
+    // start collapsed
+    termpaintp_collapse(&ret->primary);
+    ret->integration = integration;
+
+    return ret;
+}
+
+void termpaint_terminal_free(termpaint_terminal *term) {
+    termpaintp_surface_destroy(&term->primary);
+}
+
+termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
+    return &term->primary;
 }
 
 void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
@@ -265,102 +362,6 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     }
 
     int_flush(integration);
-}
-
-static int replace_norenderable_codepoints(int codepoint) {
-    if (codepoint < 32
-       || (codepoint >= 0x7f && codepoint < 0xa0)) {
-        return ' ';
-    } else {
-        return codepoint;
-    }
-}
-
-void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg) {
-    termpaint_surface_write_with_colors_clipped(surface, x, y, string, fg, bg, 0, surface->width-1);
-}
-
-void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg, int clip_x0, int clip_x1) {
-    const unsigned char *string = (const unsigned char *)string_s;
-    if (y < 0) return;
-    if (clip_x0 < 0) clip_x0 = 0;
-    if (clip_x1 >= surface->width) {
-        clip_x1 = surface->width-1;
-    }
-    while (*string) {
-        if (x > clip_x1 || y >= surface->height) {
-            return;
-        }
-
-        int size = termpaintp_utf8_len(string[0]);
-
-        // check termpaintp_utf8_decode_from_utf8 precondition
-        for (int i = 0; i < size; i++) {
-            if (string[i] == 0) {
-                // bogus, bail
-                return;
-            }
-        }
-        int codepoint = termpaintp_utf8_decode_from_utf8(string, size);
-        codepoint = replace_norenderable_codepoints(codepoint);
-
-        if (x >= clip_x0) {
-            cell *c = termpaintp_getcell(surface, x, y);
-            c->fg_color = fg;
-            c->bg_color = bg;
-            int written = termpaintp_encode_to_utf8(codepoint, c->text);
-            c->text[written] = 0;
-        }
-        string += size;
-
-        ++x;
-    }
-}
-
-void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
-    termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, fg, bg);
-}
-
-void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg) {
-    if (x < 0) {
-        width += x;
-        x = 0;
-    }
-    if (y < 0) {
-        height += y;
-        y = 0;
-    }
-    if (x >= surface->width) return;
-    if (y >= surface->height) return;
-    if (x+width > surface->width) width = surface->width - x;
-    if (y+height > surface->height) height = surface->height - y;
-    for (int y1 = y; y1 < y + height; y1++) {
-        for (int x1 = x; x1 < x + width; x1++) {
-            cell* c = termpaintp_getcell(surface, x1, y1);
-            c->text[0] = ' ';
-            c->text[1] = 0;
-            c->bg_color = bg;
-            c->fg_color = fg;
-        }
-    }
-}
-
-void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
-    if (width < 0 || height < 0) {
-        free(surface->cells);
-        free(surface->cells_last_flush);
-        termpaintp_collapse(surface);
-    } else {
-        termpaintp_resize(surface, width, height);
-    }
-}
-
-int termpaint_surface_width(termpaint_surface *surface) {
-    return surface->width;
-}
-
-int termpaint_surface_height(termpaint_surface *surface) {
-    return surface->height;
 }
 
 void termpaint_terminal_reset_attributes(termpaint_terminal *term) {
