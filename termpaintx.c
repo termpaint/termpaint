@@ -6,6 +6,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <signal.h>
+#include <poll.h>
 #include <malloc.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -67,6 +69,7 @@ typedef struct termpaint_integration_fd_ {
     int fd;
     bool auto_close;
     bool awaiting_response;
+    termpaint_terminal *terminal;
 } termpaint_integration_fd;
 
 static void fd_free(termpaint_integration* integration) {
@@ -121,9 +124,9 @@ static void fd_write(termpaint_integration* integration, char *data, int length)
     }
 }
 
-/*static void fd_expect_response(struct termpaint_integration_ *integration) {
+static void fd_request_callback(struct termpaint_integration_ *integration) {
     FDPTR(integration)->awaiting_response = true;
-}*/
+}
 
 termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
@@ -131,7 +134,7 @@ termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_clo
     ret->base.write = fd_write;
     ret->base.flush = fd_flush;
     ret->base.is_bad = fd_is_bad;
-    //ret->base.expect_response = fd_expect_response;
+    ret->base.request_callback = fd_request_callback;
     ret->fd = fd;
     ret->auto_close = auto_close;
     ret->awaiting_response = false;
@@ -156,3 +159,38 @@ bool termpaint_full_integration_terminal_size(termpaint_integration *integration
     *height = s.ws_row;
     return true;
 }
+
+void termpaint_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    t->terminal = terminal;
+}
+
+bool termpaint_full_integration_do_iteration(termpaint_integration *integration) {
+    termpaint_integration_fd *t = FDPTR(integration);
+
+    char buff[1000];
+    int amount = read(t->fd, buff, 999);
+    if (amount < 0) {
+        return false;
+    }
+    termpaint_terminal_add_input_data(t->terminal, buff, amount);
+
+    if (t->awaiting_response) {
+        t->awaiting_response = false;
+        struct pollfd info;
+        info.fd = t->fd;
+        info.events = POLLIN;
+        int ret = poll(&info, 1, 100);
+        if (ret == 1) {
+            int amount = read(t->fd, buff, 999);
+            if (amount < 0) {
+                return false;
+            }
+            termpaint_terminal_add_input_data(t->terminal, buff, amount);
+        }
+        termpaint_terminal_callback(t->terminal);
+    }
+
+    return true;
+}
+

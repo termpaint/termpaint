@@ -182,6 +182,7 @@ int main(int argc, char **argv) {
     printf("%s", "\e[?1049h");fflush(stdout);
 
     terminal = termpaint_terminal_new(integration);
+    termpaint_full_integration_set_terminal(integration, terminal);
     //termpaint_auto_detect(surface);
     termpaint_full_integration_poll_ready(integration);
 
@@ -209,9 +210,10 @@ int main(int argc, char **argv) {
     tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
 
     while (!quit) {
-        char buff[100];
-        int amount = read (STDIN_FILENO, buff, 99);
-        termpaint_terminal_add_input_data(terminal, buff, amount);
+        if (!termpaint_full_integration_do_iteration(integration)) {
+            // some kind of error
+            break;
+        }
         peek_buffer = std::string(termpaint_terminal_peek_input_buffer(terminal), termpaint_terminal_peek_input_buffer_length(terminal));
         render();
     }

@@ -429,16 +429,15 @@ int Main::main() {
     }
 
     terminal = termpaint_terminal_new(integration);
+    termpaint_full_integration_set_terminal(integration, terminal);
     surface = termpaint_terminal_get_surface(terminal);
     //termpaint_auto_detect(surface);
     termpaint_full_integration_poll_ready(integration);
 
     poll = [&] {
-        char buff[100];
-        int amount = read (STDIN_FILENO, buff, 99);
-        termpaint_terminal_add_input_data(terminal, buff, amount);
+        bool ok = termpaint_full_integration_do_iteration(integration);
         peek_buffer = std::string(termpaint_terminal_peek_input_buffer(terminal), termpaint_terminal_peek_input_buffer_length(terminal));
-        return true;
+        return ok;
     };
 
     struct termios tattr;
