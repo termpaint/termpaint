@@ -1,6 +1,8 @@
 #ifndef TERMPAINT_TERMPAINT_INCLUDED
 #define TERMPAINT_TERMPAINT_INCLUDED
 
+#include <termpaint_input.h>
+
 #ifdef __cplusplus
 #ifndef _Bool
 #define _Bool bool
@@ -22,16 +24,22 @@ typedef struct termpaint_integration_ {
     void (*write)(struct termpaint_integration_ *integration, char *data, int length);
     void (*flush)(struct termpaint_integration_ *integration);
     _Bool (*is_bad)(struct termpaint_integration_ *integration);
-    //void (*request_callback)(struct termpaint_integration_ *integration);
+    void (*request_callback)(struct termpaint_integration_ *integration);
 } termpaint_integration;
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration);
 void termpaint_terminal_free(termpaint_terminal *term);
 termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term);
 void termpaint_terminal_flush(termpaint_terminal *term, _Bool full_repaint);
-//void termpaint_terminal_callback(termpaint_terminal *term);
 void termpaint_terminal_reset_attributes(termpaint_terminal *term);
 void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y);
+
+void termpaint_terminal_callback(termpaint_terminal *term);
+void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
+void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *user_data, termpaint_input_event* event), void *user_data);
+void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length);
+const char* termpaint_terminal_peek_input_buffer(termpaint_terminal *term);
+int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term);
 
 
 //void termpaint_surface_free(termpaint_surface *surface);

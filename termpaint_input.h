@@ -85,7 +85,6 @@ void termpaint_input_free(termpaint_input *ctx);
 void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
 void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *user_data, termpaint_input_event* event), void *user_data);
 _Bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned length);
-void termpaint_input_timeout(termpaint_input *ctx);
 
 const char* termpaint_input_peek_buffer(termpaint_input *ctx);
 int termpaint_input_peek_buffer_length(termpaint_input *ctx);

@@ -34,6 +34,13 @@ struct termpaint_surface_ {
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
     termpaint_surface primary;
+    termpaint_input *input;
+    bool data_pending_after_input_received : 1;
+    bool in_auto_detection : 1;
+    void (*event_cb)(void *, termpaint_input_event *);
+    void *event_user_data;
+    bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
+    void *raw_input_filter_user_data;
 } termpaint_terminal;
 
 
@@ -198,6 +205,8 @@ static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
 
+static void termpaintp_input_event_callback(void *user_data, termpaint_input_event *event);
+static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
@@ -205,6 +214,12 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     // start collapsed
     termpaintp_collapse(&ret->primary);
     ret->integration = integration;
+
+    ret->data_pending_after_input_received = false;
+    ret->in_auto_detection = false;
+    ret->input = termpaint_input_new();
+    termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
+    termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
 
     return ret;
 }
@@ -376,4 +391,63 @@ void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
     int_puts(integration, ";");
     int_put_num(integration, x+1);
     int_puts(integration, "H");
+}
+
+static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow) {
+    termpaint_terminal *term = user_data;
+    if (!term->in_auto_detection) {
+        return term->raw_input_filter_cb(term->raw_input_filter_user_data, data, length, overflow);
+    } else {
+        return false;
+    }
+}
+
+static void termpaintp_input_event_callback(void *user_data, termpaint_input_event *event) {
+    termpaint_terminal *term = user_data;
+    if (!term->in_auto_detection) {
+        term->event_cb(term->event_user_data, event);
+    } else {
+        // TODO
+    }
+}
+
+void termpaint_terminal_callback(termpaint_terminal *term) {
+    if (term->data_pending_after_input_received) {
+        term->data_pending_after_input_received = false;
+        termpaint_integration *integration = term->integration;
+        int_puts(integration, "\033[5n");
+        int_flush(integration);
+    }
+}
+
+void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, bool (*cb)(void *, const char *, unsigned, bool), void *user_data) {
+    term->raw_input_filter_cb = cb;
+    term->raw_input_filter_user_data = user_data;
+}
+
+void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *, termpaint_input_event *), void *user_data) {
+    term->event_cb = cb;
+    term->event_user_data = user_data;
+}
+
+void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length) {
+    termpaint_input_add_data(term->input, data, length);
+    if (!term->in_auto_detection && termpaint_input_peek_buffer_length(term->input)) {
+        term->data_pending_after_input_received = true;
+        if (term->integration->request_callback) {
+            term->integration->request_callback(term->integration);
+        } else {
+            termpaint_terminal_callback(term);
+        }
+    } else {
+        term->data_pending_after_input_received = false;
+    }
+}
+
+const char *termpaint_terminal_peek_input_buffer(termpaint_terminal *term) {
+    return termpaint_input_peek_buffer(term->input);
+}
+
+int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term) {
+    return termpaint_input_peek_buffer_length(term->input);
 }

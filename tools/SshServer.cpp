@@ -31,10 +31,7 @@ static int data_function(ssh_session session, ssh_channel channel, void *data,
     (void) channel;
     (void) is_stderr;
 
-    termpaint_input_add_data(cdata->input, (const char*)data, len);
-    if (termpaint_input_peek_buffer_length(cdata->input)) {
-        ssh_channel_write(channel, "\e[5n", strlen("\e[5n"));
-    }
+    termpaint_terminal_add_input_data(cdata->terminal, (const char*)data, len);
     cdata->newInput = true;
 
     return len;
@@ -230,6 +227,8 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
 
     channel = sdata.channel;
 
+    memset(&integration, 0, sizeof(integration));
+
     integration.free = [] (termpaint_integration* ptr) {
     };
     integration.write = [] (termpaint_integration* ptr, char *data, int length) {
@@ -256,15 +255,13 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
     integration.is_bad = [] (termpaint_integration* ptr) {
         return false;
     };
+
     /*integration.expect_response = [] (termpaint_integration* ptr) {
         // nothing
     };*/
 
     terminal = termpaint_terminal_new(&integration);
     //termpaint_auto_detect(surface);
-
-    input = termpaint_input_new();
-
 
     ssh_set_channel_callbacks(sdata.channel, &channel_cb);
 

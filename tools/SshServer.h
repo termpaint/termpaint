@@ -19,7 +19,6 @@ public:
     void outStr(const char *s);
 
     termpaint_terminal *terminal = nullptr;
-    termpaint_input *input = nullptr;
 
 private:
     void handleSession(ssh_event event, ssh_session session);

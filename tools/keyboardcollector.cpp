@@ -309,7 +309,7 @@ public:
         std::string data;
         while (1 > choice || choice >= index) {
             std::string inputChars;
-            termpaint_input_set_event_cb(input, [] (void * p, termpaint_input_event *event) {
+            termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_input_event *event) {
                 std::string *inputChars = static_cast<std::string*>(p);
                 if (event->type == TERMPAINT_EV_CHAR) {
                     *inputChars += std::string(event->atom_or_string, event->length);
@@ -432,16 +432,12 @@ int Main::main() {
     surface = termpaint_terminal_get_surface(terminal);
     //termpaint_auto_detect(surface);
     termpaint_full_integration_poll_ready(integration);
-    termpaint_input *input = termpaint_input_new();
 
     poll = [&] {
         char buff[100];
         int amount = read (STDIN_FILENO, buff, 99);
-        termpaint_input_add_data(input, buff, amount);
-        peek_buffer = std::string(termpaint_input_peek_buffer(input), termpaint_input_peek_buffer_length(input));
-        if (peek_buffer.size()) {
-            write(0, "\e[5n", 4);
-        }
+        termpaint_terminal_add_input_data(terminal, buff, amount);
+        peek_buffer = std::string(termpaint_terminal_peek_input_buffer(terminal), termpaint_terminal_peek_input_buffer_length(terminal));
         return true;
     };
 
@@ -486,8 +482,8 @@ int Main::main() {
 
     termpaint_terminal_flush(terminal, false);
 
-    termpaint_input_set_raw_filter_cb(input, raw_filter, 0);
-    termpaint_input_set_event_cb(input, event_handler, 0);
+    termpaint_terminal_set_raw_input_filter_cb(terminal, raw_filter, 0);
+    termpaint_terminal_set_event_cb(terminal, event_handler, 0);
 
     render();
 
