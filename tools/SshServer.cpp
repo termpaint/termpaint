@@ -256,12 +256,12 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
     integration.is_bad = [] (termpaint_integration* ptr) {
         return false;
     };
-    integration.expect_response = [] (termpaint_integration* ptr) {
+    /*integration.expect_response = [] (termpaint_integration* ptr) {
         // nothing
-    };
+    };*/
 
-    surface = termpaint_surface_new(&integration);
-    termpaint_auto_detect(surface);
+    terminal = termpaint_terminal_new(&integration);
+    //termpaint_auto_detect(surface);
 
     input = termpaint_input_new();
 

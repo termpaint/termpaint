@@ -121,9 +121,9 @@ static void fd_write(termpaint_integration* integration, char *data, int length)
     }
 }
 
-static void fd_expect_response(struct termpaint_integration_ *integration) {
+/*static void fd_expect_response(struct termpaint_integration_ *integration) {
     FDPTR(integration)->awaiting_response = true;
-}
+}*/
 
 termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
@@ -131,7 +131,7 @@ termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_clo
     ret->base.write = fd_write;
     ret->base.flush = fd_flush;
     ret->base.is_bad = fd_is_bad;
-    ret->base.expect_response = fd_expect_response;
+    //ret->base.expect_response = fd_expect_response;
     ret->fd = fd;
     ret->auto_close = auto_close;
     ret->awaiting_response = false;

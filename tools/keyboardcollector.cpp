@@ -27,6 +27,7 @@ static std::vector<std::string> lastRaw;
 static std::vector<std::string> lastPretty;
 static std::string peek_buffer;
 static termpaint_surface *surface;
+static termpaint_terminal *terminal;
 static time_t last_q;
 static bool quit;
 
@@ -272,7 +273,7 @@ void render() {
         lastPretty.erase(lastPretty.begin());
     }
 
-    termpaint_surface_flush(surface, false);
+    termpaint_terminal_flush(terminal, false);
 }
 
 
@@ -418,7 +419,8 @@ int Main::main() {
     fflush(stdout);
 
 #ifdef USE_SSH
-    ::surface = this->surface;
+    ::terminal = this->terminal;
+    surface = termpaint_terminal_get_surface(this->terminal);
 #else
     termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0);
     if (!integration) {
@@ -426,8 +428,9 @@ int Main::main() {
         return 1;
     }
 
-    surface = termpaint_surface_new(integration);
-    termpaint_auto_detect(surface);
+    terminal = termpaint_terminal_new(integration);
+    surface = termpaint_terminal_get_surface(terminal);
+    //termpaint_auto_detect(surface);
     termpaint_full_integration_poll_ready(integration);
     termpaint_input *input = termpaint_input_new();
 
@@ -481,7 +484,7 @@ int Main::main() {
     termpaint_surface_resize(surface, 80, 24);
     termpaint_surface_clear(surface, 0x1000000, 0x1000000);
 
-    termpaint_surface_flush(surface, false);
+    termpaint_terminal_flush(terminal, false);
 
     termpaint_input_set_raw_filter_cb(input, raw_filter, 0);
     termpaint_input_set_event_cb(input, event_handler, 0);

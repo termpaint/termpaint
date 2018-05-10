@@ -18,6 +18,7 @@ typedef bool _Bool;
 std::vector<std::string> ring;
 std::vector<std::string> ring2;
 std::string peek_buffer;
+termpaint_terminal *terminal;
 termpaint_surface *surface;
 time_t last_q;
 bool quit;
@@ -162,7 +163,7 @@ void render() {
         ring2.erase(ring2.begin());
     }
 
-    termpaint_surface_flush(surface, false);
+    termpaint_terminal_flush(terminal, false);
 }
 
 int main(int argc, char **argv) {
@@ -180,15 +181,17 @@ int main(int argc, char **argv) {
     printf("%s", "\e[?1036h");fflush(stdout);
     printf("%s", "\e[?1049h");fflush(stdout);
 
-    surface = termpaint_surface_new(integration);
-    termpaint_auto_detect(surface);
+    terminal = termpaint_terminal_new(integration);
+    //termpaint_auto_detect(surface);
     termpaint_full_integration_poll_ready(integration);
+
+    surface = termpaint_terminal_get_surface(terminal);
 
     termpaint_surface_resize(surface, 80, 24);
     termpaint_surface_clear(surface, 0x1ffffff, 0x1000000);
     //termpaint_surface_write_with_colors(surface, 0, 0, "Hallo müde", 0xff0000, 0x00ff00);
 
-    termpaint_surface_flush(surface, false);
+    termpaint_terminal_flush(terminal, false);
 
     termpaint_input *input = termpaint_input_new();
     termpaint_input_set_raw_filter_cb(input, raw_filter, 0);

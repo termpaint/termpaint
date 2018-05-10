@@ -18,7 +18,7 @@ public:
 
     void outStr(const char *s);
 
-    termpaint_surface *surface = nullptr;
+    termpaint_terminal *terminal = nullptr;
     termpaint_input *input = nullptr;
 
 private:

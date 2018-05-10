@@ -15,8 +15,6 @@
 
 #define nullptr ((void*)0)
 
-#define TERMPTR(var) ((termpaint_surface_terminal*)var)
-
 
 typedef struct cell_ {
     unsigned char text[7]; // full 31bit range plus termination
@@ -33,10 +31,15 @@ struct termpaint_surface_ {
     int height;
 };
 
-typedef struct termpaint_surface_terminal_ {
-    termpaint_surface base;
+typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
-} termpaint_surface_terminal;
+    termpaint_surface primary;
+} termpaint_terminal;
+
+
+termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
+    return &term->primary;
+}
 
 
 static void termpaintp_collapse(termpaint_surface *surface) {
@@ -78,22 +81,26 @@ static inline cell* termpaintp_getcell(termpaint_surface *surface, int x, int y)
     }
 }
 
-termpaint_surface *termpaint_surface_new(termpaint_integration *integration) {
-    termpaint_surface_terminal *ret = calloc(1, sizeof(termpaint_surface_terminal));
+termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
+    termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
 
     // start collapsed
-    termpaintp_collapse(&ret->base);
+    termpaintp_collapse(&ret->primary);
     ret->integration = integration;
 
-    return (termpaint_surface*)ret;
+    return ret;
 }
 
-void termpaint_surface_free(termpaint_surface *surface) {
+static void termpaintp_surface_destroy(termpaint_surface *surface) {
     free(surface->cells);
     free(surface->cells_last_flush);
     termpaintp_collapse(surface);
-    free(surface);
 }
+
+void termpaint_terminal_free(termpaint_terminal *term) {
+    termpaintp_surface_destroy(&term->primary);
+}
+
 
 static void int_puts(termpaint_integration *integration, char *str) {
     integration->write(integration, str, strlen(str));
@@ -113,11 +120,11 @@ static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
 
-void termpaint_surface_flush(termpaint_surface *surface, bool full_repaint) {
-    termpaint_integration *integration = TERMPTR(surface)->integration;
-    if (!surface->cells_last_flush) {
+void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
+    termpaint_integration *integration = term->integration;
+    if (!term->primary.cells_last_flush) {
         full_repaint = true;
-        surface->cells_last_flush = calloc(1, surface->cells_allocated * sizeof(cell));
+        term->primary.cells_last_flush = calloc(1, term->primary.cells_allocated * sizeof(cell));
     }
     int_puts(integration, "\e[H");
     char speculation_buffer[30];
@@ -126,7 +133,7 @@ void termpaint_surface_flush(termpaint_surface *surface, bool full_repaint) {
     int pending_colum_move = 0;
     int pending_colum_move_digits = 1;
     int pending_colum_move_digits_step = 10;
-    for (int y = 0; y < surface->height; y++) {
+    for (int y = 0; y < term->primary.height; y++) {
         speculation_buffer_state = 0;
         pending_colum_move = 0;
         pending_colum_move_digits = 1;
@@ -134,9 +141,9 @@ void termpaint_surface_flush(termpaint_surface *surface, bool full_repaint) {
 
         int current_fg = -1;
         int current_bg = -1;
-        for (int x = 0; x < surface->width; x++) {
-            cell* c = termpaintp_getcell(surface, x, y);
-            cell* old_c = &surface->cells_last_flush[y*surface->width+x];
+        for (int x = 0; x < term->primary.width; x++) {
+            cell* c = termpaintp_getcell(&term->primary, x, y);
+            cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
             if (*c->text == 0) {
                 c->text[0] = ' ';
                 c->text[1] = 0;
@@ -230,7 +237,7 @@ void termpaint_surface_flush(termpaint_surface *surface, bool full_repaint) {
         }
 
         if (full_repaint) {
-            if (y+1 < surface->height) {
+            if (y+1 < term->primary.height) {
                 int_puts(integration, "\r\n");
             }
         } else {
@@ -356,23 +363,16 @@ int termpaint_surface_height(termpaint_surface *surface) {
     return surface->height;
 }
 
-bool termpaint_auto_detect(termpaint_surface *surface) {
-    UNUSED(surface); // TODO
-    return false;
-}
-
-
-void termpaint_surface_reset_attributes(termpaint_surface *surface) {
-    termpaint_integration *integration = TERMPTR(surface)->integration;
+void termpaint_terminal_reset_attributes(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
     int_puts(integration, "\e[0m");
 }
 
-void termpaint_surface_set_cursor(termpaint_surface *surface, int x, int y) {
-    termpaint_integration *integration = TERMPTR(surface)->integration;
+void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
+    termpaint_integration *integration = term->integration;
     int_puts(integration, "\e[");
     int_put_num(integration, y+1);
     int_puts(integration, ";");
     int_put_num(integration, x+1);
     int_puts(integration, "H");
 }
-
