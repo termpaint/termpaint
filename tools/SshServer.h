@@ -28,6 +28,7 @@ private:
     std::string outputBuffer;
     int port;
     std::string serverKeyFile;
+    bool callback_requested = false;
 
 public:
     bool newInput = false;

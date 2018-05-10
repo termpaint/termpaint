@@ -256,9 +256,10 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
         return false;
     };
 
-    /*integration.expect_response = [] (termpaint_integration* ptr) {
-        // nothing
-    };*/
+    integration.request_callback = [] (termpaint_integration* ptr) {
+        auto t = container_of(ptr, SshServer, integration);
+        t->callback_requested = true;
+    };
 
     terminal = termpaint_terminal_new(&integration);
     //termpaint_auto_detect(surface);
@@ -269,8 +270,16 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
         newInput = false;
         integration.flush(&integration);
         do {
-            if (ssh_event_dopoll(event, -1) == SSH_ERROR) {
-              ssh_channel_close(sdata.channel);
+            int timeout = -1;
+            if (callback_requested) {
+                 timeout = 100;
+            }
+            int res = ssh_event_dopoll(event, timeout);
+            if (res == SSH_ERROR) {
+                ssh_channel_close(sdata.channel);
+            } else if (res == SSH_AGAIN) {
+                callback_requested = false;
+                termpaint_terminal_callback(terminal);
             }
         } while(ssh_channel_is_open(sdata.channel) && !newInput);
         return ssh_channel_is_open(sdata.channel);
