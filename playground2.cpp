@@ -76,8 +76,10 @@ void event_handler(void *user_data, termpaint_input_event *event) {
         pretty += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
         pretty += " ";
         pretty += std::string { event->atom_or_string, event->length };
+    } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+        pretty = "Cursor position report: x=" + std::to_string(event->x) + " y=" + std::to_string(event->y);
     } else {
-        pretty = "XXX";
+        pretty = "Other event no. " + std::to_string(event->type);
     }
 
     ring2.emplace_back(pretty);
@@ -141,7 +143,8 @@ void display_esc(int x, int y, const std::string &data) {
 void render() {
     termpaint_surface_clear(surface, 0x1000000, 0x1000000);
 
-    termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", 0x1000000, 0x1000000);
+    termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", 0x1ffffff, 0x1000000);
+    termpaint_surface_write_with_colors(surface, 20, 0, terminal_info.data(), 0x1cccccc, 0x1000000);
 
     if (peek_buffer.length()) {
         termpaint_surface_write_with_colors(surface, 0, 23, "unmatched:", 0xff0000, 0x1000000);
