@@ -22,6 +22,7 @@ termpaint_terminal *terminal;
 termpaint_surface *surface;
 time_t last_q;
 bool quit;
+std::string terminal_info;
 
 
 template <typename X>
@@ -183,19 +184,8 @@ int main(int argc, char **argv) {
 
     terminal = termpaint_terminal_new(integration);
     termpaint_full_integration_set_terminal(integration, terminal);
-    //termpaint_auto_detect(surface);
-    termpaint_full_integration_poll_ready(integration);
 
     surface = termpaint_terminal_get_surface(terminal);
-
-    termpaint_surface_resize(surface, 80, 24);
-    termpaint_surface_clear(surface, 0x1ffffff, 0x1000000);
-    //termpaint_surface_write_with_colors(surface, 0, 0, "Hallo müde", 0xff0000, 0x00ff00);
-
-    termpaint_terminal_flush(terminal, false);
-
-    termpaint_terminal_set_raw_input_filter_cb(terminal, raw_filter, 0);
-    termpaint_terminal_set_event_cb(terminal, event_handler, 0);
 
     struct termios tattr;
 
@@ -208,6 +198,24 @@ int main(int argc, char **argv) {
     tattr.c_cc[VTIME] = 0;
     tattr.c_cc[VQUIT] = 0;
     tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
+
+    termpaint_terminal_auto_detect(terminal);
+    termpaint_full_integration_wait_for_ready(integration);
+
+    if (termpaint_terminal_auto_detect_state(terminal) == termpaint_auto_detect_done) {
+        char buff[100];
+        termpaint_terminal_auto_detect_result_text(terminal, buff, sizeof (buff));
+        terminal_info = std::string(buff);
+    }
+
+    termpaint_terminal_set_raw_input_filter_cb(terminal, raw_filter, 0);
+    termpaint_terminal_set_event_cb(terminal, event_handler, 0);
+
+    termpaint_surface_resize(surface, 80, 24);
+    termpaint_surface_clear(surface, 0x1ffffff, 0x1000000);
+    termpaint_terminal_flush(terminal, false);
+
+    render();
 
     while (!quit) {
         if (!termpaint_full_integration_do_iteration(integration)) {

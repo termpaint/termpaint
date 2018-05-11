@@ -142,8 +142,14 @@ termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_clo
     return (termpaint_integration*)ret;
 }
 
-_Bool termpaint_full_integration_poll_ready(termpaint_integration *integration) {
-    UNUSED(integration); // TODO
+bool termpaint_full_integration_wait_for_ready(termpaint_integration *integration) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    while (termpaint_terminal_auto_detect_state(t->terminal) == termpaint_auto_detect_running) {
+        if (!termpaint_full_integration_do_iteration(integration)) {
+            // some kind of error
+            break;
+        }
+    }
     return false;
 }
 

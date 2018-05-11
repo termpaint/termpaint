@@ -432,7 +432,7 @@ int Main::main() {
     termpaint_full_integration_set_terminal(integration, terminal);
     surface = termpaint_terminal_get_surface(terminal);
     //termpaint_auto_detect(surface);
-    termpaint_full_integration_poll_ready(integration);
+    //termpaint_full_integration_wait_ready(integration);
 
     poll = [&] {
         bool ok = termpaint_full_integration_do_iteration(integration);

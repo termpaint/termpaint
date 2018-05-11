@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "termpaint_compiler.h"
+#include "termpaint_input.h"
 #include "termpaint_utf8.h"
 
 /* TODO and known problems:
@@ -31,18 +32,49 @@ struct termpaint_surface_ {
     int height;
 };
 
+typedef enum auto_detect_state_ {
+    AD_NONE,
+    AD_INITIAL,
+    AD_FINISHED,
+    // Basics: cursor position, secondary id, device ready?
+    AD_BASIC_REQ,
+    AD_BASIC_CURPOS_RECVED,
+    AD_BASIC_SEC_DEV_ATTRIB_RECVED,
+    // finger print 1: Test for 'private' cursor position, xterm secondary id quirk
+    AD_FP1_REQ,
+    AD_FP1_SEC_DEV_ATTRIB_RECVED,
+    AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED,
+    AD_FP1_QMCURSOR_POS_RECVED,
+    // finger print 2: Test for konsole repeated secondary id quirk (2 ansers), Test for VTE secondary id quirk (no answer)
+    AD_FP2_REQ,
+    AD_FP2_SEC_DEV_ATTRIB_RECVED1,
+    AD_FP2_SEC_DEV_ATTRIB_RECVED2,
+} auto_detect_state;
+
+typedef enum terminal_type_enum_ {
+    TT_TOODUMB,
+    TT_UNKNOWN,
+    TT_XTERM,
+    TT_URXVT,
+    TT_KONSOLE,
+    TT_BASE,
+    TT_VTE,
+} terminal_type_enum;
+
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
     termpaint_surface primary;
     termpaint_input *input;
     bool data_pending_after_input_received : 1;
-    bool in_auto_detection : 1;
+    int support_qm_cursor_position_report : 1;
+    int terminal_type : 4;
     void (*event_cb)(void *, termpaint_input_event *);
     void *event_user_data;
     bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
     void *raw_input_filter_user_data;
-} termpaint_terminal;
 
+    auto_detect_state ad_state;
+} termpaint_terminal;
 
 
 static void termpaintp_collapse(termpaint_surface *surface) {
@@ -216,7 +248,9 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->integration = integration;
 
     ret->data_pending_after_input_received = false;
-    ret->in_auto_detection = false;
+    ret->ad_state = AD_NONE;
+    ret->support_qm_cursor_position_report = false;
+    ret->terminal_type = TT_UNKNOWN;
     ret->input = termpaint_input_new();
     termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
@@ -393,9 +427,11 @@ void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
     int_puts(integration, "H");
 }
 
+static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_input_event *event);
+
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow) {
     termpaint_terminal *term = user_data;
-    if (!term->in_auto_detection) {
+    if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
         return term->raw_input_filter_cb(term->raw_input_filter_user_data, data, length, overflow);
     } else {
         return false;
@@ -404,10 +440,11 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
 
 static void termpaintp_input_event_callback(void *user_data, termpaint_input_event *event) {
     termpaint_terminal *term = user_data;
-    if (!term->in_auto_detection) {
+    if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
         term->event_cb(term->event_user_data, event);
     } else {
-        // TODO
+        termpaint_terminal_auto_detect_event(term, event);
+        int_flush(term->integration);
     }
 }
 
@@ -432,7 +469,7 @@ void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *
 
 void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length) {
     termpaint_input_add_data(term->input, data, length);
-    if (!term->in_auto_detection && termpaint_input_peek_buffer_length(term->input)) {
+    if ((term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) && termpaint_input_peek_buffer_length(term->input)) {
         term->data_pending_after_input_received = true;
         if (term->integration->request_callback) {
             term->integration->request_callback(term->integration);
@@ -450,4 +487,186 @@ const char *termpaint_terminal_peek_input_buffer(termpaint_terminal *term) {
 
 int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term) {
     return termpaint_input_peek_buffer_length(term->input);
+}
+
+static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_input_event *event) {
+    termpaint_integration *integration = terminal->integration;
+
+    if (event == nullptr) {
+        terminal->ad_state = AD_INITIAL;
+    }
+
+    switch (terminal->ad_state) {
+        case AD_FINISHED:
+            // should not happen
+            break;
+        case AD_INITIAL:
+            int_puts(integration, "\033[6n");
+            int_puts(integration, "\033[>c");
+            int_puts(integration, "\033[5n");
+            terminal->ad_state = AD_BASIC_REQ;
+            return true;
+        case AD_BASIC_REQ:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                // TODO save initial cursor position
+                terminal->ad_state = AD_BASIC_CURPOS_RECVED;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->terminal_type = TT_TOODUMB;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->terminal_type = TT_TOODUMB;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            }
+            break;
+        case AD_BASIC_CURPOS_RECVED:
+            if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                // TODO save data
+                /* no plot */ if (event->length > 6 && memcmp("\033[>85;", event->atom_or_string, 6) == 0) {
+                    // urxvt source says: first parameter is 'U' / 85 for urxvt (except for 7.[34])
+                    terminal->terminal_type = TT_URXVT;
+                }
+                terminal->ad_state = AD_BASIC_SEC_DEV_ATTRIB_RECVED;
+                return true;
+            } else if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->terminal_type = TT_TOODUMB;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            }
+            break;
+        case AD_BASIC_SEC_DEV_ATTRIB_RECVED:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                /* no plot */ if (terminal->terminal_type == TT_URXVT) {
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
+                }
+                int_puts(integration, "\033[>1c");
+                int_puts(integration, "\033[?6n");
+                int_puts(integration, "\033[5n");
+                terminal->ad_state = AD_FP1_REQ;
+                return true;
+            }
+            break;
+        case AD_FP1_REQ:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->terminal_type = TT_BASE;
+                terminal->support_qm_cursor_position_report = false;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->support_qm_cursor_position_report = true;
+                terminal->terminal_type = TT_XTERM;
+                terminal->ad_state = AD_FP1_QMCURSOR_POS_RECVED;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_RECVED;
+                return true;
+            }
+            break;
+        case AD_FP1_SEC_DEV_ATTRIB_RECVED:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->support_qm_cursor_position_report = false;
+                int_puts(integration, "\033[>0;1c");
+                int_puts(integration, "\033[5n");
+                terminal->ad_state = AD_FP2_REQ;
+                return true;
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->support_qm_cursor_position_report = true;
+                terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED;
+                return true;
+            }
+            break;
+        case AD_FP1_QMCURSOR_POS_RECVED:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            }
+            break;
+        case AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                int_puts(integration, "\033[>0;1c");
+                int_puts(integration, "\033[5n");
+                terminal->ad_state = AD_FP2_REQ;
+                return true;
+            }
+            break;
+        case AD_FP2_REQ:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->terminal_type = TT_VTE;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->ad_state = AD_FP2_SEC_DEV_ATTRIB_RECVED1;
+                return true;
+            }
+            break;
+        case AD_FP2_SEC_DEV_ATTRIB_RECVED1:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->terminal_type = TT_BASE;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->terminal_type = TT_KONSOLE;
+                terminal->ad_state = AD_FP2_SEC_DEV_ATTRIB_RECVED2;
+                return true;
+            }
+            break;
+        case AD_FP2_SEC_DEV_ATTRIB_RECVED2:
+            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            }
+    };
+
+    // if this code runs auto detection failed by running off into the weeds
+    terminal->terminal_type = TT_TOODUMB;
+    terminal->ad_state = AD_FINISHED;
+    return false;
+}
+
+_Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal) {
+    termpaint_terminal_auto_detect_event(terminal, nullptr);
+    int_flush(terminal->integration);
+    return true;
+}
+
+enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termpaint_terminal *terminal) {
+    if (terminal->ad_state == AD_FINISHED) {
+        return termpaint_auto_detect_done;
+    } else if (terminal->ad_state == AD_NONE) {
+        return termpaint_auto_detect_none;
+    } else {
+        return termpaint_auto_detect_running;
+    }
+}
+
+void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length) {
+    const char *term_type = nullptr;
+    switch (terminal->terminal_type) {
+        case TT_TOODUMB:
+            term_type = "toodumb";
+            break;
+        case TT_UNKNOWN:
+            term_type = "unknown";
+            break;
+        case TT_BASE:
+            term_type = "base";
+            break;
+        case TT_KONSOLE:
+            term_type = "konsole";
+            break;
+        case TT_XTERM:
+            term_type = "xterm";
+            break;
+        case TT_VTE:
+            term_type = "vte";
+            break;
+        case TT_URXVT:
+            term_type = "urxvt";
+            break;
+    };
+    snprintf(buffer, buffer_length, "Type: %s %s", term_type, terminal->support_qm_cursor_position_report ? "CPR?" : "");
+    buffer[buffer_length-1] = 0;
 }

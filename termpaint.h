@@ -41,6 +41,12 @@ void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *dat
 const char* termpaint_terminal_peek_input_buffer(termpaint_terminal *term);
 int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term);
 
+_Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal);
+enum termpaint_auto_detect_state_enum { termpaint_auto_detect_none,
+                                                 termpaint_auto_detect_running,
+                                                 termpaint_auto_detect_done};
+enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termpaint_terminal *terminal);
+void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length);
 
 //void termpaint_surface_free(termpaint_surface *surface);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);

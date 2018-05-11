@@ -63,6 +63,8 @@ const char *termpaint_input_f12();
 #define TERMPAINT_EV_KEY 2
 #define TERMPAINT_EV_OVERFLOW 3
 #define TERMPAINT_EV_INVALID_UTF8 4
+#define TERMPAINT_EV_CURSOR_POSITION 5
+#define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 6
 
 #define TERMPAINT_MOD_SHIFT 1
 #define TERMPAINT_MOD_CTRL 2
@@ -74,6 +76,9 @@ struct termpaint_input_event_ {
     unsigned length;
     const char *atom_or_string;
     int modifier;
+    // valid for EV_CURSOR_POSITION
+    int x;
+    int y;
 };
 typedef struct termpaint_input_event_ termpaint_input_event;
 

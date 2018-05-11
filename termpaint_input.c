@@ -630,6 +630,31 @@ static void termpaintp_input_reset(termpaint_input *ctx) {
     ctx->state = tpis_base;
 }
 
+static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t length, int *a, int *b) {
+    int val = 0;
+    int state = 0;
+    for (int i = 0; i < length; i++) {
+        if (data[i] >= '0' && data[i] <= '9') {
+            val = val * 10 + data[i]-'0';
+        } else if (state == 0 && data[i] == ';') {
+            *a = val;
+            val = 0;
+            state = 1;
+        } else if (state == 1 && data[i] == ';'){
+            *b = val;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    if (state == 1) {
+        *b = val;
+        return true;
+    }
+
+    return false;
+}
+
 static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data, size_t length, _Bool overflow) {
     unsigned char dbl_esc_tmp[21];
     // First handle double escape for alt-ESC
@@ -808,6 +833,29 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.length = length;
             event.atom_or_string = (const char*)data;
             event.modifier = 0;
+        }
+
+        if (!event.type && length > 2 && data[0] == '\033' && data[1] == '[') {
+            int i = 2;
+            bool qm = false;
+            if (length > 3 && data[i] == '?') {
+                ++i;
+                qm = true;
+            }
+            if (length > 5 && data[length-1] == 'R') { // both plain and qm
+                int x, y;
+                if (termpaintp_input_parse_dec_2(data + i, length - i - 1, &y, &x)) {
+                    event.type = TERMPAINT_EV_CURSOR_POSITION;
+                    event.x = x - 1;
+                    event.y = y - 1;
+                }
+            }
+
+            if (length > 3 && data[2] == '>' && data[length-1] == 'c') {
+                event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
+                event.atom_or_string = (const char*)data;
+                event.length = length;
+            }
         }
     }
     ctx->event_cb(ctx->event_user_data, &event);
