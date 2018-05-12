@@ -446,6 +446,13 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
     } else {
         termpaint_terminal_auto_detect_event(term, event);
         int_flush(term->integration);
+        if (term->ad_state == AD_FINISHED) {
+            if (term->event_cb) {
+                termpaint_event event;
+                event.type = TERMPAINT_EV_AUTO_DETECT_FINISHED;
+                term->event_cb(term->event_user_data, &event);
+            }
+        }
     }
 }
 
