@@ -422,7 +422,7 @@ int Main::main() {
     ::terminal = this->terminal;
     surface = termpaint_terminal_get_surface(this->terminal);
 #else
-    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0);
+    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0, "");
     if (!integration) {
         outStr("Could not init!");
         return 1;
@@ -440,22 +440,9 @@ int Main::main() {
         return ok;
     };
 
+    // Settings not done in termpaint_full_integration
     struct termios tattr;
-
     tcgetattr (STDIN_FILENO, &tattr);
-
-    tattr.c_iflag |= IGNBRK|IGNPAR;
-    tattr.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
-    tattr.c_oflag &= ~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
-    tattr.c_lflag &= ~(ICANON|IEXTEN|ECHO);
-    tattr.c_cc[VMIN] = 1;
-    tattr.c_cc[VTIME] = 0;
-
-    // ISIG, we keep ISIG set for interrupt (ctrl-C), but disable the rest.
-    tattr.c_cc[VQUIT] = 0;
-    tattr.c_cc[VINTR] = 0;
-    tattr.c_cc[VSUSP] = 0;
-
     // should not matter when ~IXON
     tattr.c_cc[VSTART] = 0;
     tattr.c_cc[VSTOP] = 0;

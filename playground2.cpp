@@ -173,7 +173,7 @@ void render() {
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
-    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0);
+    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 1;
@@ -189,18 +189,6 @@ int main(int argc, char **argv) {
     termpaint_full_integration_set_terminal(integration, terminal);
 
     surface = termpaint_terminal_get_surface(terminal);
-
-    struct termios tattr;
-
-    tcgetattr (STDIN_FILENO, &tattr);
-    tattr.c_iflag |= IGNBRK;
-    tattr.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
-    tattr.c_oflag &= ~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
-    tattr.c_lflag &= ~(ICANON|IEXTEN|ECHO);
-    tattr.c_cc[VMIN] = 1;
-    tattr.c_cc[VTIME] = 0;
-    tattr.c_cc[VQUIT] = 0;
-    tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
 
     termpaint_terminal_auto_detect(terminal);
     termpaint_full_integration_wait_for_ready(integration);
@@ -230,6 +218,8 @@ int main(int argc, char **argv) {
     }
 
     printf("%s", "\e[?66;1049l");fflush(stdout);
+
+    termpaint_terminal_free(terminal);
 
     return 0;
 }

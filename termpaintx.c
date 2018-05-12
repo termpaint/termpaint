@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -13,6 +14,11 @@
 #include <stdbool.h>
 
 #include <termpaint_compiler.h>
+
+#if __GNUC__
+// Trying to avoid this warning with e.g. bit manipulations using defines from the standard headers is just too ugly
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
 
 #define nullptr ((void*)0)
 
@@ -33,7 +39,7 @@ _Bool termpaint_full_integration_available() {
     return false;
 }
 
-termpaint_integration *termpaint_full_integration() {
+termpaint_integration *termpaint_full_integration(const char *options) {
     int fd = -1;
     _Bool auto_close = false;
 
@@ -51,32 +57,37 @@ termpaint_integration *termpaint_full_integration() {
         }
     }
 
-    return termpaint_full_integration_from_fd(fd, auto_close);
+    return termpaint_full_integration_from_fd(fd, auto_close, options);
 }
 
 
-termpaint_integration *termpaint_full_integration_from_controlling_terminal() {
+termpaint_integration *termpaint_full_integration_from_controlling_terminal(const char *options) {
     int fd = -1;
     fd = open("/dev/tty", O_RDWR | O_NOCTTY | FD_CLOEXEC);
     if (fd == -1) {
         return nullptr;
     }
-    return termpaint_full_integration_from_fd(fd, true);
+    return termpaint_full_integration_from_fd(fd, true, options);
 }
 
 typedef struct termpaint_integration_fd_ {
     termpaint_integration base;
+    char *options;
     int fd;
     bool auto_close;
+    struct termios original_terminal_attributes;
     bool awaiting_response;
     termpaint_terminal *terminal;
 } termpaint_integration_fd;
 
 static void fd_free(termpaint_integration* integration) {
-    if (FDPTR(integration)->auto_close && FDPTR(integration)->fd != -1) {
-        close(FDPTR(integration)->fd);
+    termpaint_integration_fd* fd_data = FDPTR(integration);
+    tcsetattr (fd_data->fd, TCSAFLUSH, &fd_data->original_terminal_attributes);
+    if (fd_data->auto_close && fd_data->fd != -1) {
+        close(fd_data->fd);
     }
-    free(integration);
+    free(fd_data->options);
+    free(fd_data);
 }
 
 static void fd_flush(termpaint_integration* integration) {
@@ -128,17 +139,61 @@ static void fd_request_callback(struct termpaint_integration_ *integration) {
     FDPTR(integration)->awaiting_response = true;
 }
 
-termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close) {
+static char *termpaintp_pad_options(const char *options) {
+    size_t optlen = strlen(options);
+    char *ret = calloc(1, strlen(options) + 3);
+    ret[0] = ' ';
+    memcpy(ret + 1, options, optlen);
+    ret[optlen+1] = ' ';
+    return ret;
+}
+
+bool termpaintp_fd_set_termios(int fd, const char *options) {
+    struct termios tattr;
+    tcgetattr(fd, &tattr);
+    tattr.c_iflag |= IGNBRK|IGNPAR;
+    tattr.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
+    tattr.c_oflag &= ~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
+    tattr.c_lflag &= ~(ICANON|IEXTEN|ECHO);
+    tattr.c_cc[VMIN] = 1;
+    tattr.c_cc[VTIME] = 0;
+
+    bool allow_interrupt = strstr(options, " +kbdsigint ");
+    bool allow_quit = strstr(options, " +kbdsigquit ");
+    bool allow_suspend = strstr(options, " +kbdsigtstp ");
+
+    if (!(allow_interrupt || allow_quit || allow_suspend)) {
+        tattr.c_lflag &= ~ISIG;
+    } else {
+        if (!allow_interrupt) {
+            tattr.c_cc[VINTR] = 0;
+        }
+        if (!allow_quit) {
+            tattr.c_cc[VQUIT] = 0;
+        }
+        if (!allow_suspend) {
+            tattr.c_cc[VSUSP] = 0;
+        }
+    }
+
+    tcsetattr (fd, TCSAFLUSH, &tattr);
+    return true;
+}
+
+termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
     ret->base.free = fd_free;
     ret->base.write = fd_write;
     ret->base.flush = fd_flush;
     ret->base.is_bad = fd_is_bad;
     ret->base.request_callback = fd_request_callback;
+    ret->options = termpaintp_pad_options(options);
     ret->fd = fd;
     ret->auto_close = auto_close;
     ret->awaiting_response = false;
 
+    tcgetattr(ret->fd, &ret->original_terminal_attributes);
+    termpaintp_fd_set_termios(ret->fd, options);
     return (termpaint_integration*)ret;
 }
 

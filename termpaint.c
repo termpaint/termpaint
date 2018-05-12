@@ -260,6 +260,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 
 void termpaint_terminal_free(termpaint_terminal *term) {
     termpaintp_surface_destroy(&term->primary);
+    term->integration->free(term->integration);
 }
 
 termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {

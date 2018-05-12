@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
 _Bool termpaint_full_integration_available();
-termpaint_integration *termpaint_full_integration();
-termpaint_integration *termpaint_full_integration_from_controlling_terminal();
-termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close);
+termpaint_integration *termpaint_full_integration(const char *options);
+termpaint_integration *termpaint_full_integration_from_controlling_terminal(const char *options);
+termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close, const char *options);
 
 _Bool termpaint_full_integration_wait_for_ready(termpaint_integration *integration);
 
