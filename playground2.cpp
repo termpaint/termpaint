@@ -15,8 +15,12 @@ typedef bool _Bool;
 #include "termpaintx.h"
 #include "termpaint_input.h"
 
-std::vector<std::string> ring;
-std::vector<std::string> ring2;
+struct DisplayEvent {
+    std::string raw;
+    std::string eventString;
+};
+
+std::vector<DisplayEvent> ring;
 std::string peek_buffer;
 termpaint_terminal *terminal;
 termpaint_surface *surface;
@@ -36,7 +40,8 @@ unsigned char u8(char ch) {
 _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overflow) {
     (void)user_data;
     std::string event { data, length };
-    ring.emplace_back(event);
+    ring.emplace_back();
+    ring.back().raw = event;
 
     if (event == "q") {
         time_t now = time(0);
@@ -82,7 +87,10 @@ void event_handler(void *user_data, termpaint_event *event) {
         pretty = "Other event no. " + std::to_string(event->type);
     }
 
-    ring2.emplace_back(pretty);
+    if (ring.empty() || ring.back().eventString.size()) {
+        ring.emplace_back();
+    }
+    ring.back().eventString = pretty;
 }
 
 void display_esc(int x, int y, const std::string &data) {
@@ -152,19 +160,14 @@ void render() {
     }
 
     int y = 2;
-    for (std::string &event : ring) {
-        display_esc(5, y, event);
+    for (DisplayEvent &event : ring) {
+        display_esc(5, y, event.raw);
+        termpaint_surface_write_with_colors(surface, 20, y, event.eventString.data(), 0xff0000, 0x1000000);
         ++y;
     }
 
-    y = 2;
-    for (std::string &event : ring2) {
-        termpaint_surface_write_with_colors(surface, 20, y, event.data(), 0xff0000, 0x1000000);
-        ++y;
-    }
     if (y > 20) {
         ring.erase(ring.begin());
-        ring2.erase(ring2.begin());
     }
 
     termpaint_terminal_flush(terminal, false);
@@ -187,9 +190,9 @@ int main(int argc, char **argv) {
 
     terminal = termpaint_terminal_new(integration);
     termpaint_full_integration_set_terminal(integration, terminal);
-
     surface = termpaint_terminal_get_surface(terminal);
-
+    termpaint_terminal_set_raw_input_filter_cb(terminal, raw_filter, 0);
+    termpaint_terminal_set_event_cb(terminal, event_handler, 0);
     termpaint_terminal_auto_detect(terminal);
     termpaint_full_integration_wait_for_ready(integration);
 
@@ -199,8 +202,6 @@ int main(int argc, char **argv) {
         terminal_info = std::string(buff);
     }
 
-    termpaint_terminal_set_raw_input_filter_cb(terminal, raw_filter, 0);
-    termpaint_terminal_set_event_cb(terminal, event_handler, 0);
 
     termpaint_surface_resize(surface, 80, 24);
     termpaint_surface_clear(surface, 0x1ffffff, 0x1000000);
