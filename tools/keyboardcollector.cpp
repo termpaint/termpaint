@@ -61,7 +61,7 @@ _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overf
     return 0;
 }
 
-void event_handler(void *user_data, termpaint_input_event *event) {
+void event_handler(void *user_data, termpaint_event *event) {
     (void)user_data;
     std::string pretty;
 
@@ -309,7 +309,7 @@ public:
         std::string data;
         while (1 > choice || choice >= index) {
             std::string inputChars;
-            termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_input_event *event) {
+            termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_event *event) {
                 std::string *inputChars = static_cast<std::string*>(p);
                 if (event->type == TERMPAINT_EV_CHAR) {
                     *inputChars += std::string(event->atom_or_string, event->length);

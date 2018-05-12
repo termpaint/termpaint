@@ -117,8 +117,8 @@ void update_interpretation(std::string filename) {
         result.emplace("raw", rawInputHex);
 
         enum { START, GOT_EVENT, GOT_SYNC } state = START;
-        std::function<void(termpaint_input_event* event)> event_callback
-                = [&] (termpaint_input_event* event) -> void {
+        std::function<void(termpaint_event* event)> event_callback
+                = [&] (termpaint_event* event) -> void {
 
             bool wasSync = event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync();
             if (state == START) {

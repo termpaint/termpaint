@@ -50,7 +50,7 @@ _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overf
     return 0;
 }
 
-void event_handler(void *user_data, termpaint_input_event *event) {
+void event_handler(void *user_data, termpaint_event *event) {
     (void)user_data;
     std::string pretty;
 

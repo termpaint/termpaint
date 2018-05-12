@@ -618,7 +618,7 @@ struct termpaint_input_ {
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
 
-    void (*event_cb)(void *, termpaint_input_event *);
+    void (*event_cb)(void *, termpaint_event *);
     void *event_user_data;
 };
 
@@ -692,7 +692,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 if (ctx->raw_filter_cb && ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)"\e", 1, false)) {
                     ; // skipped by raw filter
                 } else if (ctx->event_cb) {
-                    termpaint_input_event event;
+                    termpaint_event event;
                     event.type = TERMPAINT_EV_KEY;
                     event.length = 0;
                     event.atom_or_string = ATOM_escape;
@@ -714,7 +714,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
 
     unsigned char buffer[6];
 
-    termpaint_input_event event;
+    termpaint_event event;
     event.type = 0;
     if (overflow) {
         event.type = TERMPAINT_EV_OVERFLOW;
@@ -880,7 +880,7 @@ void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *u
     ctx->raw_filter_user_data = user_data;
 }
 
-void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *, termpaint_input_event *), void *user_data) {
+void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *, termpaint_event *), void *user_data) {
     ctx->event_cb = cb;
     ctx->event_user_data = user_data;
 }

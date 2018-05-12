@@ -36,7 +36,7 @@ void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y);
 
 void termpaint_terminal_callback(termpaint_terminal *term);
 void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
-void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *user_data, termpaint_input_event* event), void *user_data);
+void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *user_data, termpaint_event* event), void *user_data);
 void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length);
 const char* termpaint_terminal_peek_input_buffer(termpaint_terminal *term);
 int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term);

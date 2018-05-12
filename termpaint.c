@@ -68,7 +68,7 @@ typedef struct termpaint_terminal_ {
     bool data_pending_after_input_received : 1;
     int support_qm_cursor_position_report : 1;
     int terminal_type : 4;
-    void (*event_cb)(void *, termpaint_input_event *);
+    void (*event_cb)(void *, termpaint_event *);
     void *event_user_data;
     bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
     void *raw_input_filter_user_data;
@@ -237,7 +237,7 @@ static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
 
-static void termpaintp_input_event_callback(void *user_data, termpaint_input_event *event);
+static void termpaintp_input_event_callback(void *user_data, termpaint_event *event);
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
@@ -428,7 +428,7 @@ void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
     int_puts(integration, "H");
 }
 
-static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_input_event *event);
+static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event);
 
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow) {
     termpaint_terminal *term = user_data;
@@ -439,7 +439,7 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
     }
 }
 
-static void termpaintp_input_event_callback(void *user_data, termpaint_input_event *event) {
+static void termpaintp_input_event_callback(void *user_data, termpaint_event *event) {
     termpaint_terminal *term = user_data;
     if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
         term->event_cb(term->event_user_data, event);
@@ -463,7 +463,7 @@ void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, bool (
     term->raw_input_filter_user_data = user_data;
 }
 
-void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *, termpaint_input_event *), void *user_data) {
+void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *, termpaint_event *), void *user_data) {
     term->event_cb = cb;
     term->event_user_data = user_data;
 }
@@ -490,7 +490,7 @@ int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term) {
     return termpaint_input_peek_buffer_length(term->input);
 }
 
-static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_input_event *event) {
+static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
     termpaint_integration *integration = terminal->integration;
 
     if (event == nullptr) {

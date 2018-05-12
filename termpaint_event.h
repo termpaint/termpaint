@@ -71,7 +71,7 @@ const char *termpaint_input_f12();
 #define TERMPAINT_MOD_ALT 4
 #define TERMPAINT_MOD_ALTGR 8
 
-struct termpaint_input_event_ {
+struct termpaint_event_ {
     int type;
     unsigned length;
     const char *atom_or_string;
@@ -80,7 +80,7 @@ struct termpaint_input_event_ {
     int x;
     int y;
 };
-typedef struct termpaint_input_event_ termpaint_input_event;
+typedef struct termpaint_event_ termpaint_event;
 
 #ifdef __cplusplus
 }

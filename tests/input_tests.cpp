@@ -76,11 +76,11 @@ TEST_CASE( "Input is correctly seperated", "[sep]" ) {
 }
 
 TEST_CASE( "evil utf8" ) {
-    std::vector<termpaint_input_event> events;
+    std::vector<termpaint_event> events;
     unsigned num_events = 0;
 
-    std::function<void(termpaint_input_event* event)> event_callback
-            = [&] (termpaint_input_event* event) -> void {
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
         if (num_events < events.size()) {
             INFO("event index " << num_events);
             auto& expected = events[num_events];
@@ -133,10 +133,10 @@ TEST_CASE( "Overflow is handled correctly", "[overflow]" ) {
         return false;
     };
 
-    termpaint_input_event captured_event;
+    termpaint_event captured_event;
 
-    std::function<void(termpaint_input_event* event)> event_callback
-            = [&state, &captured_event] (termpaint_input_event* event) -> void {
+    std::function<void(termpaint_event* event)> event_callback
+            = [&state, &captured_event] (termpaint_event* event) -> void {
 
         if (state == GOT_RAW) {
             captured_event = *event;
@@ -254,8 +254,8 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
             enum { START, GOT_EVENT, GOT_SYNC } state = START;
             bool expectSync = false;
 
-            std::function<void(termpaint_input_event* event)> event_callback
-                    = [&] (termpaint_input_event* event) -> void {
+            std::function<void(termpaint_event* event)> event_callback
+                    = [&] (termpaint_event* event) -> void {
                 if (state == GOT_EVENT && !expectSync) {
                     FAIL("more events than expected");
                 } else if (state == START) {
