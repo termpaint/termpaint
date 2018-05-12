@@ -1,7 +1,7 @@
 #ifndef TERMPAINT_TERMPAINT_INCLUDED
 #define TERMPAINT_TERMPAINT_INCLUDED
 
-#include <termpaint_input.h>
+#include <termpaint_event.h>
 
 #ifdef __cplusplus
 #ifndef _Bool

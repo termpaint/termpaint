@@ -15,14 +15,16 @@ add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declarat
 #ide:editable-filelist
 main_lib_files = [
   'termpaint.c',
-  'termpaintx.c',
+  'termpaint_event.c',
   'termpaint_input.c',
+  'termpaintx.c',
 ]
 
 main_lib = library('termpaint', main_lib_files, install: true)
 
 main_lib_installed_headers = [
   'termpaint.h',
+  'termpaint_event.h',
   'termpaint_input.h',
   'termpaintx.h',
 ]
