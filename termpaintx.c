@@ -104,8 +104,8 @@ static _Bool fd_is_bad(termpaint_integration* integration) {
 }
 
 static void fd_write(termpaint_integration* integration, char *data, int length) {
-    int written = 0;
-    int ret;
+    ssize_t written = 0;
+    ssize_t ret;
     errno = 0;
     while (written != length) {
         ret = write(FDPTR(integration)->fd, data+written, length-written);
@@ -230,7 +230,7 @@ bool termpaint_full_integration_do_iteration(termpaint_integration *integration)
     termpaint_integration_fd *t = FDPTR(integration);
 
     char buff[1000];
-    int amount = read(t->fd, buff, 999);
+    int amount = (int)read(t->fd, buff, 999);
     if (amount < 0) {
         return false;
     }
@@ -243,7 +243,7 @@ bool termpaint_full_integration_do_iteration(termpaint_integration *integration)
         info.events = POLLIN;
         int ret = poll(&info, 1, 100);
         if (ret == 1) {
-            int amount = read(t->fd, buff, 999);
+            int amount = (int)read(t->fd, buff, 999);
             if (amount < 0) {
                 return false;
             }
