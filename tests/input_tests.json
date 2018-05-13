@@ -4536,7 +4536,7 @@
       "type": "key"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_Begin.A",
       "mod": " A ",
       "raw": "1b5b313b3345",
@@ -4550,7 +4550,7 @@
       "type": "key"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_Begin.C",
       "mod": "  C",
       "raw": "1b5b313b3545",
@@ -4564,7 +4564,7 @@
       "type": "key"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_Begin.AC",
       "mod": " AC",
       "raw": "1b5b313b3745",
@@ -5425,7 +5425,7 @@
       "type": "char"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_5.S",
       "mod": "S  ",
       "raw": "1b5b313b3245",
@@ -5439,7 +5439,7 @@
       "type": "char"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_5.SA",
       "mod": "SA ",
       "raw": "1b5b313b3445",
@@ -5453,7 +5453,7 @@
       "type": "char"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_5.SC",
       "mod": "S C",
       "raw": "1b5b313b3645",
@@ -5467,7 +5467,7 @@
       "type": "char"
     },
     {
-      "key": "ArrowUp",
+      "key": "Numpad5",
       "keyId": "KP_5.SAC",
       "mod": "SAC",
       "raw": "1b5b313b3845",

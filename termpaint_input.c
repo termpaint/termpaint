@@ -324,7 +324,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eOu",  ATOM_numpad5,                                     0 },
     { "\e\eOu",ATOM_numpad5,                   MOD_ALT             },
     { "\e[E", ATOM_numpad5, 0 },
-    XTERM_MODS("\e[1;", "E", ATOM_arrow_up), // shift combinations not reachable in xterm
+    XTERM_MODS("\e[1;", "E", ATOM_numpad5),
     { "\eOE", ATOM_numpad5, 0 },
     { "\e[G",  ATOM_numpad5,                                     0 },
 
