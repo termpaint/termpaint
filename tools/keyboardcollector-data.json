@@ -144,8 +144,12 @@
             "name": "66+67",
             "set": "\\e[?66h\\e[?67h\\e[?1034l\\e[?1036h",
             "reset": "\\e[?66l\\e[?67l"
+        },
+        {
+            "name": "app arrow + app np + esc for alt",
+            "set": "\\e[?1h\\e[?66h\\e[?1036h",
+            "reset": "\\e[?66l"
         }
-
     ],
     "terminals": [
         {
