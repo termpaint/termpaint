@@ -14,6 +14,7 @@ typedef bool _Bool;
 #include "termpaint.h"
 #include "termpaintx.h"
 #include "termpaint_input.h"
+#include "termpaintx_ttyrescue.h"
 
 struct DisplayEvent {
     std::string raw;
@@ -182,6 +183,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    int rescue_fd = termpaint_ttyrescue_start("\e[>4m\e[?66;1049l\r\n\r\n");
     // xterm modify other characters: "\e[>4;2m" (disables ctrl-c)
     printf("%s", "\e[?66h");fflush(stdout);
     printf("%s", "\e[?1034l");fflush(stdout);
@@ -221,6 +223,8 @@ int main(int argc, char **argv) {
     printf("%s", "\e[?66;1049l");fflush(stdout);
 
     termpaint_terminal_free(terminal);
+
+    termpaint_ttyrescue_stop(rescue_fd);
 
     return 0;
 }

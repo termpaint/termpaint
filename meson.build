@@ -18,15 +18,18 @@ main_lib_files = [
   'termpaint_event.c',
   'termpaint_input.c',
   'termpaintx.c',
+  'termpaintx_ttyrescue.c',
+  'ttyrescue.c',
 ]
 
-main_lib = library('termpaint', main_lib_files, install: true)
+main_lib = library('termpaint', main_lib_files, c_args: '-DTERMPAINT_RESCUE_EMBEDDED', install: true)
 
 main_lib_installed_headers = [
   'termpaint.h',
   'termpaint_event.h',
   'termpaint_input.h',
   'termpaintx.h',
+  'termpaintx_ttyrescue.h',
 ]
 
 install_headers(main_lib_installed_headers)
@@ -39,6 +42,13 @@ import('pkgconfig').generate(
   filebase : 'termpaint',
   description : 'A terminal cell display and keyboard abstraction library.',
 )
+
+#ide:editable-filelist
+ttyrescue_files = [
+  'ttyrescue.c',
+]
+
+executable('ttyrescue', ttyrescue_files)
 
 #ide:editable-filelist
 playground_files = [
