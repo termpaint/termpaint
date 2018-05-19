@@ -873,6 +873,12 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.raw.string = (const char*)data;
                 event.raw.length = length;
             }
+
+            if (length > 2 && data[length-1] == 'x') {
+                event.type = TERMPAINT_EV_RAW_DECREQTPARM;
+                event.raw.string = (const char*)data;
+                event.raw.length = length;
+            }
         }
     }
     ctx->event_cb(ctx->event_user_data, &event);
