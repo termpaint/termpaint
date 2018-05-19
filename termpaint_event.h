@@ -74,12 +74,33 @@ const char *termpaint_input_f12();
 
 struct termpaint_event_ {
     int type;
-    unsigned length;
-    const char *atom_or_string;
-    int modifier;
-    // valid for EV_CURSOR_POSITION
-    int x;
-    int y;
+    union {
+        // EV_CHAR and INVALID_UTF8
+        struct {
+            unsigned length;
+            const char *string;
+            int modifier;
+        } c;
+
+        // EV_KEY
+        struct {
+            unsigned length;
+            const char *atom;
+            int modifier;
+        } key;
+
+        // EV_CURSOR_POSITION
+        struct {
+            int x;
+            int y;
+        } cursor_position;
+
+        // TERMPAINT_EV_RAW_SEC_DEV_ATTRIB
+        struct {
+            unsigned length;
+            const char *string;
+        } raw;
+    };
 };
 typedef struct termpaint_event_ termpaint_event;
 

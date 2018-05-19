@@ -72,40 +72,40 @@ void event_handler(void *user_data, termpaint_event *event) {
         result.emplace("type", "unknown");
     } else if (event->type == TERMPAINT_EV_KEY) {
         std::string modifiers;
-        modifiers += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
-        modifiers += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
-        modifiers += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        modifiers += (event->key.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+        modifiers += (event->key.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+        modifiers += (event->key.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
 
         pretty = "K: ";
-        if ((event->modifier & ~(TERMPAINT_MOD_SHIFT|TERMPAINT_MOD_ALT|TERMPAINT_MOD_CTRL)) == 0) {
+        if ((event->key.modifier & ~(TERMPAINT_MOD_SHIFT|TERMPAINT_MOD_ALT|TERMPAINT_MOD_CTRL)) == 0) {
             pretty += modifiers;
         } else {
             char buf[100];
-            snprintf(buf, 100, "%03d", event->modifier);
+            snprintf(buf, 100, "%03d", event->key.modifier);
             pretty += buf;
         }
         pretty += " ";
-        pretty += event->atom_or_string;
+        pretty += event->key.atom;
 
-        if (event->atom_or_string != termpaint_input_i_resync()) {
+        if (event->key.atom != termpaint_input_i_resync()) {
             result.emplace("type", "key");
             result.emplace("mod", modifiers);
-            result.emplace("key", event->atom_or_string);
+            result.emplace("key", event->key.atom);
         }
     } else if (event->type == TERMPAINT_EV_CHAR) {
         std::string modifiers;
-        modifiers += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
-        modifiers += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
-        modifiers += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        modifiers += (event->c.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+        modifiers += (event->c.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+        modifiers += (event->c.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
 
         pretty = "C: ";
         pretty += modifiers;
         pretty += " ";
-        pretty += std::string { event->atom_or_string, event->length };
+        pretty += std::string { event->c.string, event->c.length };
 
         result.emplace("type", "char");
         result.emplace("mod", modifiers);
-        result.emplace("chars", std::string(event->atom_or_string, event->length));
+        result.emplace("chars", std::string(event->c.string, event->c.length));
     } else {
         pretty = "XXX";
     }
@@ -312,10 +312,10 @@ public:
             termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_event *event) {
                 std::string *inputChars = static_cast<std::string*>(p);
                 if (event->type == TERMPAINT_EV_CHAR) {
-                    *inputChars += std::string(event->atom_or_string, event->length);
+                    *inputChars += std::string(event->c.string, event->c.length);
                 }
                 if (event->type == TERMPAINT_EV_KEY) {
-                    if (event->atom_or_string == termpaint_input_enter()) {
+                    if (event->key.atom == termpaint_input_enter()) {
                         *inputChars += "\n";
                     }
                 }

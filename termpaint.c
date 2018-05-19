@@ -523,7 +523,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 terminal->terminal_type = TT_TOODUMB;
                 terminal->ad_state = AD_FINISHED;
                 return false;
-            } else if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            } else if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->terminal_type = TT_TOODUMB;
                 terminal->ad_state = AD_FINISHED;
                 return false;
@@ -532,20 +532,20 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
         case AD_BASIC_CURPOS_RECVED:
             if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 // TODO save data
-                /* no plot */ if (event->length > 6 && memcmp("\033[>85;", event->atom_or_string, 6) == 0) {
+                /* no plot */ if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
                     // urxvt source says: first parameter is 'U' / 85 for urxvt (except for 7.[34])
                     terminal->terminal_type = TT_URXVT;
                 }
                 terminal->ad_state = AD_BASIC_SEC_DEV_ATTRIB_RECVED;
                 return true;
-            } else if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            } else if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->terminal_type = TT_TOODUMB;
                 terminal->ad_state = AD_FINISHED;
                 return false;
             }
             break;
         case AD_BASIC_SEC_DEV_ATTRIB_RECVED:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 /* no plot */ if (terminal->terminal_type == TT_URXVT) {
                     terminal->ad_state = AD_FINISHED;
                     return false;
@@ -558,7 +558,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP1_REQ:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->terminal_type = TT_BASE;
                 terminal->support_qm_cursor_position_report = false;
                 terminal->ad_state = AD_FINISHED;
@@ -574,7 +574,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP1_SEC_DEV_ATTRIB_RECVED:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->support_qm_cursor_position_report = false;
                 int_puts(integration, "\033[>0;1c");
                 int_puts(integration, "\033[5n");
@@ -587,13 +587,13 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP1_QMCURSOR_POS_RECVED:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->ad_state = AD_FINISHED;
                 return false;
             }
             break;
         case AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 int_puts(integration, "\033[>0;1c");
                 int_puts(integration, "\033[5n");
                 terminal->ad_state = AD_FP2_REQ;
@@ -601,7 +601,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP2_REQ:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->terminal_type = TT_VTE;
                 terminal->ad_state = AD_FINISHED;
                 return false;
@@ -611,7 +611,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP2_SEC_DEV_ATTRIB_RECVED1:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->terminal_type = TT_BASE;
                 terminal->ad_state = AD_FINISHED;
                 return false;
@@ -622,7 +622,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP2_SEC_DEV_ATTRIB_RECVED2:
-            if (event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync()) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->ad_state = AD_FINISHED;
                 return false;
             }

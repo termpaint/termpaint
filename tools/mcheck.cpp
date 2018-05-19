@@ -120,27 +120,30 @@ void update_interpretation(std::string filename) {
         std::function<void(termpaint_event* event)> event_callback
                 = [&] (termpaint_event* event) -> void {
 
-            bool wasSync = event->type == TERMPAINT_EV_KEY && event->atom_or_string == termpaint_input_i_resync();
+            bool wasSync = event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync();
             if (state == START) {
                 if (wasSync) {
                     die(fmt::format("Unable to interpret value for key '{}'. Seems to start with sync", keyId));
                 }
 
-                std::string modifiers;
-                modifiers += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
-                modifiers += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
-                modifiers += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
-
                 if (event->type == TERMPAINT_EV_UNKNOWN) {
                     result.emplace("type", "unknown");
                 } else if (event->type == TERMPAINT_EV_CHAR) {
+                    std::string modifiers;
+                    modifiers += (event->c.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+                    modifiers += (event->c.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+                    modifiers += (event->c.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
                     result.emplace("type", "char");
                     result.emplace("mod", modifiers);
-                    result.emplace("chars", std::string(event->atom_or_string, event->length));
+                    result.emplace("chars", std::string(event->c.string, event->c.length));
                 } else if (event->type == TERMPAINT_EV_KEY) {
+                    std::string modifiers;
+                    modifiers += (event->key.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+                    modifiers += (event->key.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+                    modifiers += (event->key.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
                     result.emplace("type", "key");
                     result.emplace("mod", modifiers);
-                    result.emplace("key", event->atom_or_string);
+                    result.emplace("key", event->key.atom);
                 } else {
                     die(fmt::format("Unable to interpret value for key '{}'. Event type was {}", keyId, event->type));
                 }

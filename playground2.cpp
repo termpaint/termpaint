@@ -64,26 +64,26 @@ void event_handler(void *user_data, termpaint_event *event) {
         pretty = "unknown";
     } else if (event->type == TERMPAINT_EV_KEY) {
         pretty = "K: ";
-        if ((event->modifier & ~(TERMPAINT_MOD_SHIFT|TERMPAINT_MOD_ALT|TERMPAINT_MOD_CTRL)) == 0) {
-            pretty += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
-            pretty += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
-            pretty += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        if ((event->key.modifier & ~(TERMPAINT_MOD_SHIFT|TERMPAINT_MOD_ALT|TERMPAINT_MOD_CTRL)) == 0) {
+            pretty += (event->key.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+            pretty += (event->key.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+            pretty += (event->key.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
         } else {
             char buf[100];
-            snprintf(buf, 100, "%03d", event->modifier);
+            snprintf(buf, 100, "%03d", event->key.modifier);
             pretty += buf;
         }
         pretty += " ";
-        pretty += event->atom_or_string;
+        pretty += event->key.atom;
     } else if (event->type == TERMPAINT_EV_CHAR) {
         pretty = "C: ";
-        pretty += (event->modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
-        pretty += (event->modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
-        pretty += (event->modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        pretty += (event->c.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+        pretty += (event->c.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+        pretty += (event->c.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
         pretty += " ";
-        pretty += std::string { event->atom_or_string, event->length };
+        pretty += std::string { event->c.string, event->c.length };
     } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-        pretty = "Cursor position report: x=" + std::to_string(event->x) + " y=" + std::to_string(event->y);
+        pretty = "Cursor position report: x=" + std::to_string(event->cursor_position.x) + " y=" + std::to_string(event->cursor_position.y);
     } else {
         pretty = "Other event no. " + std::to_string(event->type);
     }

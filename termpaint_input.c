@@ -701,9 +701,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 } else if (ctx->event_cb) {
                     termpaint_event event;
                     event.type = TERMPAINT_EV_KEY;
-                    event.length = 0;
-                    event.atom_or_string = ATOM_escape;
-                    event.modifier = 0;
+                    event.key.length = 0;
+                    event.key.atom = ATOM_escape;
+                    event.key.modifier = 0;
                     ctx->event_cb(ctx->event_user_data, &event);
                 }
             }
@@ -725,19 +725,19 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
     event.type = 0;
     if (overflow) {
         event.type = TERMPAINT_EV_OVERFLOW;
-        event.length = 0;
+        /*event.length = 0;
         event.atom_or_string = 0;
-        event.modifier = 0;
+        event.modifier = 0;*/
     } else if (length == 1 && data[0] == 0) {
         event.type = TERMPAINT_EV_KEY;
-        event.length = 0;
-        event.atom_or_string = ATOM_space;
-        event.modifier = MOD_CTRL;
+        event.key.length = 0;
+        event.key.atom = ATOM_space;
+        event.key.modifier = MOD_CTRL;
     } else if (length == 2 && data[0] == '\e' && data[1] == 0) {
         event.type = TERMPAINT_EV_KEY;
-        event.length = 0;
-        event.atom_or_string = ATOM_space;
-        event.modifier = MOD_CTRL | MOD_ALT;
+        event.key.length = 0;
+        event.key.atom = ATOM_space;
+        event.key.modifier = MOD_CTRL | MOD_ALT;
     } else {
         // TODO optimize
         for (key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
@@ -745,15 +745,15 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 if (entry->modifiers & MOD_PRINT) {
                     // special case for ctrl-X which is in the table but a modified printable
                     event.type = TERMPAINT_EV_CHAR;
-                    event.length = strlen(entry->atom);
-                    event.atom_or_string = entry->atom;
-                    event.modifier = entry->modifiers & ~MOD_PRINT;
+                    event.c.length = strlen(entry->atom);
+                    event.c.string = entry->atom;
+                    event.c.modifier = entry->modifiers & ~MOD_PRINT;
                     break;
                 } else {
                     event.type = TERMPAINT_EV_KEY;
-                    event.length = 0;
-                    event.atom_or_string = entry->atom;
-                    event.modifier = entry->modifiers;
+                    event.key.length = 0;
+                    event.key.atom = entry->atom;
+                    event.key.modifier = entry->modifiers;
                     break;
                 }
             }
@@ -800,46 +800,46 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             if (state == 1 && codepoint > 0 && codepoint <= 0x7FFFFFFF) {
                 // TODO exclude C0 space, C1 space and 0x7f
                 event.type = TERMPAINT_EV_CHAR;
-                event.length = termpaintp_encode_to_utf8(codepoint, buffer);
-                event.atom_or_string = (char*)buffer;
-                event.modifier = 0;
+                event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
+                event.c.string = (char*)buffer;
+                event.c.modifier = 0;
                 mod = mod - 1;
                 if (mod & 1) {
-                    event.modifier |= MOD_SHIFT;
+                    event.c.modifier |= MOD_SHIFT;
                 }
                 if (mod & 2) {
-                    event.modifier |= MOD_ALT;
+                    event.c.modifier |= MOD_ALT;
                 }
                 if (mod & 4) {
-                    event.modifier |= MOD_CTRL;
+                    event.c.modifier |= MOD_CTRL;
                 }
             }
         }
         if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
             // bogus: tokenizer should ensure that this is exactly one valid utf8 codepoint
             event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
-            event.length = length-1;
-            event.atom_or_string = (const char*)data+1;
-            event.modifier = MOD_ALT;
+            event.c.length = length-1;
+            event.c.string = (const char*)data+1;
+            event.c.modifier = MOD_ALT;
         }
         if (!event.type && length == 2 && data[0] == '\e' && data[1] > 32 && data[1] < 127) {
             event.type = TERMPAINT_EV_CHAR;
-            event.length = length-1;
-            event.atom_or_string = (const char*)data+1;
-            event.modifier = MOD_ALT;
+            event.c.length = length-1;
+            event.c.string = (const char*)data+1;
+            event.c.modifier = MOD_ALT;
         }
         if (!event.type && length >= 1 && (0xc0 == (0xc0 & data[0]))) {
             // tokenizer should ensure that this is exactly one valid utf8 codepoint
             event.type = termpaintp_check_valid_sequence(data, length) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
-            event.length = length;
-            event.atom_or_string = (const char*)data;
-            event.modifier = 0;
+            event.c.length = length;
+            event.c.string = (const char*)data;
+            event.c.modifier = 0;
         }
         if (!event.type && length > 0 && data[0] > 32 && data[0] < 127) {
             event.type = TERMPAINT_EV_CHAR;
-            event.length = length;
-            event.atom_or_string = (const char*)data;
-            event.modifier = 0;
+            event.c.length = length;
+            event.c.string = (const char*)data;
+            event.c.modifier = 0;
         }
 
         if (!event.type && length > 2 && data[0] == '\033' && data[1] == '[') {
@@ -853,15 +853,15 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 int x, y;
                 if (termpaintp_input_parse_dec_2(data + i, length - i - 1, &y, &x)) {
                     event.type = TERMPAINT_EV_CURSOR_POSITION;
-                    event.x = x - 1;
-                    event.y = y - 1;
+                    event.cursor_position.x = x - 1;
+                    event.cursor_position.y = y - 1;
                 }
             }
 
             if (length > 3 && data[2] == '>' && data[length-1] == 'c') {
                 event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
-                event.atom_or_string = (const char*)data;
-                event.length = length;
+                event.raw.string = (const char*)data;
+                event.raw.length = length;
             }
         }
     }
