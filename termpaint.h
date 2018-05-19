@@ -29,8 +29,10 @@ typedef struct termpaint_integration_ {
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration);
 void termpaint_terminal_free(termpaint_terminal *term);
+void termpaint_terminal_free_with_restore(termpaint_terminal *term);
 termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term);
 void termpaint_terminal_flush(termpaint_terminal *term, _Bool full_repaint);
+const char *termpaint_terminal_restore_sequence(termpaint_terminal *term);
 void termpaint_terminal_reset_attributes(termpaint_terminal *term);
 void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y);
 
@@ -47,6 +49,7 @@ enum termpaint_auto_detect_state_enum { termpaint_auto_detect_none,
                                                  termpaint_auto_detect_done};
 enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termpaint_terminal *terminal);
 void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length);
+void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
 //void termpaint_surface_free(termpaint_surface *surface);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);

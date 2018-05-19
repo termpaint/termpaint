@@ -74,8 +74,33 @@ typedef struct termpaint_terminal_ {
     bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
     void *raw_input_filter_user_data;
 
+    char *restore_seq;
     auto_detect_state ad_state;
 } termpaint_terminal;
+
+static void termpaintp_append_str(char **s, const char* src) {
+    int s_len = 0;
+    if (*s) {
+        s_len = strlen(*s);
+    }
+    int src_len = strlen(src);
+    *s = realloc(*s, s_len + src_len + 1);
+    memcpy(*s + s_len, src, src_len + 1);
+}
+
+static void termpaintp_prepend_str(char **s, const char* src) {
+    size_t s_len = 0;
+    if (*s) {
+        s_len = strlen(*s);
+    }
+    size_t src_len = strlen(src);
+    *s = realloc(*s, s_len + src_len + 1);
+    if (s_len) {
+        memmove(*s + src_len, *s, s_len);
+    }
+    (*s)[src_len + s_len] = 0;
+    memcpy(*s, src, src_len);
+}
 
 
 static void termpaintp_collapse(termpaint_surface *surface) {
@@ -262,6 +287,15 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 void termpaint_terminal_free(termpaint_terminal *term) {
     termpaintp_surface_destroy(&term->primary);
     term->integration->free(term->integration);
+}
+
+void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
+
+    int_puts(integration, term->restore_seq);
+    int_flush(integration);
+
+    termpaint_terminal_free(term);
 }
 
 termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
@@ -704,3 +738,50 @@ void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, ch
     snprintf(buffer, buffer_length, "Type: %s %s", term_type, terminal->support_qm_cursor_position_report ? "CPR?" : "");
     buffer[buffer_length-1] = 0;
 }
+
+static bool termpaintp_has_option(const char *options, const char *name) {
+    const char *p = options;
+    int name_len = strlen(name);
+    const char *last_possible_location = options + strlen(options) - name_len;
+    while (1) {
+        const char *found = strstr(p, name);
+        if (!found) {
+            break;
+        }
+        if (found == options || found[-1] == ' ') {
+            if (found == last_possible_location || found[name_len] == ' ') {
+                return true;
+            }
+        }
+        p = found + name_len;
+    }
+    return false;
+
+}
+
+void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options) {
+    termpaint_integration *integration = terminal->integration;
+
+    if (!termpaintp_has_option(options, "-altscreen")) {
+        termpaintp_prepend_str(&terminal->restore_seq, "\033[?1049l");
+        int_puts(integration, "\033[?1049h");
+    }
+    termpaintp_prepend_str(&terminal->restore_seq, "\033[?66l");
+    int_puts(integration, "\033[?66h");
+    int_puts(integration, "\033[?1036h");
+    if (!termpaintp_has_option(options, "+kbdsig") && terminal->terminal_type == TT_XTERM) {
+        // xterm modify other characters
+        // in this keyboard event mode xterm does no longer send the traditional one byte ^C, ^Z ^\ sequences
+        // that the kernel tty layer uses to raise signals.
+        termpaintp_prepend_str(&terminal->restore_seq, "\033[>4m");
+        int_puts(integration, "\033[>4;2m");
+    }
+    int_flush(integration);
+
+    termpaint_surface_resize(&terminal->primary, width, height);
+}
+
+const char* termpaint_terminal_restore_sequence(termpaint_terminal *term) {
+    return term->restore_seq ? term->restore_seq : "";
+}
+

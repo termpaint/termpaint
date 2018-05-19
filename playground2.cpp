@@ -180,21 +180,14 @@ void render() {
     termpaint_terminal_flush(terminal, false);
 }
 
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
-
     termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 1;
     }
-
-    int rescue_fd = termpaint_ttyrescue_start("\e[>4m\e[?66;1049l\r\n\r\n");
-    // xterm modify other characters: "\e[>4;2m" (disables ctrl-c)
-    printf("%s", "\e[?66h");fflush(stdout);
-    printf("%s", "\e[?1034l");fflush(stdout);
-    printf("%s", "\e[?1036h");fflush(stdout);
-    printf("%s", "\e[?1049h");fflush(stdout);
 
     terminal = termpaint_terminal_new(integration);
     termpaint_full_integration_set_terminal(integration, terminal);
@@ -203,6 +196,10 @@ int main(int argc, char **argv) {
     termpaint_terminal_set_event_cb(terminal, event_handler, 0);
     termpaint_terminal_auto_detect(terminal);
     termpaint_full_integration_wait_for_ready(integration);
+    int width, height;
+    termpaint_full_integration_terminal_size(integration, &width, &height);
+    termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
+    int rescue_fd = termpaint_ttyrescue_start(termpaint_terminal_restore_sequence(terminal));
 
     if (termpaint_terminal_auto_detect_state(terminal) == termpaint_auto_detect_done) {
         char buff[100];
@@ -210,13 +207,7 @@ int main(int argc, char **argv) {
         terminal_info = std::string(buff);
     }
 
-
-    termpaint_surface_resize(surface, 80, 24);
-    termpaint_surface_clear(surface, 0x1ffffff, 0x1000000);
-    termpaint_terminal_flush(terminal, false);
-
     render();
-
     while (!quit) {
         if (!termpaint_full_integration_do_iteration(integration)) {
             // some kind of error
@@ -226,10 +217,7 @@ int main(int argc, char **argv) {
         render();
     }
 
-    printf("%s", "\e[?66;1049l");fflush(stdout);
-
-    termpaint_terminal_free(terminal);
-
+    termpaint_terminal_free_with_restore(terminal);
     termpaint_ttyrescue_stop(rescue_fd);
 
     return 0;
