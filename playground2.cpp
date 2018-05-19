@@ -84,6 +84,12 @@ void event_handler(void *user_data, termpaint_event *event) {
         pretty += std::string { event->c.string, event->c.length };
     } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
         pretty = "Cursor position report: x=" + std::to_string(event->cursor_position.x) + " y=" + std::to_string(event->cursor_position.y);
+    } else if (event->type == TERMPAINT_EV_MODE_REPORT) {
+        if (event->mode.kind & 1) {
+            pretty = "Mode status report: mode=?" + std::to_string(event->mode.number) + " status=" + std::to_string(event->mode.status);
+        } else {
+            pretty = "Mode status report: mode=" + std::to_string(event->mode.number) + " status=" + std::to_string(event->mode.status);
+        }
     } else {
         pretty = "Other event no. " + std::to_string(event->type);
     }

@@ -66,6 +66,7 @@ const char *termpaint_input_f12();
 #define TERMPAINT_EV_CURSOR_POSITION 5
 #define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 6
 #define TERMPAINT_EV_AUTO_DETECT_FINISHED 7
+#define TERMPAINT_EV_MODE_REPORT 8
 
 #define TERMPAINT_MOD_SHIFT 1
 #define TERMPAINT_MOD_CTRL 2
@@ -94,6 +95,13 @@ struct termpaint_event_ {
             int x;
             int y;
         } cursor_position;
+
+        // EV_MODE_REPORT
+        struct {
+            int number;
+            int kind;
+            int status;
+        } mode;
 
         // TERMPAINT_EV_RAW_SEC_DEV_ATTRIB
         struct {

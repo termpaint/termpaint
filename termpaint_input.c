@@ -858,6 +858,16 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
             }
 
+            if (length > 5 && data[length-1] == 'y' && data[length-2] == '$') { // both plain and qm
+                int mode, status;
+                if (termpaintp_input_parse_dec_2(data + i, length - i - 2, &mode, &status)) {
+                    event.type = TERMPAINT_EV_MODE_REPORT;
+                    event.mode.number = mode;
+                    event.mode.kind = qm ? 1 : 0;
+                    event.mode.status = status;
+                }
+            }
+
             if (length > 3 && data[2] == '>' && data[length-1] == 'c') {
                 event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
                 event.raw.string = (const char*)data;
