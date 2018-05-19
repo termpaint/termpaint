@@ -40,11 +40,12 @@ typedef enum auto_detect_state_ {
     AD_BASIC_REQ,
     AD_BASIC_CURPOS_RECVED,
     AD_BASIC_SEC_DEV_ATTRIB_RECVED,
-    // finger print 1: Test for 'private' cursor position, xterm secondary id quirk
+    // finger print 1: Test for 'private' cursor position, xterm secondary id quirk, vte CSI 1x quirk
     AD_FP1_REQ,
     AD_FP1_SEC_DEV_ATTRIB_RECVED,
     AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED,
     AD_FP1_QMCURSOR_POS_RECVED,
+    AD_EXPECT_SYNC_TO_FINISH,
     // finger print 2: Test for konsole repeated secondary id quirk (2 ansers), Test for VTE secondary id quirk (no answer)
     AD_FP2_REQ,
     AD_FP2_SEC_DEV_ATTRIB_RECVED1,
@@ -552,6 +553,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 }
                 int_puts(integration, "\033[>1c");
                 int_puts(integration, "\033[?6n");
+                int_puts(integration, "\033[1x");
                 int_puts(integration, "\033[5n");
                 terminal->ad_state = AD_FP1_REQ;
                 return true;
@@ -571,6 +573,17 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_RECVED;
                 return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->terminal_type = TT_BASE;
+                terminal->support_qm_cursor_position_report = false;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                return true;
+            }
+            break;
+        case AD_EXPECT_SYNC_TO_FINISH:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_FINISHED;
+                return false;
             }
             break;
         case AD_FP1_SEC_DEV_ATTRIB_RECVED:
@@ -584,12 +597,18 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 terminal->support_qm_cursor_position_report = true;
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED;
                 return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                // ignore
+                return true;
             }
             break;
         case AD_FP1_QMCURSOR_POS_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->ad_state = AD_FINISHED;
                 return false;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                // ignore
+                return true;
             }
             break;
         case AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED:
@@ -598,11 +617,18 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 int_puts(integration, "\033[5n");
                 terminal->ad_state = AD_FP2_REQ;
                 return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0) {
+                terminal->terminal_type = TT_VTE;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                // ignore
+                return true;
             }
             break;
         case AD_FP2_REQ:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->terminal_type = TT_VTE;
+                terminal->terminal_type = TT_BASE;
                 terminal->ad_state = AD_FINISHED;
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
