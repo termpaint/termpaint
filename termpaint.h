@@ -61,6 +61,7 @@ termpaint_attr* termpaint_attr_clone(termpaint_attr* attr);
 void termpaint_attr_free(termpaint_attr* attr);
 void termpaint_attr_set_fg(termpaint_attr* attr, int fg);
 void termpaint_attr_set_bg(termpaint_attr* attr, int bg);
+void termpaint_attr_set_deco(termpaint_attr* attr, int deco_color);
 #define TERMPAINT_DEFAULT_COLOR 0x1000000
 #define TERMPAINT_NAMED_COLOR 0x1100000
 #define TERMPAINT_INDEXED_COLOR 0x1200000
