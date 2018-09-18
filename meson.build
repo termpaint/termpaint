@@ -58,6 +58,14 @@ playground_files = [
 executable('playground', playground_files, link_with: [main_lib])
 
 #ide:editable-filelist
+attrdemo_files = [
+  'demo/attrs.c',
+]
+
+executable('attrdemo', attrdemo_files, link_with: [main_lib])
+
+
+#ide:editable-filelist
 keyboardcollector_files = [
   'tools/keyboardcollector.cpp',
 ]
