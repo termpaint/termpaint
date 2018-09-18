@@ -66,6 +66,19 @@ void termpaint_attr_set_bg(termpaint_attr* attr, int bg);
 #define TERMPAINT_INDEXED_COLOR 0x1200000
 #define TERMPAINT_RGB_COLOR(r, g, b) (((r) << 16) | ((b) << 8) | (g))
 
+#define TERMPAINT_STYLE_BOLD (1<<0)
+#define TERMPAINT_STYLE_ITALIC (1<<1)
+#define TERMPAINT_STYLE_BLINK (1<<4)
+#define TERMPAINT_STYLE_OVERLINE (1<<5)
+#define TERMPAINT_STYLE_INVERSE (1<<6)
+#define TERMPAINT_STYLE_STRIKE (1<<7)
+#define TERMPAINT_STYLE_UNDERLINE (1<<16)
+#define TERMPAINT_STYLE_UNDERLINE_DBL (1<<17)
+#define TERMPAINT_STYLE_UNDERLINE_CURLY (1<<18)
+void termpaint_attr_set_style(termpaint_attr* attr, int bits);
+void termpaint_attr_unset_style(termpaint_attr* attr, int bits);
+void termpaint_attr_reset_style(termpaint_attr* attr);
+
 //void termpaint_surface_free(termpaint_surface *surface);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
 int termpaint_surface_width(termpaint_surface *surface);

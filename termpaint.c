@@ -20,12 +20,25 @@
 struct termpaint_attr_ {
     uint32_t fg_color;
     uint32_t bg_color;
+
+    uint16_t flags;
 };
 
+#define CELL_ATTR_BOLD (1 << 0)
+#define CELL_ATTR_ITALIC (1 << 1)
+#define CELL_ATTR_UNDERLINE_MASK (3 << 2)
+#define CELL_ATTR_UNDERLINE_SINGLE (1 << 2)
+#define CELL_ATTR_UNDERLINE_DOUBLE (2 << 2)
+#define CELL_ATTR_UNDERLINE_CURLY (3 << 2)
+#define CELL_ATTR_BLINK (1 << 4)
+#define CELL_ATTR_OVERLINE (1 << 5)
+#define CELL_ATTR_INVERSE (1 << 6)
+#define CELL_ATTR_STRIKE (1 << 7)
 typedef struct cell_ {
     uint32_t fg_color;
     uint32_t bg_color;
     //_Bool double_width;
+    uint16_t flags; // bold, italic, underline[2], blinking, overline, inverse, strikethrough.
     uint8_t text_len : 4; // == 0 -> text_overflow is active.
     union {
         unsigned char text[8];
@@ -173,6 +186,7 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     termpaint_attr attr;
     attr.fg_color = fg;
     attr.bg_color = bg;
+    attr.flags = 0;
     termpaint_surface_write_with_attr_clipped(surface, x, y, string, &attr, clip_x0, clip_x1);
 }
 
@@ -207,6 +221,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             cell *c = termpaintp_getcell(surface, x, y);
             c->fg_color = attr->fg_color;
             c->bg_color = attr->bg_color;
+            c->flags = attr->flags;
             c->text_len = termpaintp_encode_to_utf8(codepoint, c->text);
         }
         string += size;
@@ -247,6 +262,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
             c->text[0] = ' ';
             c->bg_color = bg;
             c->fg_color = fg;
+            c->flags = 0;
         }
     }
 }
@@ -377,6 +393,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
 
         uint32_t current_fg = -1;
         uint32_t current_bg = -1;
+        uint32_t current_flags = -1;
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
             cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
@@ -392,8 +409,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             text_changed = old_c->text_len != c->text_len || memcmp(text, old_c->text, code_units) != 0;
 
             bool needs_paint = full_repaint || c->bg_color != old_c->bg_color || c->fg_color != old_c->fg_color
-                    || text_changed;
-            bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg;
+                    || c->flags != old_c->flags || text_changed;
+            bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg
+                    || c->flags != current_flags;
             *old_c = *c;
             if (!needs_paint) {
                 pending_colum_move += 1;
@@ -453,9 +471,39 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 int_puts(integration, "\e[0");
                 write_color_sgr_values(integration, c->bg_color, ";48;2;", ";48;5;", ";", 40, 100);
                 write_color_sgr_values(integration, c->fg_color, ";38;2;", ";38;5;", ";", 30, 90);
+                if (c->flags) {
+                    if (c->flags & CELL_ATTR_BOLD) {
+                        int_puts(integration, ";1");
+                    }
+                    if (c->flags & CELL_ATTR_ITALIC) {
+                        int_puts(integration, ";3");
+                    }
+                    uint32_t underline = c->flags & CELL_ATTR_UNDERLINE_MASK;
+                    if (underline == CELL_ATTR_UNDERLINE_SINGLE) {
+                        int_puts(integration, ";4");
+                    } else if (underline == CELL_ATTR_UNDERLINE_DOUBLE) {
+                        int_puts(integration, ";21");
+                    } else if (underline == CELL_ATTR_UNDERLINE_CURLY) {
+                        // TODO maybe filter this by terminal capability somewhere?
+                        int_puts(integration, ";4:3");
+                    }
+                    if (c->flags & CELL_ATTR_BLINK) {
+                        int_puts(integration, ";5");
+                    }
+                    if (c->flags & CELL_ATTR_OVERLINE) {
+                        int_puts(integration, ";53");
+                    }
+                    if (c->flags & CELL_ATTR_INVERSE) {
+                        int_puts(integration, ";7");
+                    }
+                    if (c->flags & CELL_ATTR_STRIKE) {
+                        int_puts(integration, ";9");
+                    }
+                }
                 int_puts(integration, "m");
                 current_bg = c->bg_color;
                 current_fg = c->fg_color;
+                current_flags = c->flags;
             }
             int_write(integration, (char*)text, code_units);
         }
@@ -846,6 +894,8 @@ termpaint_attr *termpaint_attr_clone(termpaint_attr *orig) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
     attr->fg_color = orig->fg_color;
     attr->bg_color = orig->bg_color;
+
+    attr->flags = orig->flags;
     return attr;
 }
 void termpaint_attr_set_fg(termpaint_attr *attr, int fg) {
@@ -856,3 +906,34 @@ void termpaint_attr_set_bg(termpaint_attr *attr, int bg) {
     attr->bg_color = bg;
 }
 
+#define TERMPAINT_STYLE_PASSTHROUGH (TERMPAINT_STYLE_BOLD | TERMPAINT_STYLE_ITALIC | TERMPAINT_STYLE_BLINK \
+    | TERMPAINT_STYLE_OVERLINE | TERMPAINT_STYLE_INVERSE | TERMPAINT_STYLE_STRIKE)
+void termpaint_attr_set_style(termpaint_attr *attr, int bits) {
+    attr->flags |= bits & TERMPAINT_STYLE_PASSTHROUGH;
+    if (bits & ~TERMPAINT_STYLE_PASSTHROUGH) {
+        if (bits & TERMPAINT_STYLE_UNDERLINE) {
+            attr->flags = (attr->flags & ~CELL_ATTR_UNDERLINE_MASK) | CELL_ATTR_UNDERLINE_SINGLE;
+        } else if (bits & TERMPAINT_STYLE_UNDERLINE_DBL) {
+            attr->flags = (attr->flags & ~CELL_ATTR_UNDERLINE_MASK) | CELL_ATTR_UNDERLINE_DOUBLE;
+        } else if (bits & TERMPAINT_STYLE_UNDERLINE_CURLY) {
+            attr->flags = (attr->flags & ~CELL_ATTR_UNDERLINE_MASK) | CELL_ATTR_UNDERLINE_CURLY;
+        }
+    }
+}
+
+void termpaint_attr_unset_style(termpaint_attr *attr, int bits) {
+    attr->flags &= ~bits | ~TERMPAINT_STYLE_PASSTHROUGH;
+    if (bits & ~TERMPAINT_STYLE_PASSTHROUGH) {
+        if (bits & TERMPAINT_STYLE_UNDERLINE) {
+            attr->flags = attr->flags & ~CELL_ATTR_UNDERLINE_MASK;
+        } else if (bits & TERMPAINT_STYLE_UNDERLINE_DBL) {
+            attr->flags = attr->flags & ~CELL_ATTR_UNDERLINE_MASK;
+        } else if (bits & TERMPAINT_STYLE_UNDERLINE_CURLY) {
+            attr->flags = attr->flags & ~CELL_ATTR_UNDERLINE_MASK;
+        }
+    }
+}
+
+void termpaint_attr_reset_style(termpaint_attr *attr) {
+    attr->flags = 0;
+}
