@@ -304,6 +304,17 @@ termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
     return &term->primary;
 }
 
+static inline void write_color_sgr_values(termpaint_integration *integration, uint32_t color, char *direct, char *indexed, char *sep, unsigned named, unsigned bright_named) {
+    if ((color & 0xff000000) == 0) {
+        int_puts(integration, direct);
+        int_put_num(integration, (color >> 16) & 0xff);
+        int_puts(integration, sep);
+        int_put_num(integration, (color >> 8) & 0xff);
+        int_puts(integration, sep);
+        int_put_num(integration, (color) & 0xff);
+    }
+}
+
 void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     termpaint_integration *integration = term->integration;
     if (!term->primary.cells_last_flush) {
@@ -398,27 +409,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             }
 
             if (needs_attribute_change) {
-                int_puts(integration, "\e[");
-                if ((c->bg_color & 0xff000000) == 0) {
-                    int_puts(integration, "48;2;");
-                    int_put_num(integration, (c->bg_color >> 16) & 0xff);
-                    int_puts(integration, ";");
-                    int_put_num(integration, (c->bg_color >> 8) & 0xff);
-                    int_puts(integration, ";");
-                    int_put_num(integration, (c->bg_color) & 0xff);
-                } else {
-                    int_puts(integration, "49");
-                }
-                if ((c->fg_color & 0xff000000) == 0) {
-                    int_puts(integration, ";38;2;");
-                    int_put_num(integration, (c->fg_color >> 16) & 0xff);
-                    int_puts(integration, ";");
-                    int_put_num(integration, (c->fg_color >> 8) & 0xff);
-                    int_puts(integration, ";");
-                    int_put_num(integration, (c->fg_color) & 0xff);
-                } else {
-                    int_puts(integration, ";39");
-                }
+                int_puts(integration, "\e[0");
+                write_color_sgr_values(integration, c->bg_color, ";48;2;", ";48;5;", ";", 40, 100);
+                write_color_sgr_values(integration, c->fg_color, ";38;2;", ";38;5;", ";", 30, 90);
                 int_puts(integration, "m");
                 current_bg = c->bg_color;
                 current_fg = c->fg_color;
