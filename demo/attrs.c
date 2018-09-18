@@ -100,12 +100,25 @@ event* key_wait() {
 
 void write_sample(termpaint_attr* attr_ui, termpaint_attr* attr_sample, int line, char const* name, int style) {
     termpaint_surface_write_with_attr(surface, 0, line, name, attr_ui);
+
+    termpaint_attr_reset_style(attr_sample);
+    termpaint_attr_set_style(attr_sample, style);
     termpaint_surface_write_with_attr(surface, 11, line, "Sample", attr_sample);
 }
 
 void repaint_samples(termpaint_attr* attr_ui, termpaint_attr* attr_sample)
 {
     write_sample(attr_ui, attr_sample, 3, "No Style:", 0);
+    write_sample(attr_ui, attr_sample, 4, "Bold:", TERMPAINT_STYLE_BOLD);
+    write_sample(attr_ui, attr_sample, 5, "Italic:", TERMPAINT_STYLE_ITALIC);
+    write_sample(attr_ui, attr_sample, 6, "Blinking:", TERMPAINT_STYLE_BLINK);
+    write_sample(attr_ui, attr_sample, 7, "Underline:", TERMPAINT_STYLE_UNDERLINE);
+    write_sample(attr_ui, attr_sample, 8, "Strikeout:", TERMPAINT_STYLE_STRIKE);
+    write_sample(attr_ui, attr_sample, 9, "Inverse:", TERMPAINT_STYLE_INVERSE);
+
+    write_sample(attr_ui, attr_sample, 11, "Overline:", TERMPAINT_STYLE_OVERLINE);
+    write_sample(attr_ui, attr_sample, 12, "Dbl under:", TERMPAINT_STYLE_UNDERLINE_DBL);
+    write_sample(attr_ui, attr_sample, 13, "curly:", TERMPAINT_STYLE_UNDERLINE_CURLY);
 }
 
 void repaint_all(termpaint_attr* attr_ui, termpaint_attr* attr_sample)
