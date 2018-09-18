@@ -17,6 +17,11 @@
 #define nullptr ((void*)0)
 
 
+struct termpaint_attr_ {
+    uint32_t fg_color;
+    uint32_t bg_color;
+};
+
 typedef struct cell_ {
     uint32_t fg_color;
     uint32_t bg_color;
@@ -164,7 +169,17 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
     termpaint_surface_write_with_colors_clipped(surface, x, y, string, fg, bg, 0, surface->width-1);
 }
 
-void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string_s, int fg, int bg, int clip_x0, int clip_x1) {
+void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1) {
+    termpaint_attr attr;
+    attr.fg_color = fg;
+    attr.bg_color = bg;
+    termpaint_surface_write_with_attr_clipped(surface, x, y, string, &attr, clip_x0, clip_x1);
+}
+
+void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr) {
+    termpaint_surface_write_with_attr_clipped(surface, x, y, string, attr, 0, surface->width-1);
+}
+void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string_s, termpaint_attr const *attr, int clip_x0, int clip_x1) {
     const unsigned char *string = (const unsigned char *)string_s;
     if (y < 0) return;
     if (clip_x0 < 0) clip_x0 = 0;
@@ -190,8 +205,8 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
 
         if (x >= clip_x0) {
             cell *c = termpaintp_getcell(surface, x, y);
-            c->fg_color = fg;
-            c->bg_color = bg;
+            c->fg_color = attr->fg_color;
+            c->bg_color = attr->bg_color;
             c->text_len = termpaintp_encode_to_utf8(codepoint, c->text);
         }
         string += size;
@@ -200,8 +215,16 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     }
 }
 
+void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr) {
+    termpaint_surface_clear(surface, attr->fg_color, attr->bg_color);
+}
+
 void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
     termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, fg, bg);
+}
+
+void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr) {
+    termpaint_surface_clear_rect(surface, x, y, width, height, attr->fg_color, attr->bg_color);
 }
 
 void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg) {
@@ -806,5 +829,30 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
 
 const char* termpaint_terminal_restore_sequence(termpaint_terminal *term) {
     return term->restore_seq ? term->restore_seq : "";
+}
+
+termpaint_attr *termpaint_attr_new(int fg, int bg) {
+    termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
+    attr->fg_color = fg;
+    attr->bg_color = bg;
+    return attr;
+}
+
+void termpaint_attr_free(termpaint_attr *attr) {
+    free(attr);
+}
+
+termpaint_attr *termpaint_attr_clone(termpaint_attr *orig) {
+    termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
+    attr->fg_color = orig->fg_color;
+    attr->bg_color = orig->bg_color;
+    return attr;
+}
+void termpaint_attr_set_fg(termpaint_attr *attr, int fg) {
+    attr->fg_color = fg;
+}
+
+void termpaint_attr_set_bg(termpaint_attr *attr, int bg) {
+    attr->bg_color = bg;
 }
 

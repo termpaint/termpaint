@@ -15,6 +15,9 @@
 extern "C" {
 #endif
 
+struct termpaint_attr_;
+typedef struct termpaint_attr_ termpaint_attr;
+
 struct termpaint_surface_;
 typedef struct termpaint_surface_ termpaint_surface;
 
@@ -53,6 +56,11 @@ enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termp
 void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length);
 void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
+termpaint_attr* termpaint_attr_new(int fg, int bg);
+termpaint_attr* termpaint_attr_clone(termpaint_attr* attr);
+void termpaint_attr_free(termpaint_attr* attr);
+void termpaint_attr_set_fg(termpaint_attr* attr, int fg);
+void termpaint_attr_set_bg(termpaint_attr* attr, int bg);
 #define TERMPAINT_DEFAULT_COLOR 0x1000000
 #define TERMPAINT_NAMED_COLOR 0x1100000
 #define TERMPAINT_INDEXED_COLOR 0x1200000
@@ -64,8 +72,12 @@ int termpaint_surface_width(termpaint_surface *surface);
 int termpaint_surface_height(termpaint_surface *surface);
 void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg);
 void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1);
+void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr);
+void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr, int clip_x0, int clip_x1);
 void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg);
+void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr);
 void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg);
+void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr);
 
 #ifdef __cplusplus
 }
