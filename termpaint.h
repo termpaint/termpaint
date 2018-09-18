@@ -1,6 +1,8 @@
 #ifndef TERMPAINT_TERMPAINT_INCLUDED
 #define TERMPAINT_TERMPAINT_INCLUDED
 
+#include <stdint.h>
+
 #include <termpaint_event.h>
 
 #ifdef __cplusplus

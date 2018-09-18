@@ -18,10 +18,13 @@
 
 
 typedef struct cell_ {
-    unsigned char text[7]; // full 31bit range plus termination
+    uint32_t fg_color;
+    uint32_t bg_color;
     //_Bool double_width;
-    int fg_color;
-    int bg_color;
+    uint8_t text_len : 4; // == 0 -> text_overflow is active.
+    union {
+        unsigned char text[8];
+    };
 } cell;
 
 struct termpaint_surface_ {
@@ -189,8 +192,7 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
             cell *c = termpaintp_getcell(surface, x, y);
             c->fg_color = fg;
             c->bg_color = bg;
-            int written = termpaintp_encode_to_utf8(codepoint, c->text);
-            c->text[written] = 0;
+            c->text_len = termpaintp_encode_to_utf8(codepoint, c->text);
         }
         string += size;
 
@@ -218,8 +220,8 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
     for (int y1 = y; y1 < y + height; y1++) {
         for (int x1 = x; x1 < x + width; x1++) {
             cell* c = termpaintp_getcell(surface, x1, y1);
+            c->text_len = 1;
             c->text[0] = ' ';
-            c->text[1] = 0;
             c->bg_color = bg;
             c->fg_color = fg;
         }
@@ -321,18 +323,24 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         pending_colum_move_digits = 1;
         pending_colum_move_digits_step = 10;
 
-        int current_fg = -1;
-        int current_bg = -1;
+        uint32_t current_fg = -1;
+        uint32_t current_bg = -1;
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
             cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
-            if (*c->text == 0) {
+            if (c->text_len == 0) {
                 c->text[0] = ' ';
-                c->text[1] = 0;
+                c->text_len = 1;
             }
-            int code_units = strlen((char*)c->text);
+            int code_units;
+            bool text_changed;
+            unsigned char* text;
+            code_units = c->text_len;
+            text = c->text;
+            text_changed = old_c->text_len != c->text_len || memcmp(text, old_c->text, code_units) != 0;
+
             bool needs_paint = full_repaint || c->bg_color != old_c->bg_color || c->fg_color != old_c->fg_color
-                    || (strcmp(c->text, old_c->text) != 0);
+                    || text_changed;
             bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg;
             *old_c = *c;
             if (!needs_paint) {
@@ -351,7 +359,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                             // the move sequence is shorter than moving by printing chars
                             speculation_buffer_state = -1;
                         } else if (speculation_buffer_state + code_units < sizeof (speculation_buffer)) {
-                            memcpy(speculation_buffer + speculation_buffer_state, (char*)c->text, code_units);
+                            memcpy(speculation_buffer + speculation_buffer_state, (char*)text, code_units);
                         } else {
                             // speculation buffer to small
                             speculation_buffer_state = -1;
@@ -415,7 +423,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 current_bg = c->bg_color;
                 current_fg = c->fg_color;
             }
-            int_write(integration, (char*)c->text, code_units);
+            int_write(integration, (char*)text, code_units);
         }
 
         if (full_repaint) {
