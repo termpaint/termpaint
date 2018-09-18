@@ -312,6 +312,24 @@ static inline void write_color_sgr_values(termpaint_integration *integration, ui
         int_put_num(integration, (color >> 8) & 0xff);
         int_puts(integration, sep);
         int_put_num(integration, (color) & 0xff);
+    } else if (TERMPAINT_INDEXED_COLOR <= color && TERMPAINT_INDEXED_COLOR + 255 >= color) {
+        int_puts(integration, indexed);
+        int_put_num(integration, (color) & 0xff);
+    } else {
+        if (named) {
+            if (TERMPAINT_NAMED_COLOR <= color && TERMPAINT_NAMED_COLOR + 7 >= color) {
+                int_puts(integration, ";");
+                int_put_num(integration, named + (color - TERMPAINT_NAMED_COLOR));
+            } else if (TERMPAINT_NAMED_COLOR + 8 <= color && TERMPAINT_NAMED_COLOR + 15 >= color) {
+                int_puts(integration, ";");
+                int_put_num(integration, bright_named + (color - (TERMPAINT_NAMED_COLOR + 8)));
+            }
+        } else {
+            if (TERMPAINT_NAMED_COLOR <= color && TERMPAINT_NAMED_COLOR + 15 >= color) {
+                int_puts(integration, indexed);
+                int_put_num(integration, (color - TERMPAINT_NAMED_COLOR));
+            }
+        }
     }
 }
 

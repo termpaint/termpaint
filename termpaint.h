@@ -53,6 +53,11 @@ enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termp
 void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length);
 void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
+#define TERMPAINT_DEFAULT_COLOR 0x1000000
+#define TERMPAINT_NAMED_COLOR 0x1100000
+#define TERMPAINT_INDEXED_COLOR 0x1200000
+#define TERMPAINT_RGB_COLOR(r, g, b) (((r) << 16) | ((b) << 8) | (g))
+
 //void termpaint_surface_free(termpaint_surface *surface);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
 int termpaint_surface_width(termpaint_surface *surface);
