@@ -190,6 +190,8 @@ void named_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change, i
                 termpaint_attr_set_fg(attr_to_change, tp_color);
             } else if (which_color == 1) {
                 termpaint_attr_set_bg(attr_to_change, tp_color);
+            } else {
+                termpaint_attr_set_deco(attr_to_change, tp_color);
             }
             return;
         }
@@ -258,6 +260,8 @@ void indexed_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change,
                     termpaint_attr_set_fg(attr_to_change, tp_color);
                 } else if (which_color == 1) {
                     termpaint_attr_set_bg(attr_to_change, tp_color);
+                } else {
+                    termpaint_attr_set_deco(attr_to_change, tp_color);
                 }
                 return;
             }
@@ -334,6 +338,8 @@ void rgb_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change, int
                     termpaint_attr_set_fg(attr_to_change, tp_color);
                 } else if (which_color == 1) {
                     termpaint_attr_set_bg(attr_to_change, tp_color);
+                } else {
+                    termpaint_attr_set_deco(attr_to_change, tp_color);
                 }
                 return;
             }
@@ -390,6 +396,7 @@ void menu(termpaint_attr* attr_ui, termpaint_attr* attr_sample) {
 
             termpaint_surface_write_with_attr(surface, 25, 4, "* Foreground", attr_ui);
             termpaint_surface_write_with_attr(surface, 40, 4, "  Background", attr_ui);
+            termpaint_surface_write_with_attr(surface, 54, 4, "  Deco", attr_ui);
 
             while (!quit && !reset) {
                 event *evt = key_wait();
@@ -403,12 +410,20 @@ void menu(termpaint_attr* attr_ui, termpaint_attr* attr_sample) {
                     termpaint_surface_write_with_attr(surface, 25, 4, "* Foreground", attr_ui);
                     termpaint_surface_write_with_attr(surface, 40, 4, "  Background", attr_ui);
                     which_color = 0;
+                } else if (evt->type == TERMPAINT_EV_KEY && strcmp(evt->string, "ArrowLeft") == 0 && which_color == 2) {
+                    termpaint_surface_write_with_attr(surface, 40, 4, "* Background", attr_ui);
+                    termpaint_surface_write_with_attr(surface, 54, 4, "  Deco", attr_ui);
+                    which_color = 1;
                 }
 
                 if (evt->type == TERMPAINT_EV_KEY && strcmp(evt->string, "ArrowRight") == 0 && which_color == 0) {
                     termpaint_surface_write_with_attr(surface, 25, 4, "  Foreground", attr_ui);
                     termpaint_surface_write_with_attr(surface, 40, 4, "* Background", attr_ui);
                     which_color = 1;
+                } else if (evt->type == TERMPAINT_EV_KEY && strcmp(evt->string, "ArrowRight") == 0 && which_color == 1) {
+                    termpaint_surface_write_with_attr(surface, 40, 4, "  Background", attr_ui);
+                    termpaint_surface_write_with_attr(surface, 54, 4, "* Deco", attr_ui);
+                    which_color = 2;
                 }
 
                 if (evt->type == TERMPAINT_EV_KEY && (strcmp(evt->string, "ArrowUp") == 0 || strcmp(evt->string, "Escape") == 0)) {
