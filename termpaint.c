@@ -468,7 +468,11 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow) {
     termpaint_terminal *term = user_data;
     if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
-        return term->raw_input_filter_cb(term->raw_input_filter_user_data, data, length, overflow);
+        if (term->raw_input_filter_cb) {
+            return term->raw_input_filter_cb(term->raw_input_filter_user_data, data, length, overflow);
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
