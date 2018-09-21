@@ -28,6 +28,10 @@ struct termpaint_attr_ {
     uint32_t deco_color;
 
     uint16_t flags;
+
+    bool patch_optimize;
+    unsigned char* patch_setup;
+    unsigned char* patch_cleanup;
 };
 
 #define CELL_ATTR_BOLD (1 << 0)
@@ -49,6 +53,8 @@ typedef struct cell_ {
     uint32_t deco_color;
     //_Bool double_width;
     uint16_t flags; // bold, italic, underline[2], blinking, overline, inverse, strikethrough.
+
+    uint8_t attr_patch_idx;
     uint8_t text_len : 4; // == 0 -> text_overflow is active.
     union {
         termpaint_hash_item* text_overflow;
@@ -56,13 +62,27 @@ typedef struct cell_ {
     };
 } cell;
 
+typedef struct termpaintp_patch_ {
+    bool optimize;
+
+    uint32_t setup_hash;
+    char *setup;
+
+    uint32_t cleanup_hash;
+    char *cleanup;
+
+    bool unused;
+} termpaintp_patch;
+
 struct termpaint_surface_ {
     cell* cells;
     cell* cells_last_flush;
     int cells_allocated;
     int width;
     int height;
+
     termpaint_hash overflow_text;
+    termpaintp_patch *patches;
 };
 
 typedef enum auto_detect_state_ {
@@ -179,7 +199,96 @@ static void termpaintp_surface_destroy(termpaint_surface *surface) {
     free(surface->cells);
     free(surface->cells_last_flush);
     termpaintp_hash_destroy(&surface->overflow_text);
+
+    if (surface->patches) {
+        for (int i = 0; i < 255; ++i) {
+            free(surface->patches[i].setup);
+            free(surface->patches[i].cleanup);
+        }
+        free(surface->patches);
+    }
     termpaintp_collapse(surface);
+}
+
+static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, bool optimize, unsigned char *setup,
+                                                unsigned char *cleanup) {
+    if (!setup || !cleanup) {
+        return 0;
+    }
+
+    if (!surface->patches) {
+        surface->patches = calloc(255, sizeof(termpaintp_patch));
+    }
+
+    uint32_t setup_hash = termpaintp_hash_fnv1a(setup);
+    uint32_t cleanup_hash = termpaintp_hash_fnv1a(cleanup);
+
+    int free_slot = -1;
+
+    for (int i = 0; i < 255; ++i) {
+        if (!surface->patches[i].setup) {
+            if (free_slot == -1) {
+                free_slot = i;
+            }
+            continue;
+        }
+
+        if (surface->patches[i].setup_hash == setup_hash
+                && surface->patches[i].cleanup_hash == cleanup_hash
+                && strcmp(setup, surface->patches[i].setup) == 0
+                && strcmp(cleanup, surface->patches[i].cleanup) == 0) {
+            return i + 1;
+        }
+    }
+
+    if (free_slot == -1) {
+        // try to free unused entries
+        for (int i = 0; i < 255; ++i) {
+            surface->patches[i].unused = true;
+        }
+
+        for (int y = 0; y < surface->height; y++) {
+            for (int x = 0; x < surface->width; x++) {
+                cell* c = termpaintp_getcell(surface, x, y);
+                if (c) {
+                    if (c->attr_patch_idx) {
+                        surface->patches[c->attr_patch_idx - 1].unused = false;
+                    }
+                    if (surface->cells_last_flush) {
+                        cell* old_c = &surface->cells_last_flush[y*surface->width+x];
+                        if (old_c->attr_patch_idx) {
+                            surface->patches[old_c->attr_patch_idx - 1].unused = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < 255; ++i) {
+            if (surface->patches[i].unused) {
+                free(surface->patches[i].setup);
+                free(surface->patches[i].cleanup);
+                surface->patches[i].setup = NULL;
+                surface->patches[i].cleanup = NULL;
+
+                if (free_slot == -1) {
+                    free_slot = i;
+                }
+            }
+        }
+    }
+
+    if (free_slot != -1) {
+        surface->patches[free_slot].optimize = optimize;
+        surface->patches[free_slot].setup_hash = setup_hash;
+        surface->patches[free_slot].cleanup_hash = cleanup_hash;
+        surface->patches[free_slot].setup = strdup(setup);
+        surface->patches[free_slot].cleanup = strdup(cleanup);
+        return free_slot + 1;
+    }
+
+    // can't fit anymore, just ignore it.
+    return 0;
 }
 
 static int replace_unusable_codepoints(int codepoint) {
@@ -201,6 +310,8 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     attr.bg_color = bg;
     attr.deco_color = 0;
     attr.flags = 0;
+    attr.patch_setup = nullptr;
+    attr.patch_cleanup = nullptr;
     termpaint_surface_write_with_attr_clipped(surface, x, y, string, &attr, clip_x0, clip_x1);
 }
 
@@ -265,6 +376,8 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             c->bg_color = attr->bg_color;
             c->deco_color = attr->deco_color;
             c->flags = attr->flags;
+            c->attr_patch_idx = termpaintp_surface_ensure_patch_idx(surface, attr->patch_optimize,
+                                                                    attr->patch_setup, attr->patch_cleanup);
             if (output_bytes_used <= 8) {
                 memcpy(c->text, cluster_utf8, output_bytes_used);
                 c->text_len = output_bytes_used;
@@ -314,6 +427,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
             c->fg_color = fg;
             c->deco_color = 0;
             c->flags = 0;
+            c->attr_patch_idx = 0;
         }
     }
 }
@@ -478,6 +592,8 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         uint32_t current_bg = -1;
         uint32_t current_deco = -1;
         uint32_t current_flags = -1;
+        uint32_t current_patch_idx = 0; // patch index is special because it could do anything.
+
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
             cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
@@ -499,7 +615,8 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             }
 
             bool needs_paint = full_repaint || c->bg_color != old_c->bg_color || c->fg_color != old_c->fg_color
-                    || c->flags != old_c->flags || text_changed;
+                    || c->flags != old_c->flags || c->attr_patch_idx != old_c->attr_patch_idx || text_changed;
+
             uint32_t effective_deco_color;
             if (c->flags & CELL_ATTR_DECO_MASK) {
                 needs_paint |= c->deco_color != old_c->deco_color;
@@ -507,10 +624,18 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             } else {
                 effective_deco_color = TERMPAINT_DEFAULT_COLOR;
             }
+
             bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg
-                    || effective_deco_color != current_deco || c->flags != current_flags;
+                    || effective_deco_color != current_deco || c->flags != current_flags
+                    || c->attr_patch_idx != current_patch_idx;
+
             *old_c = *c;
             if (!needs_paint) {
+                if (current_patch_idx) {
+                    int_puts(integration, term->primary.patches[current_patch_idx-1].cleanup);
+                    current_patch_idx = 0;
+                }
+
                 pending_colum_move += 1;
                 if (speculation_buffer_state != -1) {
                     if (needs_attribute_change) {
@@ -603,8 +728,30 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 current_fg = c->fg_color;
                 current_deco = effective_deco_color;
                 current_flags = c->flags;
+
+                if (current_patch_idx != c->attr_patch_idx) {
+                    if (current_patch_idx) {
+                        int_puts(integration, term->primary.patches[current_patch_idx-1].cleanup);
+                    }
+                    if (c->attr_patch_idx) {
+                        int_puts(integration, term->primary.patches[c->attr_patch_idx-1].setup);
+                    }
+                }
+
+                current_patch_idx = c->attr_patch_idx;
             }
             int_write(integration, (char*)text, code_units);
+            if (current_patch_idx) {
+                if (!term->primary.patches[c->attr_patch_idx-1].optimize) {
+                    int_puts(integration, term->primary.patches[c->attr_patch_idx-1].cleanup);
+                    current_patch_idx = 0;
+                }
+            }
+        }
+
+        if (current_patch_idx) {
+            int_puts(integration, term->primary.patches[current_patch_idx-1].cleanup);
+            current_patch_idx = 0;
         }
 
         if (full_repaint) {
@@ -987,6 +1134,8 @@ termpaint_attr *termpaint_attr_new(int fg, int bg) {
 }
 
 void termpaint_attr_free(termpaint_attr *attr) {
+    free(attr->patch_setup);
+    free(attr->patch_cleanup);
     free(attr);
 }
 
@@ -997,6 +1146,13 @@ termpaint_attr *termpaint_attr_clone(termpaint_attr *orig) {
     attr->deco_color = orig->deco_color;
 
     attr->flags = orig->flags;
+
+    if (orig->patch_setup) {
+        attr->patch_setup = strdup(orig->patch_setup);
+    }
+    if (orig->patch_cleanup) {
+        attr->patch_cleanup = strdup(orig->patch_cleanup);
+    }
     return attr;
 }
 void termpaint_attr_set_fg(termpaint_attr *attr, int fg) {
@@ -1042,4 +1198,10 @@ void termpaint_attr_unset_style(termpaint_attr *attr, int bits) {
 
 void termpaint_attr_reset_style(termpaint_attr *attr) {
     attr->flags = 0;
+}
+
+void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *setup, const char *cleanup) {
+    attr->patch_optimize = optimize;
+    attr->patch_setup = strdup(setup);
+    attr->patch_cleanup = strdup(cleanup);
 }
