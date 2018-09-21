@@ -119,6 +119,12 @@ void repaint_samples(termpaint_attr* attr_ui, termpaint_attr* attr_sample)
     write_sample(attr_ui, attr_sample, 11, "Overline:", TERMPAINT_STYLE_OVERLINE);
     write_sample(attr_ui, attr_sample, 12, "Dbl under:", TERMPAINT_STYLE_UNDERLINE_DBL);
     write_sample(attr_ui, attr_sample, 13, "curly:", TERMPAINT_STYLE_UNDERLINE_CURLY);
+
+    // There is not yet explicit support for URLs, so use the low level patch interface
+    termpaint_attr* attr_url = termpaint_attr_clone(attr_sample);
+    termpaint_attr_set_patch(attr_url, true, "\e]8;;http://example.com\a", "\e]8;;\a");
+    write_sample(attr_ui, attr_url, 14, "url:", 0);
+    termpaint_attr_free(attr_url);
 }
 
 void repaint_all(termpaint_attr* attr_ui, termpaint_attr* attr_sample)
