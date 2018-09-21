@@ -22,6 +22,45 @@
 
 #define container_of(ptr, type, member) ((type *)(((char*)(ptr)) - offsetof(type, member)))
 
+/* Data model
+ *
+ * A surface is a 2 dimensional array of cells. A cluster occupies a continuous span of
+ * 1 to 16 cells in one line.
+ *
+ * Each cluster can contain a string of unicode codepoints that the terminal will use
+ * to form an grapheme. These strings consist of a base character and possible a
+ * sequence of nonspacing combining marks. These describe the minimal unit the terminal
+ * will display. If this unit is split or partially erased the whole unit will disappear.
+ *
+ * Additionally cluster has display (and/or semantic) attributes. These include foreground
+ * and background color as well as a variety of decorations. Additionally there is a low
+ * level extension mechanism to allow adding, as of now, not supported additional attributes
+ * to the cluster. In the later case the application is responible for not breaking
+ * rendering with these low level patches.
+ *
+ * Data representation
+ *
+ * The unicode codepoints for an cluster are either represented as a up to 8 byte utf8
+ * sequence inline in the cell structure or by an reference to an separate overflow node
+ * in case they do not fit within that space. These overflow nodes are managed with an
+ * auxilary (per surface) hash table. Unused entries are expired when the hash table would
+ * have to grow otherwise.
+ *
+ * Attributes consist of the following:
+ * - bold (yes/no)
+ * - italic (yes/no)
+ * - underline (none, single, double, curly) with decoration color (default or 256 color
+ *   or direct color value)
+ * - blinking (yes/no)
+ * - overline (yes/no)
+ * - inverse (yes/no)
+ * - strikethrough (yes/no)
+ * - foreground color (default or 16 colors (named or bright named)
+ *   or 256 color or direct color)
+ * - background color (same options as foreground color)
+ * - patch (an beginning and ending string of control sequences)
+ */
+
 struct termpaint_attr_ {
     uint32_t fg_color;
     uint32_t bg_color;
@@ -63,6 +102,8 @@ typedef struct cell_ {
         unsigned char text[8];
     };
 } cell;
+
+_Static_assert(sizeof(void*) > 8 || sizeof(cell) == 24, "bad cell size");
 
 typedef struct termpaintp_patch_ {
     bool optimize;
