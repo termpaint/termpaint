@@ -47,15 +47,17 @@ struct termpaint_attr_ {
 
 #define CELL_ATTR_DECO_MASK CELL_ATTR_UNDERLINE_MASK
 
+#define WIDE_RIGHT_PADDING ((termpaint_hash_item*)-1)
+
 typedef struct cell_ {
     uint32_t fg_color;
     uint32_t bg_color;
     uint32_t deco_color;
-    //_Bool double_width;
     uint16_t flags; // bold, italic, underline[2], blinking, overline, inverse, strikethrough.
-
     uint8_t attr_patch_idx;
-    uint8_t text_len : 4; // == 0 -> text_overflow is active.
+
+    uint8_t cluster_expansion : 4;
+    uint8_t text_len : 4; // == 0 -> text_overflow is active or WIDE_RIGHT_PADDING.
     union {
         termpaint_hash_item* text_overflow;
         unsigned char text[8];
@@ -321,6 +323,73 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
 void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr) {
     termpaint_surface_write_with_attr_clipped(surface, x, y, string, attr, 0, surface->width-1);
 }
+
+static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, int y, int cluster_width) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+
+    int rightmost_vanished = x;
+
+    if (cell->text_len == 0 && cell->text_overflow == WIDE_RIGHT_PADDING) {
+        int i = x;
+        while (cell && (cell->text_len == 0 && cell->text_overflow == WIDE_RIGHT_PADDING)) {
+            cell->text_len = 1;
+            cell->text[0] = ' ';
+            rightmost_vanished = i;
+
+            ++i;
+            cell = termpaintp_getcell(surface, i, y);
+        }
+
+        i = x - 1;
+        do {
+            cell = termpaintp_getcell(surface, i, y);
+
+            if (!cell) {
+                break;
+            }
+
+            cell->text_len = 1;
+            cell->text[0] = ' ';
+            --i;
+        } while (cell->cluster_expansion == 0);
+    }
+
+    for (int i = rightmost_vanished; i <= x + cluster_width - 1; i++) {
+        cell = termpaintp_getcell(surface, i, y);
+
+        if (!cell) {
+            break;
+        }
+
+        int len = cell->cluster_expansion;
+        int j = 0;
+        while (1) {
+            cell->cluster_expansion = 0;
+            cell->text_len = 1;
+            cell->text[0] = ' ';
+            ++j;
+            if (j > len) {
+                break;
+            }
+            cell = termpaintp_getcell(surface, i + j, y);
+
+            if (!cell) {
+                break;
+            }
+        }
+        i += j;
+    }
+}
+
+static void termpaintp_surface_attr_apply(termpaint_surface *surface, cell *cell, termpaint_attr const *attr) {
+    cell->fg_color = attr->fg_color;
+    cell->bg_color = attr->bg_color;
+    cell->deco_color = attr->deco_color;
+    cell->flags = attr->flags;
+    cell->attr_patch_idx = termpaintp_surface_ensure_patch_idx(surface, attr->patch_optimize,
+                                                               attr->patch_setup, attr->patch_cleanup);
+}
+
 void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string_s, termpaint_attr const *attr, int clip_x0, int clip_x1) {
     const unsigned char *string = (const unsigned char *)string_s;
     if (y < 0) return;
@@ -334,6 +403,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
         }
 
         unsigned char cluster_utf8[40];
+        int cluster_width = 1;
         int input_bytes_used = 0;
         int output_bytes_used = 0;
 
@@ -356,6 +426,8 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
                 if (width == 0) {
                     // if start is 0 width use U+00a0 as base
                     output_bytes_used += termpaintp_encode_to_utf8(0xa0, cluster_utf8 + output_bytes_used);
+                } else {
+                    cluster_width = width;
                 }
                 output_bytes_used += termpaintp_encode_to_utf8(codepoint, cluster_utf8 + output_bytes_used);
             } else {
@@ -373,14 +445,36 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             input_bytes_used += size;
         }
 
-        if (x >= clip_x0) {
+        if (cluster_width == 2 && x + 1 == clip_x0) {
+            // char is split by clipping boundary. Fill in right half as if the char was split later
+            cell *c = termpaintp_getcell(surface, x + 1, y);
+            c->cluster_expansion = 0;
+
+            termpaintp_surface_vanish_char(surface, x + 1, y, cluster_width - 1);
+
+            termpaintp_surface_attr_apply(surface, c, attr);
+
+            c->text[0] = ' ';
+            c->text_len = 1;
+        } else if (x + cluster_width - 1 > clip_x1) {
+            // char is split by clipping boundary. Fill in left half as if the char was split later
             cell *c = termpaintp_getcell(surface, x, y);
-            c->fg_color = attr->fg_color;
-            c->bg_color = attr->bg_color;
-            c->deco_color = attr->deco_color;
-            c->flags = attr->flags;
-            c->attr_patch_idx = termpaintp_surface_ensure_patch_idx(surface, attr->patch_optimize,
-                                                                    attr->patch_setup, attr->patch_cleanup);
+            c->cluster_expansion = 0;
+
+            termpaintp_surface_vanish_char(surface, x, y, cluster_width - 1);
+
+            termpaintp_surface_attr_apply(surface, c, attr);
+
+            c->text[0] = ' ';
+            c->text_len = 1;
+        } else if (x >= clip_x0) {
+            cell *c = termpaintp_getcell(surface, x, y);
+
+            termpaintp_surface_vanish_char(surface, x, y, cluster_width);
+
+            termpaintp_surface_attr_apply(surface, c, attr);
+
+            c->cluster_expansion = cluster_width - 1;
             if (output_bytes_used <= 8) {
                 memcpy(c->text, cluster_utf8, output_bytes_used);
                 c->text_len = output_bytes_used;
@@ -389,10 +483,17 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
                 c->text_len = 0;
                 c->text_overflow = termpaintp_hash_ensure(&surface->overflow_text, cluster_utf8);
             }
+            for (int i = 1; i < cluster_width; i++) {
+                cell *c = termpaintp_getcell(surface, x + i, y);
+                termpaintp_surface_attr_apply(surface, c, attr);
+                c->cluster_expansion = 0;
+                c->text_len = 0;
+                c->text_overflow = WIDE_RIGHT_PADDING;
+            }
         }
         string += input_bytes_used;
 
-        ++x;
+        x = x + cluster_width;
     }
 }
 
@@ -424,6 +525,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
     for (int y1 = y; y1 < y + height; y1++) {
         for (int x1 = x; x1 < x + width; x1++) {
             cell* c = termpaintp_getcell(surface, x1, y1);
+            c->cluster_expansion = 0;
             c->text_len = 1;
             c->text[0] = ' ';
             c->bg_color = bg;
@@ -488,12 +590,12 @@ static void termpaintp_surface_gc_mark_cb(termpaint_hash *hash) {
         for (int x = 0; x < surface->width; x++) {
             cell* c = termpaintp_getcell(surface, x, y);
             if (c) {
-                if (c->text_len == 0 && c->text_overflow != nullptr) {
+                if (c->text_len == 0 && c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
                     c->text_overflow->unused = false;
                 }
                 if (surface->cells_last_flush) {
                     cell* old_c = &surface->cells_last_flush[y*surface->width+x];
-                    if (old_c->text_len == 0 && old_c->text_overflow != nullptr) {
+                    if (old_c->text_len == 0 && old_c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
                         old_c->text_overflow->unused = false;
                     }
                 }
@@ -612,6 +714,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 text = c->text;
                 text_changed = old_c->text_len != c->text_len || memcmp(text, old_c->text, code_units) != 0;
             } else {
+                // TODO should we avoid crash here when cluster skipping failed?
                 code_units = strlen((char*)c->text_overflow->text);
                 text = c->text_overflow->text;
                 text_changed = old_c->text_len || c->text_overflow != old_c->text_overflow;
@@ -633,19 +736,25 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                     || c->attr_patch_idx != current_patch_idx;
 
             *old_c = *c;
+            for (int i = 0; i < c->cluster_expansion; i++) {
+                cell* wipe_c = &term->primary.cells_last_flush[y*term->primary.width+x+i];
+                wipe_c->text_len = 1;
+                wipe_c->text[0] = '\x01'; // impossible value, filtered out earlier in output pipeline
+            }
+
             if (!needs_paint) {
                 if (current_patch_idx) {
                     int_puts(integration, term->primary.patches[current_patch_idx-1].cleanup);
                     current_patch_idx = 0;
                 }
 
-                pending_colum_move += 1;
+                pending_colum_move += 1 + c->cluster_expansion;
                 if (speculation_buffer_state != -1) {
                     if (needs_attribute_change) {
                         // needs_attribute_change needs >= 24 chars, so repositioning will likely be cheaper (and easier to implement)
                         speculation_buffer_state = -1;
                     } else {
-                        if (pending_colum_move == pending_colum_move_digits_step) {
+                        if (pending_colum_move >= pending_colum_move_digits_step) {
                             pending_colum_move_digits += 1;
                             pending_colum_move_digits_step *= 10;
                         }
@@ -661,6 +770,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                         }
                     }
                 }
+                x += c->cluster_expansion;
                 continue;
             } else {
                 if (pending_row_move) {
@@ -750,6 +860,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                     current_patch_idx = 0;
                 }
             }
+            x += c->cluster_expansion;
         }
 
         if (current_patch_idx) {
