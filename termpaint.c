@@ -7,6 +7,9 @@
 #include "termpaint_compiler.h"
 #include "termpaint_input.h"
 #include "termpaint_utf8.h"
+#include "termpaint_hash.h"
+
+#include "termpaint_char_width.h"
 
 /* TODO and known problems:
  * What about composing code points?
@@ -16,6 +19,8 @@
 
 #define nullptr ((void*)0)
 
+
+#define container_of(ptr, type, member) ((type *)(((char*)(ptr)) - offsetof(type, member)))
 
 struct termpaint_attr_ {
     uint32_t fg_color;
@@ -46,6 +51,7 @@ typedef struct cell_ {
     uint16_t flags; // bold, italic, underline[2], blinking, overline, inverse, strikethrough.
     uint8_t text_len : 4; // == 0 -> text_overflow is active.
     union {
+        termpaint_hash_item* text_overflow;
         unsigned char text[8];
     };
 } cell;
@@ -56,6 +62,7 @@ struct termpaint_surface_ {
     int cells_allocated;
     int width;
     int height;
+    termpaint_hash overflow_text;
 };
 
 typedef enum auto_detect_state_ {
@@ -171,10 +178,11 @@ static inline cell* termpaintp_getcell(termpaint_surface *surface, int x, int y)
 static void termpaintp_surface_destroy(termpaint_surface *surface) {
     free(surface->cells);
     free(surface->cells_last_flush);
+    termpaintp_hash_destroy(&surface->overflow_text);
     termpaintp_collapse(surface);
 }
 
-static int replace_norenderable_codepoints(int codepoint) {
+static int replace_unusable_codepoints(int codepoint) {
     if (codepoint < 32
        || (codepoint >= 0x7f && codepoint < 0xa0)) {
         return ' ';
@@ -211,17 +219,45 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             return;
         }
 
-        int size = termpaintp_utf8_len(string[0]);
+        unsigned char cluster_utf8[40];
+        int input_bytes_used = 0;
+        int output_bytes_used = 0;
 
-        // check termpaintp_utf8_decode_from_utf8 precondition
-        for (int i = 0; i < size; i++) {
-            if (string[i] == 0) {
-                // bogus, bail
-                return;
+        while (string[input_bytes_used]) {
+            int size = termpaintp_utf8_len(string[input_bytes_used]);
+
+            // check termpaintp_utf8_decode_from_utf8 precondition
+            for (int i = 0; i < size; i++) {
+                if (string[i] == 0) {
+                    // bogus, bail
+                    return;
+                }
             }
+            int codepoint = termpaintp_utf8_decode_from_utf8(string + input_bytes_used, size);
+            codepoint = replace_unusable_codepoints(codepoint);
+
+            int width = termpaintp_char_width(codepoint);
+
+            if (!output_bytes_used) {
+                if (width == 0) {
+                    // if start is 0 width use U+00a0 as base
+                    output_bytes_used += termpaintp_encode_to_utf8(0xa0, cluster_utf8 + output_bytes_used);
+                }
+                output_bytes_used += termpaintp_encode_to_utf8(codepoint, cluster_utf8 + output_bytes_used);
+            } else {
+                if (width > 0) {
+                    // don't increase input_bytes_used here because this codepoint will need to be reprocessed.
+                    break;
+                }
+                if (output_bytes_used + 6 < sizeof (cluster_utf8)) {
+                    output_bytes_used += termpaintp_encode_to_utf8(codepoint, cluster_utf8 + output_bytes_used);
+                } else {
+                    // just ignore further combining codepoints, likely this is way over the limit
+                    // of the terminal anyway
+                }
+            }
+            input_bytes_used += size;
         }
-        int codepoint = termpaintp_utf8_decode_from_utf8(string, size);
-        codepoint = replace_norenderable_codepoints(codepoint);
 
         if (x >= clip_x0) {
             cell *c = termpaintp_getcell(surface, x, y);
@@ -229,9 +265,16 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             c->bg_color = attr->bg_color;
             c->deco_color = attr->deco_color;
             c->flags = attr->flags;
-            c->text_len = termpaintp_encode_to_utf8(codepoint, c->text);
+            if (output_bytes_used <= 8) {
+                memcpy(c->text, cluster_utf8, output_bytes_used);
+                c->text_len = output_bytes_used;
+            } else {
+                cluster_utf8[output_bytes_used] = 0;
+                c->text_len = 0;
+                c->text_overflow = termpaintp_hash_ensure(&surface->overflow_text, cluster_utf8);
+            }
         }
-        string += size;
+        string += input_bytes_used;
 
         ++x;
     }
@@ -293,6 +336,12 @@ int termpaint_surface_height(termpaint_surface *surface) {
     return surface->height;
 }
 
+int termpaint_surface_char_width(termpaint_surface *surface, int codepoint) {
+    UNUSED(surface);
+    // require surface here to allow for future implementation that uses terminal
+    // specific information from terminal detection.
+    return termpaintp_char_width(codepoint);
+}
 
 static void int_puts(termpaint_integration *integration, char *str) {
     integration->write(integration, str, strlen(str));
@@ -315,9 +364,35 @@ static void int_flush(termpaint_integration *integration) {
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event);
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
+static void termpaintp_surface_gc_mark_cb(termpaint_hash *hash) {
+    termpaint_surface *surface = container_of(hash, termpaint_surface, overflow_text);
+
+    for (int y = 0; y < surface->height; y++) {
+        for (int x = 0; x < surface->width; x++) {
+            cell* c = termpaintp_getcell(surface, x, y);
+            if (c) {
+                if (c->text_len == 0 && c->text_overflow != nullptr) {
+                    c->text_overflow->unused = false;
+                }
+                if (surface->cells_last_flush) {
+                    cell* old_c = &surface->cells_last_flush[y*surface->width+x];
+                    if (old_c->text_len == 0 && old_c->text_overflow != nullptr) {
+                        old_c->text_overflow->unused = false;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void termpaintp_surface_init(termpaint_surface *surface) {
+    surface->overflow_text.gc_mark_cb = termpaintp_surface_gc_mark_cb;
+    surface->overflow_text.item_size = sizeof(termpaint_hash_item);
+}
+
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
-
+    termpaintp_surface_init(&ret->primary);
     // start collapsed
     termpaintp_collapse(&ret->primary);
     ret->integration = integration;
@@ -406,16 +481,22 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
             cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
-            if (c->text_len == 0) {
+            if (c->text_len == 0 && c->text_overflow == 0) {
                 c->text[0] = ' ';
                 c->text_len = 1;
             }
             int code_units;
             bool text_changed;
             unsigned char* text;
-            code_units = c->text_len;
-            text = c->text;
-            text_changed = old_c->text_len != c->text_len || memcmp(text, old_c->text, code_units) != 0;
+            if (c->text_len) {
+                code_units = c->text_len;
+                text = c->text;
+                text_changed = old_c->text_len != c->text_len || memcmp(text, old_c->text, code_units) != 0;
+            } else {
+                code_units = strlen((char*)c->text_overflow->text);
+                text = c->text_overflow->text;
+                text_changed = old_c->text_len || c->text_overflow != old_c->text_overflow;
+            }
 
             bool needs_paint = full_repaint || c->bg_color != old_c->bg_color || c->fg_color != old_c->fg_color
                     || c->flags != old_c->flags || text_changed;

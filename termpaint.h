@@ -84,6 +84,7 @@ void termpaint_attr_reset_style(termpaint_attr* attr);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
 int termpaint_surface_width(termpaint_surface *surface);
 int termpaint_surface_height(termpaint_surface *surface);
+int termpaint_surface_char_width(termpaint_surface *surface, int codepoint);
 void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg);
 void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1);
 void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr);
