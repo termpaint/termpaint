@@ -295,6 +295,9 @@ static int replace_unusable_codepoints(int codepoint) {
     if (codepoint < 32
        || (codepoint >= 0x7f && codepoint < 0xa0)) {
         return ' ';
+    } else if (codepoint == 0xad) { // soft hyphen
+        // Some implementations see this as spacing others as non spacing, make sure we get something spacing.
+        return '-';
     } else {
         return codepoint;
     }
