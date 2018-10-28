@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "termpaint_compiler.h"
 #include "termpaint_input.h"

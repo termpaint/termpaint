@@ -187,4 +187,19 @@ static inline int termpaintp_encode_to_utf8(int codepoint, unsigned char *buf) {
 #undef STORE_AND_SHIFT
 }
 
+
+// UTF-16 sneaked in here too
+
+static inline _Bool termpaintp_utf16_is_high_surrogate(uint16_t codeunit) {
+    return (codeunit >= 0xD800) && (codeunit <= 0xDBFF);
+}
+
+static inline _Bool termpaintp_utf16_is_low_surrogate(uint16_t codeunit) {
+    return (codeunit >= 0xDC00) && (codeunit <= 0xDFFF);
+}
+
+static inline int termpaintp_utf16_combine(uint16_t high, uint16_t low) {
+    return 0x10000 + (((high - 0xD800) << 10) | (low - 0xDC00));
+}
+
 #endif
