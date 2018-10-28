@@ -91,4 +91,11 @@ executable('mcheck', 'tools/mcheck.cpp', link_with: [main_lib, docopt_lib, fmt_l
 executable('termquery', 'termquery.cpp', link_with: [main_lib])
 
 testlib = static_library('testlib', 'tests/catch_main.cpp')
-test('testtermpaint', executable('testtermpaint', 'tests/input_tests.cpp', 'tests/utf8_tests.cpp', link_with: [main_lib, testlib]))
+
+#ide:editable-filelist
+test_files = [
+  'tests/input_tests.cpp',
+  'tests/utf8_tests.cpp',
+]
+
+test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline']))

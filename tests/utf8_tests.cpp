@@ -6,7 +6,7 @@ typedef bool _Bool;
 #include <termpaint_utf8.h>
 
 template <typename X>
-const unsigned char* u8p(X); // intentionally undefined
+static const unsigned char* u8p(X); // intentionally undefined
 
 template <>
 const unsigned char* u8p(const char *str) {
