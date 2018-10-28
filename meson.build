@@ -66,6 +66,13 @@ executable('attrdemo', attrdemo_files, link_with: [main_lib])
 
 
 #ide:editable-filelist
+chardemo_files = [
+  'demo/chars.c',
+]
+
+executable('chardemo', chardemo_files, link_with: [main_lib])
+
+#ide:editable-filelist
 keyboardcollector_files = [
   'tools/keyboardcollector.cpp',
 ]
