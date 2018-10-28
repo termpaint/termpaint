@@ -18,6 +18,9 @@ extern "C" {
 struct termpaint_attr_;
 typedef struct termpaint_attr_ termpaint_attr;
 
+struct termpaint_text_measurement_;
+typedef struct termpaint_text_measurement_ termpaint_text_measurement;
+
 struct termpaint_surface_;
 typedef struct termpaint_surface_ termpaint_surface;
 
@@ -94,6 +97,32 @@ void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg);
 void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr);
 void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg);
 void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr);
+
+
+termpaint_text_measurement* termpaint_text_measurement_new(termpaint_surface *surface);
+void termpaint_text_measurement_free(termpaint_text_measurement *m);
+void termpaint_text_measurement_reset(termpaint_text_measurement *m);
+
+int termpaint_text_measurement_pending_ref(termpaint_text_measurement *m);
+
+int termpaint_text_measurement_last_codepoints(termpaint_text_measurement *m);
+int termpaint_text_measurement_last_clusters(termpaint_text_measurement *m);
+int termpaint_text_measurement_last_width(termpaint_text_measurement *m);
+int termpaint_text_measurement_last_ref(termpaint_text_measurement *m);
+
+int termpaint_text_measurement_limit_codepoints(termpaint_text_measurement *m);
+void termpaint_text_measurement_set_limit_codepoints(termpaint_text_measurement *m, int new_value);
+int termpaint_text_measurement_limit_clusters(termpaint_text_measurement *m);
+void termpaint_text_measurement_set_limit_clusters(termpaint_text_measurement *m, int new_value);
+int termpaint_text_measurement_limit_width(termpaint_text_measurement *m);
+void termpaint_text_measurement_set_limit_width(termpaint_text_measurement *m, int new_value);
+int termpaint_text_measurement_limit_ref(termpaint_text_measurement *m);
+void termpaint_text_measurement_set_limit_ref(termpaint_text_measurement *m, int new_value);
+
+_Bool /* new cluster*/ termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust);
+_Bool /* reached limit */ termpaint_text_measurement_feed_utf32(termpaint_text_measurement *m, const uint32_t *chars, int length, _Bool final);
+_Bool /* reached limit */ termpaint_text_measurement_feed_utf16(termpaint_text_measurement *m, const uint16_t *code_units, int length, _Bool final);
+_Bool /* reached limit */ termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const uint8_t *code_units, int length, _Bool final);
 
 #ifdef __cplusplus
 }

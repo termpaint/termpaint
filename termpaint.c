@@ -175,6 +175,41 @@ typedef struct termpaint_terminal_ {
     auto_detect_state ad_state;
 } termpaint_terminal;
 
+typedef enum termpaint_text_measurement_state_ {
+    TM_INITIAL,
+    TM_IN_CLUSTER
+} termpaint_text_measurement_state;
+
+typedef enum termpaint_text_measurement_decoder_state_ {
+    TMD_INITIAL,
+    TMD_PARTIAL_UTF16,
+    TMD_PARTIAL_UTF8
+} termpaint_text_measurement_decoder_state;
+
+struct termpaint_text_measurement_ {
+    int pending_codepoints;
+    int pending_clusters;
+    int pending_width;
+    int pending_ref;
+    int last_codepoints;
+    int last_clusters;
+    int last_width;
+    int last_ref;
+    termpaint_text_measurement_state state;
+
+    int limit_codepoints;
+    int limit_clusters;
+    int limit_width;
+    int limit_ref;
+
+    // utf decoder state
+    termpaint_text_measurement_decoder_state decoder_state;
+    uint16_t utf_16_high;
+    uint8_t utf8_size;
+    uint8_t utf8_available;
+    uint8_t utf8_units[6];
+};
+
 static void termpaintp_append_str(char **s, const char* src) {
     int s_len = 0;
     if (*s) {
@@ -449,6 +484,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
         int input_bytes_used = 0;
         int output_bytes_used = 0;
 
+        // ATTENTION keep this in sync with termpaint_text_measurement_feed_codepoint
         while (string[input_bytes_used]) {
             int size = termpaintp_utf8_len(string[input_bytes_used]);
 
@@ -1360,4 +1396,277 @@ void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *s
     attr->patch_optimize = optimize;
     attr->patch_setup = strdup(setup);
     attr->patch_cleanup = strdup(cleanup);
+}
+
+termpaint_text_measurement *termpaint_text_measurement_new(termpaint_surface *surface) {
+    termpaint_text_measurement *m = malloc(sizeof(termpaint_text_measurement));
+    termpaint_text_measurement_reset(m);
+    return m;
+}
+
+void termpaint_text_measurement_free(termpaint_text_measurement *m) {
+    free(m);
+}
+
+void termpaint_text_measurement_reset(termpaint_text_measurement *m) {
+    m->pending_codepoints = 0;
+    m->pending_ref = 0;
+    m->pending_clusters = 0;
+    m->pending_width = 0;
+    m->last_codepoints = -1;
+    m->last_ref = -1;
+    m->last_clusters = -1;
+    m->last_width = -1;
+    m->state = TM_INITIAL;
+
+    m->limit_codepoints = -1;
+    m->limit_ref = -1;
+    m->limit_clusters = -1;
+    m->limit_width = -1;
+
+    m->decoder_state = TMD_INITIAL;
+}
+
+
+int termpaint_text_measurement_pending_ref(termpaint_text_measurement *m) {
+    int result = m->pending_ref;
+    if (m->decoder_state == TMD_PARTIAL_UTF16) {
+        result += 1;
+    } else if (m->decoder_state == TMD_PARTIAL_UTF8) {
+        result += m->utf8_available;
+    }
+    return result;
+}
+
+
+int termpaint_text_measurement_last_codepoints(termpaint_text_measurement *m) {
+    return m->last_codepoints;
+}
+
+int termpaint_text_measurement_last_clusters(termpaint_text_measurement *m) {
+    return m->last_clusters;
+}
+
+int termpaint_text_measurement_last_width(termpaint_text_measurement *m) {
+    return m->last_width;
+}
+
+int termpaint_text_measurement_last_ref(termpaint_text_measurement *m) {
+    return m->last_ref;
+}
+
+int termpaint_text_measurement_limit_codepoints(termpaint_text_measurement *m) {
+    return m->limit_codepoints;
+}
+
+void termpaint_text_measurement_set_limit_codepoints(termpaint_text_measurement *m, int new_value) {
+    m->limit_codepoints = new_value;
+}
+
+int termpaint_text_measurement_limit_clusters(termpaint_text_measurement *m) {
+    return m->limit_clusters;
+}
+
+void termpaint_text_measurement_set_limit_clusters(termpaint_text_measurement *m, int new_value) {
+    m->limit_clusters = new_value;
+}
+
+int termpaint_text_measurement_limit_width(termpaint_text_measurement *m) {
+    return m->limit_width;
+}
+
+void termpaint_text_measurement_set_limit_width(termpaint_text_measurement *m, int new_value) {
+    m->limit_width = new_value;
+}
+
+int termpaint_text_measurement_limit_ref(termpaint_text_measurement *m) {
+    return m->limit_ref;
+}
+
+void termpaint_text_measurement_set_limit_ref(termpaint_text_measurement *m, int new_value) {
+    m->limit_ref = new_value;
+}
+
+static inline void termpaintp_text_measurement_commit(termpaint_text_measurement *m) {
+    m->last_codepoints = m->pending_codepoints;
+    m->last_clusters = m->pending_clusters;
+    m->last_width = m->pending_width;
+    m->last_ref = m->pending_ref;
+}
+
+
+_Bool termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust) {
+    // ATTENTION keep this in sync with actual write to surface
+    ch = replace_unusable_codepoints(ch);
+    int width = termpaintp_char_width(ch);
+    if (width == 0) {
+        ++m->pending_codepoints;
+        m->pending_ref += ref_adjust;
+
+        if (m->state == TM_INITIAL) {
+            // Assume this will be input in this way into write which will supply it with U+00a0 as base.
+            width = 1;
+            m->pending_clusters += 1;
+            m->pending_width += width;
+            m->state = TM_IN_CLUSTER;
+        } else {
+            // accumulates into cluster. Nothing do do here.
+        }
+        return false;
+    } else {
+        // advance last full cluster
+        termpaintp_text_measurement_commit(m);
+
+        ++m->pending_codepoints;
+        m->pending_ref += ref_adjust;
+
+        m->pending_width += width;
+        m->pending_clusters += 1;
+
+        if (m->state == TM_INITIAL) {
+            m->state = TM_IN_CLUSTER;
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+static void termpaintp_text_measurement_undo(termpaint_text_measurement *m) {
+    m->pending_codepoints = m->last_codepoints;
+    m->pending_ref = m->last_ref;
+    m->pending_clusters = m->last_clusters;
+    m->pending_width = m->last_width;
+    m->state = TM_IN_CLUSTER;
+
+    m->decoder_state = TMD_INITIAL;
+}
+
+static bool termpaintp_text_measurement_check_limits(termpaint_text_measurement *m) {
+    if (m->last_codepoints >= 0 && m->last_codepoints > m->limit_codepoints) {
+        termpaintp_text_measurement_undo(m);
+        return true;
+    }
+    if (m->last_clusters >= 0 && m->last_clusters > m->limit_clusters) {
+        termpaintp_text_measurement_undo(m);
+        return true;
+    }
+    if (m->last_width >= 0 && m->last_width > m->limit_width) {
+        termpaintp_text_measurement_undo(m);
+        return true;
+    }
+    if (m->last_ref >= 0 && m->last_ref > m->limit_ref) {
+        termpaintp_text_measurement_undo(m);
+        return true;
+    }
+    return false;
+}
+
+_Bool termpaint_text_measurement_feed_utf32(termpaint_text_measurement *m, const uint32_t *chars, int length, _Bool final) {
+    for (int i = 0; i < length; i++) {
+        if (termpaint_text_measurement_feed_codepoint(m, (int)chars[i], 1)) {
+            if (termpaintp_text_measurement_check_limits(m)) {
+                return true;
+            }
+        }
+    }
+    if (final) {
+        termpaintp_text_measurement_commit(m);
+        return true;
+    }
+    return false;
+}
+
+_Bool termpaint_text_measurement_feed_utf16(termpaint_text_measurement *m, const uint16_t *code_units, int length, _Bool final) {
+    if (m->decoder_state != TMD_INITIAL && m->decoder_state != TMD_PARTIAL_UTF16) {
+        // This is bogus usage, but just paper over it
+        m->decoder_state = TMD_INITIAL;
+    }
+    for (int i = 0; i < length; i++) {
+        int ch = code_units[i];
+        int adjust = 1;
+        if (termpaintp_utf16_is_high_surrogate(code_units[i])) {
+            if (m->decoder_state != TMD_INITIAL) {
+                // This is bogus usage, but just paper over it
+                ch = 0xFFFD;
+            } else {
+                m->decoder_state = TMD_PARTIAL_UTF16;
+                m->utf_16_high = code_units[i];
+                continue;
+            }
+        }
+        if (termpaintp_utf16_is_low_surrogate(code_units[i])) {
+            if (m->decoder_state != TMD_PARTIAL_UTF16) {
+                // This is bogus usage, but just paper over it
+                ch = 0xFFFD;
+            } else {
+                adjust = 2;
+                ch = termpaintp_utf16_combine(m->utf_16_high, code_units[i]);
+            }
+        }
+
+        if (termpaint_text_measurement_feed_codepoint(m, ch, adjust)) {
+            if (termpaintp_text_measurement_check_limits(m)) {
+                return true;
+            }
+        }
+    }
+    if (final) {
+        termpaintp_text_measurement_commit(m);
+        return true;
+    }
+    return false;
+}
+
+_Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const uint8_t *code_units, int length, _Bool final) {
+    if (m->decoder_state != TMD_INITIAL && m->decoder_state != TMD_PARTIAL_UTF8) {
+        // This is bogus usage, but just paper over it
+        m->decoder_state = TMD_INITIAL;
+    }
+
+    for (int i = 0; i < length; i++) {
+        int ch;
+        int adjust = 1;
+
+        if (m->decoder_state == TMD_INITIAL) {
+            int len = termpaintp_utf8_len(code_units[i]);
+            if (len == 1) {
+                ch = code_units[i];
+            } else {
+                m->decoder_state = TMD_PARTIAL_UTF8;
+                m->utf8_size = len;
+                m->utf8_units[0] = code_units[i];
+                m->utf8_available = 1;
+                continue;
+            }
+        } else {
+            m->utf8_units[m->utf8_available] = code_units[i];
+            m->utf8_available++;
+            adjust = m->utf8_available;
+            if (m->utf8_available == m->utf8_size) {
+                if (termpaintp_check_valid_sequence(m->utf8_units, m->utf8_size)) {
+                    ch = termpaintp_utf8_decode_from_utf8(m->utf8_units, m->utf8_size);
+                } else {
+                    // This is bogus usage, but just paper over it
+                    ch = 0xFFFD;
+                }
+            } else if (m->utf8_available > m->utf8_size) {
+                // This is bogus usage, but just paper over it
+                ch = 0xFFFD;
+            } else {
+                continue;
+            }
+        }
+
+        if (termpaint_text_measurement_feed_codepoint(m, ch, adjust)) {
+            if (termpaintp_text_measurement_check_limits(m)) {
+                return true;
+            }
+        }
+    }
+    if (final) {
+        termpaintp_text_measurement_commit(m);
+        return true;
+    }
+    return false;
 }
