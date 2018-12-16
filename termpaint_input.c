@@ -623,6 +623,8 @@ struct termpaint_input_ {
     _Bool overflow;
     _Bool esc_pending;
 
+    _Bool expect_cursor_position_report;
+
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
 
@@ -843,42 +845,47 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.c.modifier = 0;
         }
 
-        if (!event.type && length > 2 && data[0] == '\033' && data[1] == '[') {
+        if (length > 2 && data[0] == '\033' && data[1] == '[') {
             int i = 2;
             bool qm = false;
             if (length > 3 && data[i] == '?') {
                 ++i;
                 qm = true;
             }
-            if (length > 5 && data[length-1] == 'R') { // both plain and qm
+            if ((!event.type || ctx->expect_cursor_position_report) && length > 5 && data[length-1] == 'R') { // both plain and qm
                 int x, y;
                 if (termpaintp_input_parse_dec_2(data + i, length - i - 1, &y, &x)) {
                     event.type = TERMPAINT_EV_CURSOR_POSITION;
                     event.cursor_position.x = x - 1;
                     event.cursor_position.y = y - 1;
+                    if (!qm) {
+                        ctx->expect_cursor_position_report = false;
+                    }
                 }
             }
 
-            if (length > 5 && data[length-1] == 'y' && data[length-2] == '$') { // both plain and qm
-                int mode, status;
-                if (termpaintp_input_parse_dec_2(data + i, length - i - 2, &mode, &status)) {
-                    event.type = TERMPAINT_EV_MODE_REPORT;
-                    event.mode.number = mode;
-                    event.mode.kind = qm ? 1 : 0;
-                    event.mode.status = status;
+            if (!event.type) {
+                if (length > 5 && data[length-1] == 'y' && data[length-2] == '$') { // both plain and qm
+                    int mode, status;
+                    if (termpaintp_input_parse_dec_2(data + i, length - i - 2, &mode, &status)) {
+                        event.type = TERMPAINT_EV_MODE_REPORT;
+                        event.mode.number = mode;
+                        event.mode.kind = qm ? 1 : 0;
+                        event.mode.status = status;
+                    }
                 }
-            }
 
-            if (length > 3 && data[2] == '>' && data[length-1] == 'c') {
-                event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
-                event.raw.string = (const char*)data;
-                event.raw.length = length;
-            }
+                if (length > 3 && data[2] == '>' && data[length-1] == 'c') {
+                    event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
+                    event.raw.string = (const char*)data;
+                    event.raw.length = length;
+                }
 
-            if (length > 2 && data[length-1] == 'x') {
-                event.type = TERMPAINT_EV_RAW_DECREQTPARM;
-                event.raw.string = (const char*)data;
-                event.raw.length = length;
+                if (length > 2 && data[length-1] == 'x') {
+                    event.type = TERMPAINT_EV_RAW_DECREQTPARM;
+                    event.raw.string = (const char*)data;
+                    event.raw.length = length;
+                }
             }
         }
     }
@@ -892,6 +899,7 @@ termpaint_input *termpaint_input_new() {
     ctx->esc_pending = false;
     ctx->raw_filter_cb = nullptr;
     ctx->event_cb = nullptr;
+    ctx->expect_cursor_position_report = false;
     return ctx;
 }
 
@@ -1096,4 +1104,8 @@ const char *termpaint_input_peek_buffer(termpaint_input *ctx) {
 
 int termpaint_input_peek_buffer_length(termpaint_input *ctx) {
     return ctx->used;
+}
+
+void termpaint_input_expect_cursor_position_report(termpaint_input *ctx) {
+    ctx->expect_cursor_position_report = true;
 }

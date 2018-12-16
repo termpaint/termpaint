@@ -1076,6 +1076,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             // should not happen
             break;
         case AD_INITIAL:
+            termpaint_input_expect_cursor_position_report(terminal->input);
             int_puts(integration, "\033[6n");
             int_puts(integration, "\033[>c");
             int_puts(integration, "\033[5n");
