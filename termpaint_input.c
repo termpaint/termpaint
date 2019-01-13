@@ -281,7 +281,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eO4l", ATOM_numpad_decimal,            MOD_ALT | MOD_SHIFT },
     { "\eO7l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT             },
     { "\eO8l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOl",  ATOM_numpad_decimal, MOD_CTRL                       },
+    { "\eOl",  ATOM_numpad_decimal,            MOD_ALT             },
     { "\eOn",  ATOM_numpad_decimal,                              0 },
     { "\e\eOn",ATOM_numpad_decimal,            MOD_ALT             },
 
