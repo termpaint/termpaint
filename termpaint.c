@@ -713,7 +713,9 @@ void termpaint_terminal_free(termpaint_terminal *term) {
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
 
-    int_puts(integration, term->restore_seq);
+    if (term->restore_seq) {
+        int_puts(integration, term->restore_seq);
+    }
     int_flush(integration);
 
     termpaint_terminal_free(term);
