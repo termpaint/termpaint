@@ -576,7 +576,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
 }
 
 void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr) {
-    termpaint_surface_clear(surface, attr->fg_color, attr->bg_color);
+    termpaint_surface_clear_rect_with_attr(surface, 0, 0, surface->width, surface->height, attr);
 }
 
 void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
@@ -584,10 +584,6 @@ void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
 }
 
 void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr) {
-    termpaint_surface_clear_rect(surface, x, y, width, height, attr->fg_color, attr->bg_color);
-}
-
-void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg) {
     if (x < 0) {
         width += x;
         x = 0;
@@ -606,13 +602,24 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
             c->cluster_expansion = 0;
             c->text_len = 1;
             c->text[0] = ' ';
-            c->bg_color = bg;
-            c->fg_color = fg;
+            c->bg_color = attr->bg_color;
+            c->fg_color = attr->fg_color;
             c->deco_color = 0;
-            c->flags = 0;
+            c->flags = attr->flags;
             c->attr_patch_idx = 0;
         }
     }
+}
+
+void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg) {
+    termpaint_attr attr;
+    attr.fg_color = fg;
+    attr.bg_color = bg;
+    attr.deco_color = 0;
+    attr.flags = 0;
+    attr.patch_setup = nullptr;
+    attr.patch_cleanup = nullptr;
+    termpaint_surface_clear_rect_with_attr(surface, x, y, width, height, &attr);
 }
 
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
