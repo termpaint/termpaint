@@ -95,6 +95,7 @@ struct termpaint_event_ {
         struct {
             int x;
             int y;
+            _Bool safe;
         } cursor_position;
 
         // EV_MODE_REPORT

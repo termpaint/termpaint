@@ -894,6 +894,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                     if (!qm) {
                         ctx->expect_cursor_position_report = false;
                     }
+                    event.cursor_position.safe = qm;
                 }
             }
 
