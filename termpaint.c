@@ -133,30 +133,45 @@ typedef enum auto_detect_state_ {
     AD_NONE,
     AD_INITIAL,
     AD_FINISHED,
+    // does \033[5n work?
+    AD_BASICCOMPAT,
     // Basics: cursor position, secondary id, device ready?
     AD_BASIC_REQ,
     AD_BASIC_CURPOS_RECVED,
+    AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB,
     AD_BASIC_SEC_DEV_ATTRIB_RECVED,
     // finger print 1: Test for 'private' cursor position, xterm secondary id quirk, vte CSI 1x quirk
     AD_FP1_REQ,
+    AD_FP1_REQ_TERMID_RECVED,
+    AD_FP1_REQ_TERMID_RECVED_SEC_DEV_ATTRIB_RECVED,
     AD_FP1_SEC_DEV_ATTRIB_RECVED,
     AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED,
     AD_FP1_QMCURSOR_POS_RECVED,
+    AD_FP1_CLEANUP_AFTER_SYNC,
+    AD_FP1_CLEANUP,
     AD_EXPECT_SYNC_TO_FINISH,
+    AD_WAIT_FOR_SYNC_TO_FINISH,
     // finger print 2: Test for konsole repeated secondary id quirk (2 ansers), Test for VTE secondary id quirk (no answer)
     AD_FP2_REQ,
+    AD_FP2_CURSOR_DONE,
     AD_FP2_SEC_DEV_ATTRIB_RECVED1,
     AD_FP2_SEC_DEV_ATTRIB_RECVED2,
 } auto_detect_state;
 
 typedef enum terminal_type_enum_ {
+    TT_INCOMPATIBLE,
     TT_TOODUMB,
+    TT_MISPARSING,
     TT_UNKNOWN,
+    TT_BASE,
     TT_XTERM,
     TT_URXVT,
     TT_KONSOLE,
-    TT_BASE,
     TT_VTE,
+    TT_SCREEN,
+    TT_TMUX,
+    TT_LINUXVC,
+    TT_FULL,
 } terminal_type_enum;
 
 typedef struct termpaint_terminal_ {
@@ -165,11 +180,18 @@ typedef struct termpaint_terminal_ {
     termpaint_input *input;
     bool data_pending_after_input_received : 1;
     int support_qm_cursor_position_report : 1;
-    int terminal_type : 4;
+    int support_parsing_csi_gt_sequences : 1;
+    int support_parsing_csi_equals_sequences : 1;
+
+    int terminal_type;
+    int terminal_type_confidence;
     void (*event_cb)(void *, termpaint_event *);
     void *event_user_data;
     bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
     void *raw_input_filter_user_data;
+
+    int initial_cursor_x;
+    int initial_cursor_y;
 
     char *restore_seq;
     auto_detect_state ad_state;
@@ -703,8 +725,13 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 
     ret->data_pending_after_input_received = false;
     ret->ad_state = AD_NONE;
+    ret->initial_cursor_x = -1;
+    ret->initial_cursor_y = -1;
     ret->support_qm_cursor_position_report = false;
+    ret->support_parsing_csi_equals_sequences = false;
+    ret->support_parsing_csi_gt_sequences = false;
     ret->terminal_type = TT_UNKNOWN;
+    ret->terminal_type_confidence = 0;
     ret->input = termpaint_input_new();
     termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
@@ -1073,6 +1100,43 @@ int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term) {
     return termpaint_input_peek_buffer_length(term->input);
 }
 
+static void termpaintp_patch_misparsing(termpaint_terminal *terminal, termpaint_integration *integration,
+                                        termpaint_event *event) {
+    if (terminal->initial_cursor_y == event->cursor_position.y) {
+        if (terminal->initial_cursor_x + 1 == event->cursor_position.x) {
+            // the c in e.g. "\033[>c" was printed
+            // try to hide this
+            int_puts(integration, "\010 \010");
+        } else if (terminal->initial_cursor_x < event->cursor_position.x) {
+            // more of this sequence got printed
+            // try to hide this
+            int cols = event->cursor_position.x - terminal->initial_cursor_x;
+            for (int i = 0; i < cols; i++) {
+                int_puts(integration, "\010");
+            }
+            for (int i = 0; i < cols; i++) {
+                int_puts(integration, " ");
+            }
+            for (int i = 0; i < cols; i++) {
+                int_puts(integration, "\010");
+            }
+        } else if (event->cursor_position.x == 1) {
+            // the c in e.g. "\033[>c" was printed, causing a line wrap on the last line scrolling once
+            // should we check if this is acutally the last line? Terminal size might be stale or unavailable
+            // though.
+            int_puts(integration, "\010 \010");
+        }
+    } else if (terminal->initial_cursor_y + 1 == event->cursor_position.y
+               && event->cursor_position.x == 1) {
+        // the c in e.g. "\033[>c" was printed, causing a line wrap
+        int_puts(integration, "\010 \010");
+    } else if (terminal->initial_cursor_y != event->cursor_position.y) {
+        // something else, just bail out.
+    }
+}
+
+// known terminals where auto detections hangs: tmux < 1.3
+// TODO add a time out and display a message to press any key to abort.
 static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
     termpaint_integration *integration = terminal->integration;
 
@@ -1086,14 +1150,28 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             break;
         case AD_INITIAL:
             termpaint_input_expect_cursor_position_report(terminal->input);
+            int_puts(integration, "\033[5n");
             int_puts(integration, "\033[6n");
             int_puts(integration, "\033[>c");
             int_puts(integration, "\033[5n");
-            terminal->ad_state = AD_BASIC_REQ;
+            terminal->ad_state = AD_BASICCOMPAT;
             return true;
+        case AD_BASICCOMPAT:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_BASIC_REQ;
+                return true;
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->initial_cursor_x = event->cursor_position.x;
+                terminal->initial_cursor_y = event->cursor_position.y;
+                terminal->terminal_type = TT_INCOMPATIBLE;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            }
+            break;
         case AD_BASIC_REQ:
             if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                // TODO save initial cursor position
+                terminal->initial_cursor_x = event->cursor_position.x;
+                terminal->initial_cursor_y = event->cursor_position.y;
                 terminal->ad_state = AD_BASIC_CURPOS_RECVED;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
@@ -1108,25 +1186,66 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             break;
         case AD_BASIC_CURPOS_RECVED:
             if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->support_parsing_csi_gt_sequences = true;
                 // TODO save data
-                /* no plot */ if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
+                if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
                     // urxvt source says: first parameter is 'U' / 85 for urxvt (except for 7.[34])
+                    terminal->support_parsing_csi_equals_sequences = true;
                     terminal->terminal_type = TT_URXVT;
+                    terminal->terminal_type_confidence = 2;
                 }
+                if (event->raw.length > 6 && memcmp("\033[>83;", event->raw.string, 6) == 0) {
+                    // 83 = 'S'
+                    // second parameter is version as major*10000 + minor * 100 + patch
+                    terminal->support_parsing_csi_equals_sequences = true;
+                    terminal->terminal_type = TT_SCREEN;
+                    terminal->terminal_type_confidence = 2;
+                }
+                if (event->raw.length > 6 && memcmp("\033[>84;", event->raw.string, 6) == 0) {
+                    // 84 = 'T'
+                    // no version here
+                    terminal->support_parsing_csi_equals_sequences = true;
+                    terminal->terminal_type = TT_TMUX;
+                    terminal->terminal_type_confidence = 2;
+                }
+
                 terminal->ad_state = AD_BASIC_SEC_DEV_ATTRIB_RECVED;
                 return true;
-            } else if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+            } else if (event->type == TERMPAINT_EV_RAW_PRI_DEV_ATTRIB) {
+                // We never asked for primary device attributes. This means the terminal gets
+                // basic parsing rules wrong.
                 terminal->terminal_type = TT_TOODUMB;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                return true;
+            } else if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                // check if finger printing left printed characters
+                termpaint_input_expect_cursor_position_report(terminal->input);
+                int_puts(integration, "\033[6n");
+                terminal->ad_state = AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB;
+                return true;
+            }
+            break;
+        case AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->terminal_type = TT_TOODUMB;
+                terminal->support_parsing_csi_gt_sequences =
+                        terminal->initial_cursor_x == event->cursor_position.x
+                        && terminal->initial_cursor_y == event->cursor_position.y;
+                if (!terminal->support_parsing_csi_gt_sequences) {
+                    terminal->terminal_type = TT_MISPARSING;
+                    termpaintp_patch_misparsing(terminal, integration, event);
+                }
                 terminal->ad_state = AD_FINISHED;
                 return false;
             }
             break;
         case AD_BASIC_SEC_DEV_ATTRIB_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                /* no plot */ if (terminal->terminal_type == TT_URXVT) {
+                if (terminal->terminal_type_confidence >= 2) {
                     terminal->ad_state = AD_FINISHED;
                     return false;
                 }
+                int_puts(integration, "\033[=c");
                 int_puts(integration, "\033[>1c");
                 int_puts(integration, "\033[?6n");
                 int_puts(integration, "\033[1x");
@@ -1137,23 +1256,75 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             break;
         case AD_FP1_REQ:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->terminal_type = TT_BASE;
+                if (terminal->terminal_type_confidence == 0) {
+                    terminal->terminal_type = TT_BASE;
+                }
                 terminal->support_qm_cursor_position_report = false;
-                terminal->ad_state = AD_FINISHED;
-                return false;
-            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                terminal->support_qm_cursor_position_report = true;
-                terminal->terminal_type = TT_XTERM;
-                terminal->ad_state = AD_FP1_QMCURSOR_POS_RECVED;
+                // see if "\033[=c" was misparsed
+                termpaint_input_expect_cursor_position_report(terminal->input);
+                int_puts(integration, "\033[6n");
+                terminal->ad_state = AD_FP1_CLEANUP;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_3RD_DEV_ATTRIB) {
+                terminal->support_parsing_csi_equals_sequences = true;
+                if (event->raw.length == 8) {
+                    // Terminal implementors: DO NOT fake other terminal IDs here!
+                    // any unknown id will enable all features here. Allocate a new one!
+                    if (memcmp(event->raw.string, "7E565445", 8) == 0) { // ~VTE
+                        terminal->terminal_type = TT_VTE;
+                        terminal->terminal_type_confidence = 2;
+                    } else if (memcmp(event->raw.string, "7E4C4E58", 8) == 0) { // ~LNX
+                        terminal->terminal_type = TT_LINUXVC;
+                        terminal->terminal_type_confidence = 2;
+                    } else if (memcmp(event->raw.string, "00000000", 8) == 0) {
+                        // xterm uses this since 336. But this could be something else too.
+                        terminal->terminal_type = TT_XTERM;
+                        terminal->terminal_type_confidence = 1;
+                    } else {
+                        terminal->terminal_type = TT_FULL;
+                        terminal->terminal_type_confidence = 1;
+                    }
+                    terminal->ad_state = AD_FP1_REQ_TERMID_RECVED;
+                }
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_RECVED;
                 return true;
-            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
-                terminal->terminal_type = TT_BASE;
-                terminal->support_qm_cursor_position_report = false;
-                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                if (terminal->initial_cursor_y != event->cursor_position.y
+                     || terminal->initial_cursor_x != event->cursor_position.x) {
+                    termpaintp_patch_misparsing(terminal, integration, event);
+                    terminal->terminal_type = TT_BASE;
+                } else {
+                    terminal->support_parsing_csi_equals_sequences = true;
+                    if (event->cursor_position.safe) {
+                        terminal->terminal_type = TT_XTERM;
+                    } else {
+                        terminal->terminal_type = TT_BASE;
+                    }
+                }
+                terminal->ad_state = AD_FP1_QMCURSOR_POS_RECVED;
                 return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                if (terminal->terminal_type_confidence == 0) {
+                    terminal->terminal_type = TT_BASE;
+                }
+                terminal->support_qm_cursor_position_report = false;
+                terminal->ad_state = AD_FP1_CLEANUP_AFTER_SYNC;
+                return true;
+            }
+            break;
+        case AD_FP1_CLEANUP:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                if (terminal->initial_cursor_y != event->cursor_position.y
+                     || terminal->initial_cursor_x != event->cursor_position.x) {
+                    termpaintp_patch_misparsing(terminal, integration, event);
+                } else {
+                    terminal->support_parsing_csi_equals_sequences = true;
+                }
+                terminal->ad_state = AD_FINISHED;
+                return false;
             }
             break;
         case AD_EXPECT_SYNC_TO_FINISH:
@@ -1162,15 +1333,79 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 return false;
             }
             break;
+        case AD_FP1_CLEANUP_AFTER_SYNC:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                // see if "\033[=c" was misparsed
+                if (terminal->support_qm_cursor_position_report) {
+                    int_puts(integration, "\033[?6n");
+                } else {
+                    termpaint_input_expect_cursor_position_report(terminal->input);
+                    int_puts(integration, "\033[6n");
+                }
+                terminal->ad_state = AD_FP1_CLEANUP;
+                return true;
+            }
+        break;
+        case AD_WAIT_FOR_SYNC_TO_FINISH:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else {
+                if (event->type != TERMPAINT_EV_KEY && event->type != TERMPAINT_EV_CHAR) {
+                    return true;
+                }
+            }
+            break;
+        case AD_FP1_REQ_TERMID_RECVED:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->support_qm_cursor_position_report = false;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->ad_state = AD_FP1_REQ_TERMID_RECVED_SEC_DEV_ATTRIB_RECVED;
+                return true;
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                // keep terminal_type from terminal id
+                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->support_qm_cursor_position_report = false;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                return true;
+            }
+            break;
+        case AD_FP1_REQ_TERMID_RECVED_SEC_DEV_ATTRIB_RECVED:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->support_qm_cursor_position_report = false;
+                terminal->ad_state = AD_FINISHED;
+                return true;
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                // ignore
+                return true;
+            }
+            break;
         case AD_FP1_SEC_DEV_ATTRIB_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->support_qm_cursor_position_report = false;
+                termpaint_input_expect_cursor_position_report(terminal->input);
+                int_puts(integration, "\033[6n"); // detect if "\033[=c" was misparsed
                 int_puts(integration, "\033[>0;1c");
                 int_puts(integration, "\033[5n");
                 terminal->ad_state = AD_FP2_REQ;
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                terminal->support_qm_cursor_position_report = true;
+                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                if (terminal->initial_cursor_y != event->cursor_position.y
+                     || terminal->initial_cursor_x != event->cursor_position.x) {
+                    termpaintp_patch_misparsing(terminal, integration, event);
+                } else {
+                    terminal->support_parsing_csi_equals_sequences = true;
+                }
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
@@ -1191,7 +1426,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 int_puts(integration, "\033[>0;1c");
                 int_puts(integration, "\033[5n");
-                terminal->ad_state = AD_FP2_REQ;
+                terminal->ad_state = AD_FP2_CURSOR_DONE;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0) {
                 terminal->terminal_type = TT_VTE;
@@ -1203,8 +1438,22 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             }
             break;
         case AD_FP2_REQ:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                if (terminal->initial_cursor_y != event->cursor_position.y
+                     || terminal->initial_cursor_x != event->cursor_position.x) {
+                    termpaintp_patch_misparsing(terminal, integration, event);
+                } else {
+                    terminal->support_parsing_csi_equals_sequences = true;
+                }
+                terminal->ad_state = AD_FP2_CURSOR_DONE;
+                return true;
+            }
+            break;
+        case AD_FP2_CURSOR_DONE:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->terminal_type = TT_BASE;
+                if (terminal->terminal_type_confidence == 0) {
+                    terminal->terminal_type = TT_BASE;
+                }
                 terminal->ad_state = AD_FINISHED;
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
@@ -1214,7 +1463,9 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             break;
         case AD_FP2_SEC_DEV_ATTRIB_RECVED1:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->terminal_type = TT_BASE;
+                if (terminal->terminal_type_confidence == 0) {
+                    terminal->terminal_type = TT_BASE;
+                }
                 terminal->ad_state = AD_FINISHED;
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
@@ -1229,14 +1480,35 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 return false;
             }
     };
-
     // if this code runs auto detection failed by running off into the weeds
+
+#if 0
+    int_puts(integration, "ran off autodetect: ");
+    int_put_num(integration, terminal->ad_state);
+    int_puts(integration, ", ");
+    int_put_num(integration, event->type);
+#endif
+
     terminal->terminal_type = TT_TOODUMB;
     terminal->ad_state = AD_FINISHED;
     return false;
 }
 
 _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal) {
+    if (!terminal->event_cb) {
+        // bail out, running this without an event callback risks crashing
+        return false;
+    }
+
+    // reset state just to be safe
+    terminal->terminal_type = TT_UNKNOWN;
+    terminal->terminal_type_confidence = 0;
+    terminal->initial_cursor_x = -1;
+    terminal->initial_cursor_y = -1;
+    terminal->support_qm_cursor_position_report = false;
+    terminal->support_parsing_csi_equals_sequences = false;
+    terminal->support_parsing_csi_gt_sequences = false;
+
     termpaint_terminal_auto_detect_event(terminal, nullptr);
     int_flush(terminal->integration);
     return true;
@@ -1255,14 +1527,26 @@ enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termp
 void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length) {
     const char *term_type = nullptr;
     switch (terminal->terminal_type) {
+        case TT_INCOMPATIBLE:
+            term_type = "incompatible with input handling";
+            break;
         case TT_TOODUMB:
             term_type = "toodumb";
+            break;
+        case TT_MISPARSING:
+            term_type = "misparsing";
             break;
         case TT_UNKNOWN:
             term_type = "unknown";
             break;
+        case TT_FULL:
+            term_type = "unknown full featured";
+            break;
         case TT_BASE:
             term_type = "base";
+            break;
+        case TT_LINUXVC:
+            term_type = "linux vc";
             break;
         case TT_KONSOLE:
             term_type = "konsole";
@@ -1273,11 +1557,19 @@ void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, ch
         case TT_VTE:
             term_type = "vte";
             break;
+        case TT_SCREEN:
+            term_type = "screen";
+            break;
+        case TT_TMUX:
+            term_type = "tmux";
+            break;
         case TT_URXVT:
             term_type = "urxvt";
             break;
     };
-    snprintf(buffer, buffer_length, "Type: %s %s", term_type, terminal->support_qm_cursor_position_report ? "CPR?" : "");
+    snprintf(buffer, buffer_length, "Type: %s %s seq:%s%s", term_type, terminal->support_qm_cursor_position_report ? "safe-CPR" : "",
+             terminal->support_parsing_csi_gt_sequences ? ">" : "",
+             terminal->support_parsing_csi_equals_sequences ? "=" : "");
     buffer[buffer_length-1] = 0;
 }
 
