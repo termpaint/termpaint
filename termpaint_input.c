@@ -909,12 +909,13 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                     }
                 }
 
-                if (length > 3 && data[2] == '>' && data[length-1] == 'c') {
+                if (!qm && length > 3 && data[2] == '>' && data[length-1] == 'c') {
                     event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
                     event.raw.string = (const char*)data;
                     event.raw.length = length;
                 }
 
+                // qm == true is possible here, VTE < 0.54 answer this to CSI 1x
                 if (length > 2 && data[length-1] == 'x') {
                     event.type = TERMPAINT_EV_RAW_DECREQTPARM;
                     event.raw.string = (const char*)data;
