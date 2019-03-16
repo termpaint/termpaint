@@ -1010,6 +1010,8 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     ctx->state = tpis_csi;
                 } else if (data[i] == ']') {
                     ctx->state = tpis_cmd_str;
+                } else if (data[i] == '_') { // APC
+                    ctx->state = tpis_cmd_str;
                 } else if (0xfc == (0xfe & data[i])) { // meta -> ESC can produce these
                     ctx->state = tpid_utf8_5;
                 } else if (0xf8 == (0xfc & data[i])) {
