@@ -195,6 +195,14 @@ typedef struct termpaint_terminal_ {
     int initial_cursor_x;
     int initial_cursor_y;
 
+    bool cursor_visible;
+    int cursor_x;
+    int cursor_y;
+    int cursor_style;
+    bool cursor_blink;
+
+    int cursor_prev_data;
+
     char *restore_seq;
     auto_detect_state ad_state;
 } termpaint_terminal;
@@ -689,6 +697,72 @@ static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
 
+void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
+    termpaint_integration *integration = term->integration;
+    int_puts(integration, "\e[");
+    int_put_num(integration, y+1);
+    int_puts(integration, ";");
+    int_put_num(integration, x+1);
+    int_puts(integration, "H");
+}
+
+static void termpaintp_terminal_hide_cursor(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
+    int_puts(integration, "\033[?25l");
+}
+
+static void termpaintp_terminal_show_cursor(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
+    int_puts(integration, "\033[?25h");
+}
+
+static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
+    // use support_parsing_csi_gt_sequences as indication for more advanced parsing capabilities
+    bool nonharmful = term->support_parsing_csi_gt_sequences;
+
+    if (term->terminal_type == TT_VTE && term->terminal_version < 4600) {
+        nonharmful = false;
+    }
+
+    if (term->cursor_style != -1 && nonharmful) {
+        const char *resetSequence = "\033[0 q";
+        int cmd = term->cursor_style + (term->cursor_blink ? 0 : 1);
+        if (term->terminal_type == TT_XTERM && term->terminal_version < 282 && term->cursor_style == TERMPAINT_CURSOR_STYLE_BAR) {
+            // xterm < 282 does not support BAR style.
+            cmd = TERMPAINT_CURSOR_STYLE_BLOCK + (term->cursor_blink ? 0 : 1);
+        }
+        if (cmd != term->cursor_prev_data) {
+            termpaint_integration *integration = term->integration;
+            if (term->terminal_type == TT_KONSOLE) {
+                // konsole starting at version 18.07.70 could do the CSI space q one too, but
+                // we don't have the konsole version.
+                if (term->cursor_style == TERMPAINT_CURSOR_STYLE_BAR) {
+                    int_puts(integration, "\x1b]50;CursorShape=1;BlinkingCursorEnabled=");
+                } else if (term->cursor_style == TERMPAINT_CURSOR_STYLE_UNDERLINE) {
+                    int_puts(integration, "\x1b]50;CursorShape=2;BlinkingCursorEnabled=");
+                } else {
+                    int_puts(integration, "\x1b]50;CursorShape=0;BlinkingCursorEnabled=");
+                }
+                if (term->cursor_blink) {
+                    int_puts(integration, "1\a");
+                } else {
+                    int_puts(integration, "0\a");
+                }
+                resetSequence = "\x1b]50;CursorShape=0;BlinkingCursorEnabled=0\a";
+            } else {
+                int_puts(integration, "\033[");
+                int_put_num(integration, cmd);
+                int_puts(integration, " q");
+            }
+        }
+        if (term->cursor_prev_data == -1) {
+            // add style reset. We don't know the original style, so just reset to terminal default.
+            termpaintp_prepend_str(&term->restore_seq, resetSequence);
+        }
+        term->cursor_prev_data = cmd;
+    }
+}
+
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event);
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
@@ -725,6 +799,14 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaintp_collapse(&ret->primary);
     ret->integration = integration;
 
+    ret->cursor_visible = true;
+    ret->cursor_x = -1;
+    ret->cursor_y = -1;
+    ret->cursor_style = -1;
+    ret->cursor_blink = false;
+
+    ret->cursor_prev_data = -1;
+
     ret->data_pending_after_input_received = false;
     ret->ad_state = AD_NONE;
     ret->initial_cursor_x = -1;
@@ -750,6 +832,8 @@ void termpaint_terminal_free(termpaint_terminal *term) {
 
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
+
+    termpaintp_terminal_show_cursor(term);
 
     if (term->restore_seq) {
         int_puts(integration, term->restore_seq);
@@ -798,6 +882,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         full_repaint = true;
         term->primary.cells_last_flush = calloc(1, term->primary.cells_allocated * sizeof(cell));
     }
+    termpaintp_terminal_hide_cursor(term);
     int_puts(integration, "\e[H");
     char speculation_buffer[30];
     int speculation_buffer_state = 0; // 0 = cursor position matches current cell, -1 = force move, > 0 bytes to print instead of move
@@ -1014,6 +1099,15 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         int_puts(integration, "C");
     }
 
+    if (term->cursor_x != -1 && term->cursor_y != -1) {
+        termpaint_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
+    }
+
+    termpaintp_terminal_update_cursor_style(term);
+
+    if (term->cursor_visible) {
+        termpaintp_terminal_show_cursor(term);
+    }
     int_flush(integration);
 }
 
@@ -1022,13 +1116,29 @@ void termpaint_terminal_reset_attributes(termpaint_terminal *term) {
     int_puts(integration, "\e[0m");
 }
 
-void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
-    termpaint_integration *integration = term->integration;
-    int_puts(integration, "\e[");
-    int_put_num(integration, y+1);
-    int_puts(integration, ";");
-    int_put_num(integration, x+1);
-    int_puts(integration, "H");
+
+void termpaint_terminal_set_cursor_position(termpaint_terminal *term, int x, int y) {
+    term->cursor_x = x;
+    term->cursor_y = y;
+}
+
+void termpaint_terminal_set_cursor_visible(termpaint_terminal *term, bool visible) {
+    term->cursor_visible = visible;
+}
+
+void termpaint_terminal_set_cursor_style(termpaint_terminal *term, int style, bool blink) {
+    switch (style) {
+        case TERMPAINT_CURSOR_STYLE_TERM_DEFAULT:
+            term->cursor_style = style;
+            term->cursor_blink = true;
+            break;
+        case TERMPAINT_CURSOR_STYLE_BLOCK:
+        case TERMPAINT_CURSOR_STYLE_UNDERLINE:
+        case TERMPAINT_CURSOR_STYLE_BAR:
+            term->cursor_style = style;
+            term->cursor_blink = blink;
+            break;
+    }
 }
 
 static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event);

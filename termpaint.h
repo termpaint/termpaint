@@ -43,6 +43,15 @@ void termpaint_terminal_flush(termpaint_terminal *term, _Bool full_repaint);
 const char *termpaint_terminal_restore_sequence(termpaint_terminal *term);
 void termpaint_terminal_reset_attributes(termpaint_terminal *term);
 void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y);
+void termpaint_terminal_set_cursor_position(termpaint_terminal *term, int x, int y);
+void termpaint_terminal_set_cursor_visible(termpaint_terminal *term, _Bool visible);
+
+#define TERMPAINT_CURSOR_STYLE_TERM_DEFAULT 0
+#define TERMPAINT_CURSOR_STYLE_BLOCK 1
+#define TERMPAINT_CURSOR_STYLE_UNDERLINE 3
+#define TERMPAINT_CURSOR_STYLE_BAR 5
+
+void termpaint_terminal_set_cursor_style(termpaint_terminal *term, int style, _Bool blink);
 
 void termpaint_terminal_callback(termpaint_terminal *term);
 void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
