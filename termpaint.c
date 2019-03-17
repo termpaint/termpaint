@@ -182,8 +182,10 @@ typedef struct termpaint_terminal_ {
     int support_qm_cursor_position_report : 1;
     int support_parsing_csi_gt_sequences : 1;
     int support_parsing_csi_equals_sequences : 1;
+    char *auto_detect_sec_device_attributes;
 
     int terminal_type;
+    int terminal_version;
     int terminal_type_confidence;
     void (*event_cb)(void *, termpaint_event *);
     void *event_user_data;
@@ -740,6 +742,8 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 }
 
 void termpaint_terminal_free(termpaint_terminal *term) {
+    free(term->auto_detect_sec_device_attributes);
+    term->auto_detect_sec_device_attributes = 0;
     termpaintp_surface_destroy(&term->primary);
     term->integration->free(term->integration);
 }
@@ -1050,6 +1054,60 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
         termpaint_terminal_auto_detect_event(term, event);
         int_flush(term->integration);
         if (term->ad_state == AD_FINISHED) {
+            if (term->terminal_type == TT_VTE) {
+                const char* data = term->auto_detect_sec_device_attributes;
+                if (strlen(data) > 11) {
+                    bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
+                    bool vte_old = memcmp(data, "\033[>1;", 5) == 0;
+                    if (vte_gt0_54 || vte_old) {
+                        if (vte_old) {
+                            data += 5;
+                        } else {
+                            data += 6;
+                        }
+                        int version = 0;
+                        while ('0' <= *data && *data <= '9') {
+                            version = version * 10 + *data - '0';
+                            ++data;
+                        }
+                        if (*data == ';' && (version < 5400) == vte_old) {
+                            term->terminal_version = version;
+                        }
+                    }
+                }
+            } else if (term->terminal_type == TT_XTERM) {
+                const char* data = term->auto_detect_sec_device_attributes;
+                if (strlen(data) > 10) {
+                    while (*data != ';' && *data != 0) {
+                        ++data;
+                    }
+                    if (*data == ';') {
+                        ++data;
+                        int version = 0;
+                        while ('0' <= *data && *data <= '9') {
+                            version = version * 10 + *data - '0';
+                            ++data;
+                        }
+                        if (*data == ';') {
+                            term->terminal_version = version;
+                        }
+                    }
+                }
+            } else if (term->terminal_type == TT_SCREEN) {
+                const char* data = term->auto_detect_sec_device_attributes;
+                if (strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
+                    data += 6;
+                    int version = 0;
+                    while ('0' <= *data && *data <= '9') {
+                        version = version * 10 + *data - '0';
+                        ++data;
+                    }
+                    if (*data == ';') {
+                        term->terminal_version = version;
+                    }
+                }
+            }
+
             if (term->event_cb) {
                 termpaint_event event;
                 event.type = TERMPAINT_EV_AUTO_DETECT_FINISHED;
@@ -1135,7 +1193,7 @@ static void termpaintp_patch_misparsing(termpaint_terminal *terminal, termpaint_
     }
 }
 
-// known terminals where auto detections hangs: tmux < 1.3
+// known terminals where auto detections hangs: freebsd system console using vt module
 // TODO add a time out and display a message to press any key to abort.
 static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
     termpaint_integration *integration = terminal->integration;
@@ -1187,7 +1245,9 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
         case AD_BASIC_CURPOS_RECVED:
             if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->support_parsing_csi_gt_sequences = true;
-                // TODO save data
+                terminal->auto_detect_sec_device_attributes = malloc(event->raw.length + 1);
+                memcpy(terminal->auto_detect_sec_device_attributes, event->raw.string, event->raw.length);
+                terminal->auto_detect_sec_device_attributes[event->raw.length] = 0;
                 if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
                     // urxvt source says: first parameter is 'U' / 85 for urxvt (except for 7.[34])
                     terminal->support_parsing_csi_equals_sequences = true;
@@ -1502,6 +1562,7 @@ _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal) {
 
     // reset state just to be safe
     terminal->terminal_type = TT_UNKNOWN;
+    terminal->terminal_version = 0;
     terminal->terminal_type_confidence = 0;
     terminal->initial_cursor_x = -1;
     terminal->initial_cursor_y = -1;
@@ -1567,7 +1628,7 @@ void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, ch
             term_type = "urxvt";
             break;
     };
-    snprintf(buffer, buffer_length, "Type: %s %s seq:%s%s", term_type, terminal->support_qm_cursor_position_report ? "safe-CPR" : "",
+    snprintf(buffer, buffer_length, "Type: %s(%d) %s seq:%s%s", term_type, terminal->terminal_version, terminal->support_qm_cursor_position_report ? "safe-CPR" : "",
              terminal->support_parsing_csi_gt_sequences ? ">" : "",
              terminal->support_parsing_csi_equals_sequences ? "=" : "");
     buffer[buffer_length-1] = 0;
