@@ -60,6 +60,8 @@
  *   or 256 color or direct color)
  * - background color (same options as foreground color)
  * - patch (an beginning and ending string of control sequences)
+ *
+ * text_len == 1 && text[0] == '\x01', only in cells_last_flush => cell was hidden, will need repaint if start of char.
  */
 
 struct termpaint_attr_ {
@@ -940,7 +942,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
 
             *old_c = *c;
             for (int i = 0; i < c->cluster_expansion; i++) {
-                cell* wipe_c = &term->primary.cells_last_flush[y*term->primary.width+x+i];
+                cell* wipe_c = &term->primary.cells_last_flush[y*term->primary.width+x+i+1];
                 wipe_c->text_len = 1;
                 wipe_c->text[0] = '\x01'; // impossible value, filtered out earlier in output pipeline
             }
