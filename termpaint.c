@@ -670,15 +670,15 @@ void termpaint_surface_resize(termpaint_surface *surface, int width, int height)
     }
 }
 
-int termpaint_surface_width(termpaint_surface *surface) {
+int termpaint_surface_width(const termpaint_surface *surface) {
     return surface->width;
 }
 
-int termpaint_surface_height(termpaint_surface *surface) {
+int termpaint_surface_height(const termpaint_surface *surface) {
     return surface->height;
 }
 
-int termpaint_surface_char_width(termpaint_surface *surface, int codepoint) {
+int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
     UNUSED(surface);
     // require surface here to allow for future implementation that uses terminal
     // specific information from terminal detection.
@@ -1117,7 +1117,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     int_flush(integration);
 }
 
-void termpaint_terminal_reset_attributes(termpaint_terminal *term) {
+void termpaint_terminal_reset_attributes(const termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
     int_puts(integration, "\e[0m");
 }
@@ -1266,11 +1266,11 @@ void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *dat
     }
 }
 
-const char *termpaint_terminal_peek_input_buffer(termpaint_terminal *term) {
+const char *termpaint_terminal_peek_input_buffer(const termpaint_terminal *term) {
     return termpaint_input_peek_buffer(term->input);
 }
 
-int termpaint_terminal_peek_input_buffer_length(termpaint_terminal *term) {
+int termpaint_terminal_peek_input_buffer_length(const termpaint_terminal *term) {
     return termpaint_input_peek_buffer_length(term->input);
 }
 
@@ -1691,7 +1691,7 @@ _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal) {
     return true;
 }
 
-enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termpaint_terminal *terminal) {
+enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(const termpaint_terminal *terminal) {
     if (terminal->ad_state == AD_FINISHED) {
         return termpaint_auto_detect_done;
     } else if (terminal->ad_state == AD_NONE) {
@@ -1701,7 +1701,7 @@ enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(termp
     }
 }
 
-void termpaint_terminal_auto_detect_result_text(termpaint_terminal *terminal, char *buffer, int buffer_length) {
+void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length) {
     const char *term_type = nullptr;
     switch (terminal->terminal_type) {
         case TT_INCOMPATIBLE:
@@ -1792,7 +1792,7 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
     termpaint_surface_resize(&terminal->primary, width, height);
 }
 
-const char* termpaint_terminal_restore_sequence(termpaint_terminal *term) {
+const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) {
     return term->restore_seq ? term->restore_seq : "";
 }
 

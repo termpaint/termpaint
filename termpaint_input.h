@@ -26,8 +26,8 @@ _Bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned 
 
 void termpaint_input_expect_cursor_position_report(termpaint_input *ctx);
 
-const char* termpaint_input_peek_buffer(termpaint_input *ctx);
-int termpaint_input_peek_buffer_length(termpaint_input *ctx);
+const char* termpaint_input_peek_buffer(const termpaint_input *ctx);
+int termpaint_input_peek_buffer_length(const termpaint_input *ctx);
 
 
 #ifdef __cplusplus
