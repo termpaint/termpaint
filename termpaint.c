@@ -633,6 +633,8 @@ void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, i
     if (x+width > surface->width) width = surface->width - x;
     if (y+height > surface->height) height = surface->height - y;
     for (int y1 = y; y1 < y + height; y1++) {
+        termpaintp_surface_vanish_char(surface, x, y1, 1);
+        termpaintp_surface_vanish_char(surface, x + width - 1, y1, 1);
         for (int x1 = x; x1 < x + width; x1++) {
             cell* c = termpaintp_getcell(surface, x1, y1);
             c->cluster_expansion = 0;
