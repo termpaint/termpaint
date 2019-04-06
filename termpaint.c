@@ -61,6 +61,8 @@
  * - background color (same options as foreground color)
  * - patch (an beginning and ending string of control sequences)
  *
+ * text_len == 0 && text_overflow == nullptr -> same as ' '
+ * text_len == 0 && text_overflow == WIDE_RIGHT_PADDING -> character hidden by multi cell cluster
  * text_len == 1 && text[0] == '\x01', only in cells_last_flush => cell was hidden, will need repaint if start of char.
  */
 
