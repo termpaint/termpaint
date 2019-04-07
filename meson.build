@@ -35,8 +35,7 @@ main_lib_installed_headers = [
 
 install_headers(main_lib_installed_headers)
 
-import('pkgconfig').generate(
-  libraries : [main_lib],
+import('pkgconfig').generate(main_lib,
   subdirs : '.',
   version : '0.0',
   name : 'libtermpaint',
