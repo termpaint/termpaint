@@ -96,7 +96,8 @@ void termpaint_attr_set_style(termpaint_attr* attr, int bits);
 void termpaint_attr_unset_style(termpaint_attr* attr, int bits);
 void termpaint_attr_reset_style(termpaint_attr* attr);
 
-//void termpaint_surface_free(termpaint_surface *surface);
+termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height);
+void termpaint_surface_free(termpaint_surface *surface);
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
 int termpaint_surface_width(const termpaint_surface *surface);
 int termpaint_surface_height(const termpaint_surface *surface);

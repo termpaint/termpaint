@@ -123,6 +123,7 @@ typedef struct termpaintp_patch_ {
 } termpaintp_patch;
 
 struct termpaint_surface_ {
+    bool primary;
     cell* cells;
     cell* cells_last_flush;
     int cells_allocated;
@@ -708,6 +709,23 @@ static void termpaintp_surface_init(termpaint_surface *surface) {
     surface->overflow_text.item_size = sizeof(termpaint_hash_item);
 }
 
+termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height) {
+    termpaint_surface *ret = calloc(1, sizeof(termpaint_surface));
+    termpaintp_surface_init(ret);
+    termpaintp_collapse(ret);
+    termpaintp_resize(ret, width, height);
+    return ret;
+}
+
+void termpaint_surface_free(termpaint_surface *surface) {
+    // guard against freeing the primary surface
+    if (surface->primary) {
+        return;
+    }
+    termpaintp_surface_destroy(surface);
+    free(surface);
+}
+
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
     UNUSED(surface);
     // require surface here to allow for future implementation that uses terminal
@@ -806,6 +824,7 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
     termpaintp_surface_init(&ret->primary);
+    ret->primary.primary = true;
     // start collapsed
     termpaintp_collapse(&ret->primary);
     ret->integration = integration;
