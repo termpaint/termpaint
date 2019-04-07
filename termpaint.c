@@ -1038,6 +1038,71 @@ const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x,
     return text;
 }
 
+bool termpaint_surface_same_contents(const termpaint_surface *surface1, const termpaint_surface *surface2) {
+    if (surface1 == surface2) {
+        return true;
+    }
+
+    if (surface1->width != surface2->width
+      || surface1->height != surface2->height) {
+        return false;
+    }
+
+    for (int y = 0; y < surface1->height; y++) {
+        for (int x = 0; x < surface1->width; x++) {
+            if (termpaint_surface_peek_fg_color(surface1, x, y)
+                    != termpaint_surface_peek_fg_color(surface2, x, y)) {
+                return false;
+            }
+            if (termpaint_surface_peek_bg_color(surface1, x, y)
+                    != termpaint_surface_peek_bg_color(surface2, x, y)) {
+                return false;
+            }
+            if (termpaint_surface_peek_deco_color(surface1, x, y)
+                    != termpaint_surface_peek_deco_color(surface2, x, y)) {
+                return false;
+            }
+            if (termpaint_surface_peek_style(surface1, x, y)
+                    != termpaint_surface_peek_style(surface2, x, y)) {
+                return false;
+            }
+            {
+                const char *setup1, *setup2;
+                const char *cleanup1, *cleanup2;
+                bool optimize1, optimize2;
+                termpaint_surface_peek_patch(surface1, x, y, &setup1, &cleanup1, &optimize1);
+                termpaint_surface_peek_patch(surface2, x, y, &setup2, &cleanup2, &optimize2);
+
+                if ((setup1 == nullptr || setup2 == nullptr || strcmp(setup1, setup2) != 0) && !(setup1 == nullptr && setup2 == nullptr)) {
+                    return false;
+                }
+                if ((cleanup1 == nullptr || cleanup2 == nullptr || strcmp(cleanup1, cleanup2) != 0) && !(setup1 == nullptr && setup2 == nullptr)) {
+                    return false;
+                }
+                if (optimize1 != optimize2) {
+                    return false;
+                }
+            }
+            {
+                int left1, right1, len1;
+                int left2, right2, len2;
+                const char *text1 = termpaint_surface_peek_text(surface1, x, y, &len1, &left1, &right1);
+                const char *text2 = termpaint_surface_peek_text(surface2, x, y, &len2, &left2, &right2);
+
+                if (left1 != left2 || right1 != right2 || len1 != len2) {
+                    return false;
+                }
+                if (memcmp(text1, text2, len1) != 0) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
     UNUSED(surface);
     // require surface here to allow for future implementation that uses terminal
