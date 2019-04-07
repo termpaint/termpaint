@@ -51,6 +51,23 @@ ttyrescue_files = [
 executable('ttyrescue', ttyrescue_files)
 
 #ide:editable-filelist
+image_lib_files = [
+  'termpaint_image.cpp',
+]
+
+image_lib = library('termpaint_image', image_lib_files, link_with: [main_lib],
+                    install: true)
+
+import('pkgconfig').generate(image_lib,
+  subdirs : '.',
+  version : '0.0',
+  name : 'libtermpaint_image',
+  filebase : 'termpaint_image',
+  description : 'File load and save support for termpaint.',
+)
+
+
+#ide:editable-filelist
 playground_files = [
   'playground2.cpp',
 ]
