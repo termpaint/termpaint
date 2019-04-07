@@ -59,7 +59,7 @@
  * - foreground color (default or 16 colors (named or bright named)
  *   or 256 color or direct color)
  * - background color (same options as foreground color)
- * - patch (an beginning and ending string of control sequences)
+ * - patch (an beginning and ending string of control sequences; 0 no patch else index + 1 of patches array in surface)
  *
  * text_len == 0 && text_overflow == nullptr -> same as ' '
  * text_len == 0 && text_overflow == WIDE_RIGHT_PADDING -> character hidden by multi cell cluster
