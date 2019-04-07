@@ -437,6 +437,7 @@ void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y,
     termpaint_surface_write_with_attr_clipped(surface, x, y, string, attr, 0, surface->width-1);
 }
 
+// This ensures that cells [x, x + cluster_width) have cluster_expansion = 0
 static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, int y, int cluster_width) {
     cell *cell = termpaintp_getcell(surface, x, y);
 
@@ -448,6 +449,7 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
             cell->text_len = 1;
             cell->text[0] = ' ';
             rightmost_vanished = i;
+            // cell->cluster_expansion == 0 already because padding cell
 
             ++i;
             cell = termpaintp_getcell(surface, i, y);
@@ -463,8 +465,10 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
 
             cell->text_len = 1;
             cell->text[0] = ' ';
+            // cell->cluster_expansion == 0 already unless this is the last iteration, see fixup below
             --i;
         } while (cell->cluster_expansion == 0);
+        cell->cluster_expansion = 0;
     }
 
     for (int i = rightmost_vanished; i <= x + cluster_width - 1; i++) {
@@ -474,14 +478,14 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
             break;
         }
 
-        int len = cell->cluster_expansion;
+        int expansion = cell->cluster_expansion;
         int j = 0;
         while (1) {
             cell->cluster_expansion = 0;
             cell->text_len = 1;
             cell->text[0] = ' ';
             ++j;
-            if (j > len) {
+            if (j > expansion) {
                 break;
             }
             cell = termpaintp_getcell(surface, i + j, y);
