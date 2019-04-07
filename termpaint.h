@@ -56,6 +56,8 @@ _tERMPAINT_PUBLIC void termpaint_terminal_set_cursor_visible(termpaint_terminal 
 
 _tERMPAINT_PUBLIC void termpaint_terminal_set_cursor_style(termpaint_terminal *term, int style, _Bool blink);
 
+#define TERMPAINT_COLOR_SLOT_CURSOR 12
+
 _tERMPAINT_PUBLIC void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int b, int g);
 _tERMPAINT_PUBLIC void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot);
 

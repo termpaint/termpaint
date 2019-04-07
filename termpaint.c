@@ -1545,11 +1545,17 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         while (entry) {
             termpaint_color_entry *next = entry->next_dirty;
             entry->next_dirty = nullptr;
-            int_puts(integration, "\033]");
-            int_puts(integration, entry->base.text);
-            int_puts(integration, ";");
-            int_puts(integration, entry->requested);
-            int_puts(integration, "\033\\");
+            if (entry->requested) {
+                int_puts(integration, "\033]");
+                int_puts(integration, entry->base.text);
+                int_puts(integration, ";");
+                int_puts(integration, entry->requested);
+                int_puts(integration, "\033\\");
+            } else {
+                int_puts(integration, "\033]1");
+                int_puts(integration, entry->base.text);
+                int_puts(integration, "\033\\");
+            }
             entry = next;
         }
     }
@@ -1595,6 +1601,13 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
         return;
     }
 
+    if (color_slot == TERMPAINT_COLOR_SLOT_CURSOR) {
+        // even requesting a color report does not allow to restore this, so just reset.
+        // TODO: needs a sensible value for saved.
+        entry->saved = strdup("");
+        termpaintp_prepend_str(&term->restore_seq, "\033]112\033\\");
+    }
+
     if (!entry->save_initiated && !entry->saved) {
         termpaint_integration *integration = term->integration;
         int_puts(integration, "\033]");
@@ -1624,7 +1637,11 @@ void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
             term->colors_dirty = entry;
         }
         free(entry->requested);
-        entry->requested = strdup(entry->saved);
+        if (color_slot != TERMPAINT_COLOR_SLOT_CURSOR) {
+            entry->requested = strdup(entry->saved);
+        } else {
+            entry->requested = nullptr;
+        }
     }
 }
 
