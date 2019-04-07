@@ -1880,8 +1880,18 @@ void termpaint_attr_reset_style(termpaint_attr *attr) {
 
 void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *setup, const char *cleanup) {
     attr->patch_optimize = optimize;
-    attr->patch_setup = strdup(setup);
-    attr->patch_cleanup = strdup(cleanup);
+    free(attr->patch_setup);
+    if (setup) {
+        attr->patch_setup = strdup(setup);
+    } else {
+        attr->patch_setup = nullptr;
+    }
+    free(attr->patch_cleanup);
+    if (cleanup) {
+        attr->patch_cleanup = strdup(cleanup);
+    } else {
+        attr->patch_cleanup = nullptr;
+    }
 }
 
 termpaint_text_measurement *termpaint_text_measurement_new(termpaint_surface *surface) {
