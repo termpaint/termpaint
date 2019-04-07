@@ -91,6 +91,9 @@ struct termpaint_attr_ {
 
 #define CELL_ATTR_DECO_MASK CELL_ATTR_UNDERLINE_MASK
 
+#define TERMPAINT_STYLE_PASSTHROUGH (TERMPAINT_STYLE_BOLD | TERMPAINT_STYLE_ITALIC | TERMPAINT_STYLE_BLINK \
+    | TERMPAINT_STYLE_OVERLINE | TERMPAINT_STYLE_INVERSE | TERMPAINT_STYLE_STRIKE)
+
 #define WIDE_RIGHT_PADDING ((termpaint_hash_item*)-1)
 
 typedef struct cell_ {
@@ -949,6 +952,90 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
             }
         }
     }
+}
+
+unsigned termpaint_surface_peek_fg_color(const termpaint_surface *surface, int x, int y) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    if (cell->text_len == 0 && cell->text_overflow == nullptr) {
+        return TERMPAINT_DEFAULT_COLOR;
+    }
+    return cell->fg_color;
+}
+
+unsigned termpaint_surface_peek_bg_color(const termpaint_surface *surface, int x, int y) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    if (cell->text_len == 0 && cell->text_overflow == nullptr) {
+        return TERMPAINT_DEFAULT_COLOR;
+    }
+    return cell->bg_color;
+}
+
+unsigned termpaint_surface_peek_deco_color(const termpaint_surface *surface, int x, int y) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    if (cell->text_len == 0 && cell->text_overflow == nullptr) {
+        return TERMPAINT_DEFAULT_COLOR;
+    }
+    return cell->deco_color;
+}
+
+int termpaint_surface_peek_style(const termpaint_surface *surface, int x, int y) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    unsigned flags = cell->flags;
+    int style = flags & TERMPAINT_STYLE_PASSTHROUGH;
+    if ((flags & CELL_ATTR_UNDERLINE_MASK) == CELL_ATTR_UNDERLINE_SINGLE) {
+        style |= TERMPAINT_STYLE_UNDERLINE;
+    } else if ((flags & CELL_ATTR_UNDERLINE_MASK) == CELL_ATTR_UNDERLINE_DOUBLE) {
+        style |= TERMPAINT_STYLE_UNDERLINE_DBL;
+    } else if ((flags & CELL_ATTR_UNDERLINE_MASK) == CELL_ATTR_UNDERLINE_CURLY) {
+        style |= TERMPAINT_STYLE_UNDERLINE_CURLY;
+    }
+    return style;
+}
+
+void termpaint_surface_peek_patch(const termpaint_surface *surface, int x, int y, const char **setup, const char **cleanup, bool *optimize) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    if (cell->attr_patch_idx) {
+        termpaintp_patch* patch = &surface->patches[cell->attr_patch_idx - 1];
+        *setup = patch->setup;
+        *cleanup = patch->cleanup;
+        *optimize = patch->optimize;
+    } else {
+        *setup = nullptr;
+        *cleanup = nullptr;
+        *optimize = true;
+    }
+}
+
+const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x, int y, int *len, int *left, int *right) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    while (x > 0) {
+        cell = termpaintp_getcell(surface, x, y);
+        if (cell->text_len != 0 || cell->text_overflow != WIDE_RIGHT_PADDING) {
+            break;
+        }
+        --x;
+    }
+
+    if (left) {
+        *left = x;
+    }
+
+    const char *text;
+    if (cell->text_len > 0) {
+        text = (const char*)cell->text;
+        *len = cell->text_len;
+    } else if (cell->text_overflow == nullptr) {
+        text = " ";
+        *len = 1;
+    } else {
+        text = (const char*)cell->text_overflow->text;
+        *len = strlen(text);
+    }
+
+    if (right) {
+        *right = x + cell->cluster_expansion;
+    }
+    return text;
 }
 
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
@@ -2078,6 +2165,7 @@ termpaint_attr *termpaint_attr_clone(termpaint_attr *orig) {
     }
     return attr;
 }
+
 void termpaint_attr_set_fg(termpaint_attr *attr, int fg) {
     attr->fg_color = fg;
 }
@@ -2089,9 +2177,6 @@ void termpaint_attr_set_bg(termpaint_attr *attr, int bg) {
 void termpaint_attr_set_deco(termpaint_attr *attr, int deco_color) {
     attr->deco_color = deco_color;
 }
-
-#define TERMPAINT_STYLE_PASSTHROUGH (TERMPAINT_STYLE_BOLD | TERMPAINT_STYLE_ITALIC | TERMPAINT_STYLE_BLINK \
-    | TERMPAINT_STYLE_OVERLINE | TERMPAINT_STYLE_INVERSE | TERMPAINT_STYLE_STRIKE)
 
 void termpaint_attr_set_style(termpaint_attr *attr, int bits) {
     attr->flags |= bits & TERMPAINT_STYLE_PASSTHROUGH;

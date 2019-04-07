@@ -120,6 +120,12 @@ void termpaint_surface_tint(termpaint_surface *surface,
                             void (*recolor)(void *user_data, unsigned *fg, unsigned *bg, unsigned *deco),
                             void *user_data);
 
+unsigned termpaint_surface_peek_fg_color(const termpaint_surface *surface, int x, int y);
+unsigned termpaint_surface_peek_bg_color(const termpaint_surface *surface, int x, int y);
+unsigned termpaint_surface_peek_deco_color(const termpaint_surface *surface, int x, int y);
+int termpaint_surface_peek_style(const termpaint_surface *surface, int x, int y);
+void termpaint_surface_peek_patch(const termpaint_surface *surface, int x, int y, const char **setup, const char **cleanup, _Bool *optimize);
+const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x, int y, int *len, int *left, int *right);
 
 termpaint_text_measurement* termpaint_text_measurement_new(termpaint_surface *surface);
 void termpaint_text_measurement_free(termpaint_text_measurement *m);
