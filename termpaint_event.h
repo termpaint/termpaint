@@ -72,6 +72,7 @@ _tERMPAINT_PUBLIC const char *termpaint_input_f12();
 #define TERMPAINT_EV_INVALID_UTF8 5
 #define TERMPAINT_EV_CURSOR_POSITION 6
 #define TERMPAINT_EV_MODE_REPORT 7
+#define TERMPAINT_EV_COLOR_SLOT_REPORT 8
 
 #define TERMPAINT_EV_RAW_PRI_DEV_ATTRIB 100
 #define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 101
@@ -119,6 +120,12 @@ struct termpaint_event_ {
             unsigned length;
             const char *string;
         } raw;
+
+        struct {
+            int slot;
+            const char *color;
+            unsigned length;
+        } color_slot_report;
     };
 };
 typedef struct termpaint_event_ termpaint_event;

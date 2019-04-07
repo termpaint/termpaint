@@ -930,6 +930,44 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
         }
 
+        if (!event.type && length > 5 && data[0] == '\033' && data[1] == ']' && data[length-1] == '\\' && data[length-2] == '\033') {
+            // OSC sequences
+            int num; // -1 -> not a numerical OSC
+            size_t num_end = 0;
+            if ('0' <= data[2] && data[2] <= '9') {
+                num = 0;
+                for (size_t i = 2; i < length - 2; i++) {
+                    if (data[i] == ';') {
+                        num_end = i;
+                        // finished
+                        break;
+                    } else if ('0' <= data[i] && data[i] <= '9') {
+                        num = num * 10 + (data[i] - '0');
+                    } else {
+                        // bail
+                        num = -1;
+                        break;
+                    }
+                }
+                if (num_end == 0) {
+                    num = -1;
+                }
+            } else {
+                num = -1;
+            }
+
+            if ((num >= 10 && num <= 14) || num == 17 || num == 19 || (num >= 705 && num <= 708)) {
+                event.type = TERMPAINT_EV_COLOR_SLOT_REPORT;
+                event.color_slot_report.slot = num;
+                event.color_slot_report.color = (const char*)data + num_end + 1;
+                size_t end_idx = num_end + 1;
+                while (end_idx < length && data[end_idx] != '\033' && data[end_idx] != ';') {
+                    end_idx++;
+                }
+                event.color_slot_report.length = end_idx - num_end - 1;
+            }
+        }
+
         if (!event.type && length > 5 && data[0] == '\033' && data[1] == 'P' && data[length-1] == '\\' && data[length-2] == '\033') {
             // DCS sequences
             if (data[2] == '!' && data[3] == '|') {
