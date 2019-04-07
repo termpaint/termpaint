@@ -2200,7 +2200,7 @@ const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) 
     return term->restore_seq ? term->restore_seq : "";
 }
 
-termpaint_attr *termpaint_attr_new(int fg, int bg) {
+termpaint_attr *termpaint_attr_new(unsigned fg, unsigned bg) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
     attr->fg_color = fg;
     attr->bg_color = bg;
@@ -2231,15 +2231,15 @@ termpaint_attr *termpaint_attr_clone(termpaint_attr *orig) {
     return attr;
 }
 
-void termpaint_attr_set_fg(termpaint_attr *attr, int fg) {
+void termpaint_attr_set_fg(termpaint_attr *attr, unsigned fg) {
     attr->fg_color = fg;
 }
 
-void termpaint_attr_set_bg(termpaint_attr *attr, int bg) {
+void termpaint_attr_set_bg(termpaint_attr *attr, unsigned bg) {
     attr->bg_color = bg;
 }
 
-void termpaint_attr_set_deco(termpaint_attr *attr, int deco_color) {
+void termpaint_attr_set_deco(termpaint_attr *attr, unsigned deco_color) {
     attr->deco_color = deco_color;
 }
 

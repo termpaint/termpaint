@@ -71,12 +71,12 @@ _tERMPAINT_PUBLIC enum termpaint_auto_detect_state_enum termpaint_terminal_auto_
 _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length);
 _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
-_tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(int fg, int bg);
+_tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(unsigned fg, unsigned bg);
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone(termpaint_attr* attr);
 _tERMPAINT_PUBLIC void termpaint_attr_free(termpaint_attr* attr);
-_tERMPAINT_PUBLIC void termpaint_attr_set_fg(termpaint_attr* attr, int fg);
-_tERMPAINT_PUBLIC void termpaint_attr_set_bg(termpaint_attr* attr, int bg);
-_tERMPAINT_PUBLIC void termpaint_attr_set_deco(termpaint_attr* attr, int deco_color);
+_tERMPAINT_PUBLIC void termpaint_attr_set_fg(termpaint_attr* attr, unsigned fg);
+_tERMPAINT_PUBLIC void termpaint_attr_set_bg(termpaint_attr* attr, unsigned bg);
+_tERMPAINT_PUBLIC void termpaint_attr_set_deco(termpaint_attr* attr, unsigned deco_color);
 _tERMPAINT_PUBLIC void termpaint_attr_set_patch(termpaint_attr* attr, _Bool optimize, const char *setup, const char * cleanup);
 #define TERMPAINT_DEFAULT_COLOR 0x1000000
 #define TERMPAINT_NAMED_COLOR 0x1100000
