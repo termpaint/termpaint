@@ -682,6 +682,32 @@ int termpaint_surface_height(const termpaint_surface *surface) {
     return surface->height;
 }
 
+static void termpaintp_surface_gc_mark_cb(termpaint_hash *hash) {
+    termpaint_surface *surface = container_of(hash, termpaint_surface, overflow_text);
+
+    for (int y = 0; y < surface->height; y++) {
+        for (int x = 0; x < surface->width; x++) {
+            cell* c = termpaintp_getcell(surface, x, y);
+            if (c) {
+                if (c->text_len == 0 && c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
+                    c->text_overflow->unused = false;
+                }
+                if (surface->cells_last_flush) {
+                    cell* old_c = &surface->cells_last_flush[y*surface->width+x];
+                    if (old_c->text_len == 0 && old_c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
+                        old_c->text_overflow->unused = false;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void termpaintp_surface_init(termpaint_surface *surface) {
+    surface->overflow_text.gc_mark_cb = termpaintp_surface_gc_mark_cb;
+    surface->overflow_text.item_size = sizeof(termpaint_hash_item);
+}
+
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
     UNUSED(surface);
     // require surface here to allow for future implementation that uses terminal
@@ -776,31 +802,6 @@ static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event);
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
-static void termpaintp_surface_gc_mark_cb(termpaint_hash *hash) {
-    termpaint_surface *surface = container_of(hash, termpaint_surface, overflow_text);
-
-    for (int y = 0; y < surface->height; y++) {
-        for (int x = 0; x < surface->width; x++) {
-            cell* c = termpaintp_getcell(surface, x, y);
-            if (c) {
-                if (c->text_len == 0 && c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
-                    c->text_overflow->unused = false;
-                }
-                if (surface->cells_last_flush) {
-                    cell* old_c = &surface->cells_last_flush[y*surface->width+x];
-                    if (old_c->text_len == 0 && old_c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
-                        old_c->text_overflow->unused = false;
-                    }
-                }
-            }
-        }
-    }
-}
-
-static void termpaintp_surface_init(termpaint_surface *surface) {
-    surface->overflow_text.gc_mark_cb = termpaintp_surface_gc_mark_cb;
-    surface->overflow_text.item_size = sizeof(termpaint_hash_item);
-}
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
