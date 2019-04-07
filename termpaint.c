@@ -426,7 +426,7 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     termpaint_attr attr;
     attr.fg_color = fg;
     attr.bg_color = bg;
-    attr.deco_color = 0;
+    attr.deco_color = TERMPAINT_DEFAULT_COLOR;
     attr.flags = 0;
     attr.patch_setup = nullptr;
     attr.patch_cleanup = nullptr;
@@ -646,7 +646,7 @@ void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, i
             c->text[0] = ' ';
             c->bg_color = attr->bg_color;
             c->fg_color = attr->fg_color;
-            c->deco_color = 0;
+            c->deco_color = TERMPAINT_DEFAULT_COLOR;
             c->flags = attr->flags;
             c->attr_patch_idx = 0;
         }
@@ -657,7 +657,7 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
     termpaint_attr attr;
     attr.fg_color = fg;
     attr.bg_color = bg;
-    attr.deco_color = 0;
+    attr.deco_color = TERMPAINT_DEFAULT_COLOR;
     attr.flags = 0;
     attr.patch_setup = nullptr;
     attr.patch_cleanup = nullptr;
@@ -918,6 +918,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             if (c->text_len == 0 && c->text_overflow == 0) {
                 c->text[0] = ' ';
                 c->text_len = 1;
+                c->deco_color = TERMPAINT_DEFAULT_COLOR;
+                c->fg_color = TERMPAINT_DEFAULT_COLOR;
+                c->bg_color = TERMPAINT_DEFAULT_COLOR;
             }
             int code_units;
             bool text_changed;
@@ -938,8 +941,8 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
 
             uint32_t effective_deco_color;
             if (c->flags & CELL_ATTR_DECO_MASK) {
-                needs_paint |= c->deco_color != old_c->deco_color;
                 effective_deco_color = c->deco_color;
+                needs_paint |= effective_deco_color != old_c->deco_color;
             } else {
                 effective_deco_color = TERMPAINT_DEFAULT_COLOR;
             }
