@@ -110,6 +110,12 @@ void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg);
 void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr);
 void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg);
 void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr);
+#define TERMPAINT_COPY_NO_TILE 0
+#define TERMPAINT_COPY_TILE_PRESERVE -1
+#define TERMPAINT_COPY_TILE_PUT 1
+void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, int width, int height,
+                                 termpaint_surface *dst_surface, int dst_x, int dst_y,
+                                 int tile_left, int tile_right);
 
 
 termpaint_text_measurement* termpaint_text_measurement_new(termpaint_surface *surface);

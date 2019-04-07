@@ -726,6 +726,204 @@ void termpaint_surface_free(termpaint_surface *surface) {
     free(surface);
 }
 
+static void termpaintp_copy_colors_and_attibutes(termpaint_surface *src_surface, cell *src_cell,
+                                                 termpaint_surface *dst_surface, cell *dst_cell) {
+    dst_cell->fg_color = src_cell->fg_color;
+    dst_cell->bg_color = src_cell->bg_color;
+    dst_cell->deco_color = src_cell->deco_color;
+    dst_cell->flags = src_cell->flags;
+    if (src_cell->attr_patch_idx) {
+        termpaintp_patch* patch = &src_surface->patches[src_cell->attr_patch_idx - 1];
+        dst_cell->attr_patch_idx = termpaintp_surface_ensure_patch_idx(dst_surface,
+                                                                       patch->optimize,
+                                                                       patch->setup,
+                                                                       patch->cleanup);
+    }
+}
+
+void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, int width, int height,
+                                 termpaint_surface *dst_surface, int dst_x, int dst_y, int tile_left, int tile_right) {
+    if (x < 0) {
+        width += x;
+        x = 0;
+        // also switch left mode to erase
+        tile_left = TERMPAINT_COPY_NO_TILE;
+    }
+    if (y < 0) {
+        height += y;
+        y = 0;
+    }
+    if (x >= src_surface->width) {
+        return;
+    }
+    if (y >= src_surface->height) {
+        return;
+    }
+    if (x + width > src_surface->width) {
+        width = src_surface->width - x;
+        // also switch right mode to erase
+        tile_right = TERMPAINT_COPY_NO_TILE;
+    }
+    if (y + height > src_surface->height) {
+        height = src_surface->height - y;
+    }
+    if (dst_x < 0) {
+        x -= dst_x;
+        width += dst_x;
+        dst_x = 0;
+        // also switch left mode to erase
+        tile_left = TERMPAINT_COPY_NO_TILE;
+    }
+    if (dst_y < 0) {
+        y -= dst_y;
+        height += dst_y;
+        dst_y = 0;
+    }
+    if (dst_x + width >= dst_surface->width) {
+        width = dst_surface->width - dst_x;
+        // also switch right mode to erase
+        tile_right = TERMPAINT_COPY_NO_TILE;
+    }
+
+    if (tile_right >= TERMPAINT_COPY_TILE_PUT && dst_x + width + 1 >= dst_surface->width) {
+        tile_right = TERMPAINT_COPY_NO_TILE;
+    }
+
+    if (dst_y + height >= dst_surface->height) {
+        height = dst_surface->height - dst_y;
+    }
+
+    if (width == 0) {
+        return;
+    }
+
+    for (int yOffset = 0; yOffset < height; yOffset++) {
+        bool in_complete_cluster = false;
+        int xOffset = 0;
+
+        {
+            cell *src_cell = termpaintp_getcell(src_surface, x, y + yOffset);
+            if (src_cell->text_len == 0 && src_cell->text_overflow == WIDE_RIGHT_PADDING) {
+                if (tile_left == TERMPAINT_COPY_TILE_PRESERVE) {
+                    bool skip = false;
+                    for (int i = 0; i < width; i++) {
+                        cell *src_scan = termpaintp_getcell(src_surface, x + i, y + yOffset);
+                        cell *dst_scan = termpaintp_getcell(dst_surface, dst_x + i, dst_y + yOffset);
+
+                        if (!(src_scan->text_len == 0 && src_scan->text_overflow == WIDE_RIGHT_PADDING)
+                            && !(dst_scan->text_len == 0 && dst_scan->text_overflow == WIDE_RIGHT_PADDING)) {
+                            // end of cluster in both surfaces.
+                            // skip over same length cluster in src and dst.
+                            xOffset = i;
+                            break;
+                        }
+
+                        if (!(dst_scan->text_len == 0 && dst_scan->text_overflow == WIDE_RIGHT_PADDING)) {
+                            // cluster in dst is shorter than in src or shifted. This can not be valid tiling.
+                            skip = false;
+                            break;
+                        }
+                    }
+                } else if (tile_left >= TERMPAINT_COPY_TILE_PUT && x > 0 && dst_x > 0) {
+                    cell *src_scan = termpaintp_getcell(src_surface, x - 1, y + yOffset);
+                    cell *dst_scan = termpaintp_getcell(dst_surface, dst_x - 1, dst_y + yOffset);
+
+                    if ((src_scan->text_len != 0 || src_scan->text_overflow != WIDE_RIGHT_PADDING)
+                            && src_scan->cluster_expansion > 0
+                            && src_scan->cluster_expansion <= width) {
+                        in_complete_cluster = true;
+
+                        termpaintp_surface_vanish_char(dst_surface, dst_x - 1, dst_y + yOffset, src_scan->cluster_expansion + 1);
+                        termpaintp_copy_colors_and_attibutes(src_surface, src_scan,
+                                                             dst_surface, dst_scan);
+                        dst_scan->cluster_expansion = src_scan->cluster_expansion;
+                        if (src_scan->text_len > 0) {
+                            memcpy(dst_scan->text, src_scan->text, src_scan->text_len);
+                            dst_scan->text_len = src_scan->text_len;
+                        } else if (src_scan->text_len == 0) {
+                            dst_scan->text_len = 0;
+                            dst_scan->text_overflow = termpaintp_hash_ensure(&dst_surface->overflow_text, src_scan->text_overflow->text);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        int extra_width = 0;
+
+        for (; xOffset < width + extra_width; xOffset++) {
+            cell *src_cell = termpaintp_getcell(src_surface, x + xOffset, y + yOffset);
+            cell *dst_cell = termpaintp_getcell(dst_surface, dst_x + xOffset, dst_y + yOffset);
+
+            if (src_cell->text_len == 0 && src_cell->text_overflow == nullptr) {
+                src_cell->text[0] = ' ';
+                src_cell->text_len = 1;
+                src_cell->deco_color = TERMPAINT_DEFAULT_COLOR;
+                src_cell->fg_color = TERMPAINT_DEFAULT_COLOR;
+                src_cell->bg_color = TERMPAINT_DEFAULT_COLOR;
+            }
+
+            if (src_cell->text_len == 0 && src_cell->text_overflow == WIDE_RIGHT_PADDING) {
+                termpaintp_surface_vanish_char(dst_surface, dst_x + xOffset, dst_y + yOffset, 1);
+                termpaintp_copy_colors_and_attibutes(src_surface, src_cell,
+                                                     dst_surface, dst_cell);
+                if (in_complete_cluster) {
+                    dst_cell->text_len = 0;
+                    dst_cell->text_overflow = WIDE_RIGHT_PADDING;
+                } else {
+                    dst_cell->text_len = 1;
+                    dst_cell->text[0] = ' ';
+                }
+            } else {
+                if (tile_right == TERMPAINT_COPY_TILE_PRESERVE) {
+                    if (src_cell->cluster_expansion && xOffset + src_cell->cluster_expansion >= width) {
+                        if (src_cell->cluster_expansion == dst_cell->cluster_expansion) {
+                            // same cluster length in both, preserve cluster in dst
+                            break;
+                        }
+                    }
+                }
+
+                termpaintp_surface_vanish_char(dst_surface, dst_x + xOffset, dst_y + yOffset, src_cell->cluster_expansion + 1);
+                termpaintp_copy_colors_and_attibutes(src_surface, src_cell,
+                                                     dst_surface, dst_cell);
+                bool vanish = false;
+                if (src_cell->cluster_expansion) {
+                    if (xOffset + src_cell->cluster_expansion >= width) {
+                        if (tile_right >= TERMPAINT_COPY_TILE_PUT && src_cell->cluster_expansion == 1) {
+                            extra_width = 1;
+                            dst_cell->cluster_expansion = src_cell->cluster_expansion;
+                            in_complete_cluster = true;
+                        } else {
+                            vanish = true;
+                            in_complete_cluster = false;
+                        }
+                    } else {
+                        dst_cell->cluster_expansion = src_cell->cluster_expansion;
+                        in_complete_cluster = true;
+                    }
+                } else {
+                    in_complete_cluster = false;
+                }
+
+                if (!vanish) {
+                    if (src_cell->text_len > 0) {
+                        memcpy(dst_cell->text, src_cell->text, src_cell->text_len);
+                        dst_cell->text_len = src_cell->text_len;
+                    } else if (src_cell->text_len == 0) {
+                        dst_cell->text_len = 0;
+                        dst_cell->text_overflow = termpaintp_hash_ensure(&dst_surface->overflow_text, src_cell->text_overflow->text);
+                    }
+                } else {
+                    dst_cell->text_len = 1;
+                    dst_cell->text[0] = ' ';
+                }
+            }
+        }
+    }
+}
+
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
     UNUSED(surface);
     // require surface here to allow for future implementation that uses terminal
