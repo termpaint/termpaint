@@ -202,4 +202,13 @@ static inline int termpaintp_utf16_combine(uint16_t high, uint16_t low) {
     return 0x10000 + (((high - 0xD800) << 10) | (low - 0xDC00));
 }
 
+static inline unsigned termpaintp_utf16_split(int codepoint) {
+    if (codepoint <= 0xffff) {
+        return codepoint;
+    } else {
+        codepoint -= 0x10000;
+        return (0xDC00 + (codepoint & 0x3ff)) << 16 | (0xD800 + (codepoint >> 10));
+    }
+}
+
 #endif
