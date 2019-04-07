@@ -20,6 +20,7 @@ typedef struct termpaint_hash_ {
     termpaint_hash_item** buckets;
     int item_size;
     void (*gc_mark_cb)(struct termpaint_hash_*);
+    void (*destroy_cb)(struct termpaint_hash_*);
 } termpaint_hash;
 
 
@@ -137,6 +138,9 @@ static void termpaintp_hash_destroy(termpaint_hash* p) {
         while (item) {
             termpaint_hash_item* old = item;
             item = item->next;
+            if (p->destroy_cb) {
+                p->destroy_cb(old);
+            }
             free(old);
         }
     }
