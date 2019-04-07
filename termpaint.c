@@ -1658,7 +1658,9 @@ void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *
 
 void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length) {
     termpaint_input_add_data(term->input, data, length);
-    if ((term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) && termpaint_input_peek_buffer_length(term->input)) {
+    bool not_in_autodetect = (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED);
+
+    if (not_in_autodetect && termpaint_input_peek_buffer_length(term->input)) {
         term->data_pending_after_input_received = true;
         if (term->integration->request_callback) {
             term->integration->request_callback(term->integration);
