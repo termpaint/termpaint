@@ -741,6 +741,33 @@ static void termpaintp_copy_colors_and_attibutes(termpaint_surface *src_surface,
     }
 }
 
+void termpaint_surface_tint(termpaint_surface *surface,
+                            void (*recolor)(void *user_data, unsigned *fg, unsigned *bg, unsigned *deco),
+                            void *user_data) {
+    for (int y = 0; y < surface->height; y++) {
+        for (int x = 0; x < surface->width; x++) {
+            cell *cell = termpaintp_getcell(surface, x, y);
+            // Don't give out pointers to internal cell structure contents.
+            unsigned fg = cell->fg_color;
+            unsigned bg = cell->bg_color;
+            unsigned deco = cell->deco_color;
+
+            recolor(user_data, &fg, &bg, &deco);
+
+            int expansion = cell->cluster_expansion;
+
+            // update cluster at once, different colors in one cluster are not allowed
+            for (int i = 0; i <= expansion; i++) {
+                cell = termpaintp_getcell(surface, x + i, y);
+                cell->fg_color = fg;
+                cell->bg_color = bg;
+                cell->deco_color = deco;
+            }
+            x += expansion;
+        }
+    }
+}
+
 void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, int width, int height,
                                  termpaint_surface *dst_surface, int dst_x, int dst_y, int tile_left, int tile_right) {
     if (x < 0) {

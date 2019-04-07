@@ -116,6 +116,9 @@ void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, i
 void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, int width, int height,
                                  termpaint_surface *dst_surface, int dst_x, int dst_y,
                                  int tile_left, int tile_right);
+void termpaint_surface_tint(termpaint_surface *surface,
+                            void (*recolor)(void *user_data, unsigned *fg, unsigned *bg, unsigned *deco),
+                            void *user_data);
 
 
 termpaint_text_measurement* termpaint_text_measurement_new(termpaint_surface *surface);
