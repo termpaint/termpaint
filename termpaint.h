@@ -78,7 +78,7 @@ void termpaint_attr_set_patch(termpaint_attr* attr, _Bool optimize, const char *
 #define TERMPAINT_DEFAULT_COLOR 0x1000000
 #define TERMPAINT_NAMED_COLOR 0x1100000
 #define TERMPAINT_INDEXED_COLOR 0x1200000
-#define TERMPAINT_RGB_COLOR(r, g, b) (((r) << 16) | ((b) << 8) | (g))
+#define TERMPAINT_RGB_COLOR(r, g, b) (((r) << 16) | ((g) << 8) | (b))
 
 #define TERMPAINT_STYLE_BOLD (1<<0)
 #define TERMPAINT_STYLE_ITALIC (1<<1)
