@@ -182,11 +182,21 @@ typedef enum terminal_type_enum_ {
     TT_FULL,
 } terminal_type_enum;
 
+typedef struct termpaint_color_entry_ {
+    termpaint_hash_item base;
+    char *saved;
+    char *requested;
+    bool dirty;
+    bool save_initiated;
+    struct termpaint_color_entry_ *next_dirty;
+} termpaint_color_entry;
+
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
     termpaint_surface primary;
     termpaint_input *input;
     bool data_pending_after_input_received : 1;
+    bool request_repaint : 1;
     int support_qm_cursor_position_report : 1;
     int support_parsing_csi_gt_sequences : 1;
     int support_parsing_csi_equals_sequences : 1;
@@ -210,6 +220,9 @@ typedef struct termpaint_terminal_ {
     bool cursor_blink;
 
     int cursor_prev_data;
+
+    termpaint_hash colors;
+    termpaint_color_entry *colors_dirty;
 
     char *restore_seq;
     auto_detect_state ad_state;
@@ -1197,6 +1210,10 @@ static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event);
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
+void termpaint_color_entry_destroy(termpaint_color_entry *entry) {
+    free(entry->saved);
+    free(entry->requested);
+}
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
@@ -1227,6 +1244,9 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
 
+    ret->colors.item_size = sizeof(termpaint_color_entry);
+    ret->colors.destroy_cb = termpaint_color_entry_destroy;
+
     return ret;
 }
 
@@ -1235,6 +1255,7 @@ void termpaint_terminal_free(termpaint_terminal *term) {
     term->auto_detect_sec_device_attributes = 0;
     termpaintp_surface_destroy(&term->primary);
     term->integration->free(term->integration);
+    termpaintp_hash_destroy(&term->colors);
 }
 
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
@@ -1518,6 +1539,20 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     if (term->cursor_visible) {
         termpaintp_terminal_show_cursor(term);
     }
+    if (term->colors_dirty) {
+        termpaint_color_entry *entry = term->colors_dirty;
+        term->colors_dirty = nullptr;
+        while (entry) {
+            termpaint_color_entry *next = entry->next_dirty;
+            entry->next_dirty = nullptr;
+            int_puts(integration, "\033]");
+            int_puts(integration, entry->base.text);
+            int_puts(integration, ";");
+            int_puts(integration, entry->requested);
+            int_puts(integration, "\033\\");
+            entry = next;
+        }
+    }
     int_flush(integration);
 }
 
@@ -1551,6 +1586,48 @@ void termpaint_terminal_set_cursor_style(termpaint_terminal *term, int style, bo
     }
 }
 
+void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int b, int g) {
+    char buff[100];
+    sprintf(buff, "%d", color_slot);
+    termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, buff);
+    sprintf(buff, "#%02x%02x%02x", r, g, b);
+    if (entry->requested && strcmp(entry->requested, buff) == 0) {
+        return;
+    }
+
+    if (!entry->save_initiated && !entry->saved) {
+        termpaint_integration *integration = term->integration;
+        int_puts(integration, "\033]");
+        int_put_num(integration, color_slot);
+        int_puts(integration, ";?\033\\");
+        int_flush(integration);
+        entry->save_initiated = true;
+    } else {
+        if (!entry->dirty) {
+            entry->dirty = true;
+            entry->next_dirty = term->colors_dirty;
+            term->colors_dirty = entry;
+        }
+    }
+    free(entry->requested);
+    entry->requested = strdup(buff);
+}
+
+void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
+    char buff[100];
+    sprintf(buff, "%d", color_slot);
+    termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, buff);
+    if (entry->saved) {
+        if (!entry->dirty) {
+            entry->dirty = true;
+            entry->next_dirty = term->colors_dirty;
+            term->colors_dirty = entry;
+        }
+        free(entry->requested);
+        entry->requested = strdup(entry->saved);
+    }
+}
+
 static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event);
 
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow) {
@@ -1569,6 +1646,26 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event) {
     termpaint_terminal *term = user_data;
     if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
+        if (event->type == TERMPAINT_EV_COLOR_SLOT_REPORT) {
+            char buff[100];
+            sprintf(buff, "%d", event->color_slot_report.slot);
+            termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, buff);
+            if (!entry->saved) {
+                entry->saved = strndup(event->color_slot_report.color,
+                                       event->color_slot_report.length);
+                termpaintp_prepend_str(&term->restore_seq, "\033\\");
+                termpaintp_prepend_str(&term->restore_seq, entry->saved);
+                termpaintp_prepend_str(&term->restore_seq, ";");
+                termpaintp_prepend_str(&term->restore_seq, entry->base.text);
+                termpaintp_prepend_str(&term->restore_seq, "\033]");
+                if (entry->requested && !entry->dirty) {
+                    entry->dirty = true;
+                    entry->next_dirty = term->colors_dirty;
+                    term->colors_dirty = entry;
+                    term->request_repaint = true;
+                }
+            }
+        }
         term->event_cb(term->event_user_data, event);
     } else {
         termpaint_terminal_auto_detect_event(term, event);
@@ -1659,6 +1756,13 @@ void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *
 void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length) {
     termpaint_input_add_data(term->input, data, length);
     bool not_in_autodetect = (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED);
+
+    if (not_in_autodetect && term->request_repaint) {
+        termpaint_event event;
+        event.type = TERMPAINT_EV_REPAINT_REQUESTED;
+        term->event_cb(term->event_user_data, &event);
+        term->request_repaint = false;
+    }
 
     if (not_in_autodetect && termpaint_input_peek_buffer_length(term->input)) {
         term->data_pending_after_input_received = true;
