@@ -11,8 +11,14 @@
 extern "C" {
 #endif
 
-void termpaint_ttyrescue_stop(int fd);
-int termpaint_ttyrescue_start(const char *restore_seq);
+#if defined(__GNUC__) && defined(TERMPAINT_EXPORT_SYMBOLS)
+#define _tERMPAINT_PUBLIC __attribute__((visibility("default")))
+#else
+#define _tERMPAINT_PUBLIC
+#endif
+
+_tERMPAINT_PUBLIC void termpaint_ttyrescue_stop(int fd);
+_tERMPAINT_PUBLIC int termpaint_ttyrescue_start(const char *restore_seq);
 
 
 #ifdef __cplusplus

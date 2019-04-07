@@ -1,7 +1,8 @@
 project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized'])
 
-if meson.get_compiler('cpp').get_id() == 'gcc'
-  add_project_arguments('-fvisibility=hidden', '-fvisibility-inlines-hidden', language: 'cpp')
+if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_id() == 'clang'
+  add_project_arguments('-fvisibility=hidden', '-fvisibility-inlines-hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'c')
+  add_project_arguments('-fvisibility=hidden', '-fvisibility-inlines-hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'cpp')
 endif
 
 add_project_arguments('-std=gnu11', language : 'c')

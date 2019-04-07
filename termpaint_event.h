@@ -11,52 +11,58 @@
 extern "C" {
 #endif
 
-const char *termpaint_input_i_resync();
+#if defined(__GNUC__) && defined(TERMPAINT_EXPORT_SYMBOLS)
+#define _tERMPAINT_PUBLIC __attribute__((visibility("default")))
+#else
+#define _tERMPAINT_PUBLIC
+#endif
 
-const char *termpaint_input_enter();
-const char *termpaint_input_space();
-const char *termpaint_input_tab();
-const char *termpaint_input_backspace();
-const char *termpaint_input_context_menu();
-const char *termpaint_input_delete();
-const char *termpaint_input_end();
-const char *termpaint_input_home();
-const char *termpaint_input_insert();
-const char *termpaint_input_page_down();
-const char *termpaint_input_page_up();
-const char *termpaint_input_arrow_down();
-const char *termpaint_input_arrow_left();
-const char *termpaint_input_arrow_right();
-const char *termpaint_input_arrow_up();
-const char *termpaint_input_numpad_divide();
-const char *termpaint_input_numpad_multiply();
-const char *termpaint_input_numpad_subtract();
-const char *termpaint_input_numpad_add();
-const char *termpaint_input_numpad_enter();
-const char *termpaint_input_numpad_decimal();
-const char *termpaint_input_numpad0();
-const char *termpaint_input_numpad1();
-const char *termpaint_input_numpad2();
-const char *termpaint_input_numpad3();
-const char *termpaint_input_numpad4();
-const char *termpaint_input_numpad5();
-const char *termpaint_input_numpad6();
-const char *termpaint_input_numpad7();
-const char *termpaint_input_numpad8();
-const char *termpaint_input_numpad9();
-const char *termpaint_input_escape();
-const char *termpaint_input_f1();
-const char *termpaint_input_f2();
-const char *termpaint_input_f3();
-const char *termpaint_input_f4();
-const char *termpaint_input_f5();
-const char *termpaint_input_f6();
-const char *termpaint_input_f7();
-const char *termpaint_input_f8();
-const char *termpaint_input_f9();
-const char *termpaint_input_f10();
-const char *termpaint_input_f11();
-const char *termpaint_input_f12();
+_tERMPAINT_PUBLIC const char *termpaint_input_i_resync();
+
+_tERMPAINT_PUBLIC const char *termpaint_input_enter();
+_tERMPAINT_PUBLIC const char *termpaint_input_space();
+_tERMPAINT_PUBLIC const char *termpaint_input_tab();
+_tERMPAINT_PUBLIC const char *termpaint_input_backspace();
+_tERMPAINT_PUBLIC const char *termpaint_input_context_menu();
+_tERMPAINT_PUBLIC const char *termpaint_input_delete();
+_tERMPAINT_PUBLIC const char *termpaint_input_end();
+_tERMPAINT_PUBLIC const char *termpaint_input_home();
+_tERMPAINT_PUBLIC const char *termpaint_input_insert();
+_tERMPAINT_PUBLIC const char *termpaint_input_page_down();
+_tERMPAINT_PUBLIC const char *termpaint_input_page_up();
+_tERMPAINT_PUBLIC const char *termpaint_input_arrow_down();
+_tERMPAINT_PUBLIC const char *termpaint_input_arrow_left();
+_tERMPAINT_PUBLIC const char *termpaint_input_arrow_right();
+_tERMPAINT_PUBLIC const char *termpaint_input_arrow_up();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad_divide();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad_multiply();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad_subtract();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad_add();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad_enter();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad_decimal();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad0();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad1();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad2();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad3();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad4();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad5();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad6();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad7();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad8();
+_tERMPAINT_PUBLIC const char *termpaint_input_numpad9();
+_tERMPAINT_PUBLIC const char *termpaint_input_escape();
+_tERMPAINT_PUBLIC const char *termpaint_input_f1();
+_tERMPAINT_PUBLIC const char *termpaint_input_f2();
+_tERMPAINT_PUBLIC const char *termpaint_input_f3();
+_tERMPAINT_PUBLIC const char *termpaint_input_f4();
+_tERMPAINT_PUBLIC const char *termpaint_input_f5();
+_tERMPAINT_PUBLIC const char *termpaint_input_f6();
+_tERMPAINT_PUBLIC const char *termpaint_input_f7();
+_tERMPAINT_PUBLIC const char *termpaint_input_f8();
+_tERMPAINT_PUBLIC const char *termpaint_input_f9();
+_tERMPAINT_PUBLIC const char *termpaint_input_f10();
+_tERMPAINT_PUBLIC const char *termpaint_input_f11();
+_tERMPAINT_PUBLIC const char *termpaint_input_f12();
 
 #define TERMPAINT_EV_UNKNOWN 0
 #define TERMPAINT_EV_CHAR 1
