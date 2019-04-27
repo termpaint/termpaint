@@ -2508,42 +2508,38 @@ static inline void termpaintp_text_measurement_commit(termpaint_text_measurement
     m->last_ref = m->pending_ref;
 }
 
-
-_Bool termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust) {
-    // ATTENTION keep this in sync with actual write to surface
-    ch = replace_unusable_codepoints(ch);
-    int width = termpaintp_char_width(ch);
-    if (width == 0) {
-        ++m->pending_codepoints;
-        m->pending_ref += ref_adjust;
-
-        if (m->state == TM_INITIAL) {
-            // Assume this will be input in this way into write which will supply it with U+00a0 as base.
-            width = 1;
-            m->pending_clusters += 1;
-            m->pending_width += width;
-            m->state = TM_IN_CLUSTER;
-        } else {
-            // accumulates into cluster. Nothing do do here.
-        }
-        return false;
-    } else {
-        // advance last full cluster
-        termpaintp_text_measurement_commit(m);
-
-        ++m->pending_codepoints;
-        m->pending_ref += ref_adjust;
-
-        m->pending_width += width;
-        m->pending_clusters += 1;
-
-        if (m->state == TM_INITIAL) {
-            m->state = TM_IN_CLUSTER;
-            return false;
-        } else {
-            return true;
+// -1 if no limit reached, 1 if some limit exceeded, 0 if no limit exceeded and some limit reached
+static int termpaintp_text_measurement_cmp_limits(termpaint_text_measurement *m) {
+    int ret = -1;
+    if (m->limit_codepoints >= 0) {
+        if (m->pending_codepoints == m->limit_codepoints) {
+            ret = 0;
+        } else if (m->pending_codepoints > m->limit_codepoints) {
+            return 1;
         }
     }
+    if (m->limit_clusters >= 0) {
+        if (m->pending_clusters == m->limit_clusters) {
+            ret = 0;
+        } else if (m->pending_clusters > m->limit_clusters) {
+            return 1;
+        }
+    }
+    if (m->limit_width >= 0) {
+        if (m->pending_width == m->limit_width) {
+            ret = 0;
+        } else if (m->pending_width > m->limit_width) {
+            return 1;
+        }
+    }
+    if (m->limit_ref >= 0) {
+        if (m->pending_ref == m->limit_ref) {
+            ret = 0;
+        } else if (m->pending_ref > m->limit_ref) {
+            return 1;
+        }
+    }
+    return ret;
 }
 
 static void termpaintp_text_measurement_undo(termpaint_text_measurement *m) {
@@ -2556,37 +2552,71 @@ static void termpaintp_text_measurement_undo(termpaint_text_measurement *m) {
     m->decoder_state = TMD_INITIAL;
 }
 
-static bool termpaintp_text_measurement_check_limits(termpaint_text_measurement *m) {
-    if (m->last_codepoints >= 0 && m->last_codepoints > m->limit_codepoints) {
-        termpaintp_text_measurement_undo(m);
-        return true;
+int termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust) {
+    // ATTENTION keep this in sync with actual write to surface
+    ch = replace_unusable_codepoints(ch);
+    int width = termpaintp_char_width(ch);
+    if (width == 0) {
+        if (m->state == TM_INITIAL) {
+            // Assume this will be input in this way into write which will supply it with U+00a0 as base.
+            // We can ignore this non spaceing mark and just calculate for U+00a0 because what is needed is
+            //  * adding ref_adjust to ref (to account for the non spaceing mark)
+            //  * adding one codepoint to ref (also to account for the non spaceing mark)
+            //  * and incrementing the cluster and width just as U+00a0 would do. While we can ignore the non spacing
+            //    mark for cluster/width purposes.
+            // This is exactly what happens on feeding U+00a0, so just do that instead of creating another implementation.
+            return termpaint_text_measurement_feed_codepoint(m, 0xa0, ref_adjust);
+        }
+
+        ++m->pending_codepoints;
+        m->pending_ref += ref_adjust;
+
+        // accumulates into cluster. Nothing do do here.
+        return 0;
+    } else {
+        int limit_rel = termpaintp_text_measurement_cmp_limits(m);
+
+        if (limit_rel == 0) { // no limit exceeded, some limit hit exactly -> commit cluster and use that as best match
+            termpaintp_text_measurement_commit(m);
+            m->state = TM_IN_CLUSTER;
+            return TERMPAINT_MEASURE_NEW_CLUSTER | TERMPAINT_MEASURE_LIMIT_REACHED;
+        } else if (limit_rel < 0) { // no limit reached -> commit cluster and go on
+            // advance last full cluster
+            termpaintp_text_measurement_commit(m);
+            m->state = TM_IN_CLUSTER;
+
+            ++m->pending_codepoints;
+            m->pending_ref += ref_adjust;
+
+            m->pending_width += width;
+            m->pending_clusters += 1;
+
+            return TERMPAINT_MEASURE_NEW_CLUSTER;
+        } else { // some limit exceeded -> return with previous cluster as best match
+            termpaintp_text_measurement_undo(m);
+            return TERMPAINT_MEASURE_LIMIT_REACHED;
+        }
     }
-    if (m->last_clusters >= 0 && m->last_clusters > m->limit_clusters) {
-        termpaintp_text_measurement_undo(m);
-        return true;
-    }
-    if (m->last_width >= 0 && m->last_width > m->limit_width) {
-        termpaintp_text_measurement_undo(m);
-        return true;
-    }
-    if (m->last_ref >= 0 && m->last_ref > m->limit_ref) {
-        termpaintp_text_measurement_undo(m);
-        return true;
-    }
-    return false;
 }
 
 _Bool termpaint_text_measurement_feed_utf32(termpaint_text_measurement *m, const uint32_t *chars, int length, _Bool final) {
     for (int i = 0; i < length; i++) {
-        if (termpaint_text_measurement_feed_codepoint(m, (int)chars[i], 1)) {
-            if (termpaintp_text_measurement_check_limits(m)) {
-                return true;
-            }
+        if (termpaint_text_measurement_feed_codepoint(m, (int)chars[i], 1) & TERMPAINT_MEASURE_LIMIT_REACHED) {
+            return true;
         }
     }
     if (final) {
-        termpaintp_text_measurement_commit(m);
-        return true;
+        int limit_rel = termpaintp_text_measurement_cmp_limits(m);
+        if (limit_rel == 0) { // no limit exceeded, some limit hit exactly -> commit cluster and use that as best match
+            termpaintp_text_measurement_commit(m);
+            return true;
+        } else if (limit_rel < 0) { // no limit reached -> commit cluster
+            termpaintp_text_measurement_commit(m);
+            return false;
+        } else { // some limit exceeded -> return with previous cluster as best match
+            termpaintp_text_measurement_undo(m);
+            return true;
+        }
     }
     return false;
 }
@@ -2618,16 +2648,24 @@ _Bool termpaint_text_measurement_feed_utf16(termpaint_text_measurement *m, const
                 ch = termpaintp_utf16_combine(m->utf_16_high, code_units[i]);
             }
         }
+        m->decoder_state = TMD_INITIAL;
 
-        if (termpaint_text_measurement_feed_codepoint(m, ch, adjust)) {
-            if (termpaintp_text_measurement_check_limits(m)) {
-                return true;
-            }
+        if (termpaint_text_measurement_feed_codepoint(m, ch, adjust) & TERMPAINT_MEASURE_LIMIT_REACHED) {
+            return true;
         }
     }
     if (final) {
-        termpaintp_text_measurement_commit(m);
-        return true;
+        int limit_rel = termpaintp_text_measurement_cmp_limits(m);
+        if (limit_rel == 0) { // no limit exceeded, some limit hit exactly -> commit cluster and use that as best match
+            termpaintp_text_measurement_commit(m);
+            return true;
+        } else if (limit_rel < 0) { // no limit reached -> commit cluster
+            termpaintp_text_measurement_commit(m);
+            return false;
+        } else { // some limit exceeded -> return with previous cluster as best match
+            termpaintp_text_measurement_undo(m);
+            return true;
+        }
     }
     return false;
 }
@@ -2670,17 +2708,25 @@ _Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const 
             } else {
                 continue;
             }
+            m->decoder_state = TMD_INITIAL;
         }
 
-        if (termpaint_text_measurement_feed_codepoint(m, ch, adjust)) {
-            if (termpaintp_text_measurement_check_limits(m)) {
-                return true;
-            }
+        if (termpaint_text_measurement_feed_codepoint(m, ch, adjust) & TERMPAINT_MEASURE_LIMIT_REACHED) {
+            return true;
         }
     }
     if (final) {
-        termpaintp_text_measurement_commit(m);
-        return true;
+        int limit_rel = termpaintp_text_measurement_cmp_limits(m);
+        if (limit_rel == 0) { // no limit exceeded, some limit hit exactly -> commit cluster and use that as best match
+            termpaintp_text_measurement_commit(m);
+            return true;
+        } else if (limit_rel < 0) { // no limit reached -> commit cluster
+            termpaintp_text_measurement_commit(m);
+            return false;
+        } else { // some limit exceeded -> return with previous cluster as best match
+            termpaintp_text_measurement_undo(m);
+            return true;
+        }
     }
     return false;
 }
