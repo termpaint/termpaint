@@ -116,7 +116,7 @@ struct termpaint_event_ {
             int status;
         } mode;
 
-        // TERMPAINT_EV_RAW_SEC_DEV_ATTRIB
+        // TERMPAINT_EV_RAW_SEC_DEV_ATTRIB, etc
         struct {
             unsigned length;
             const char *string;
