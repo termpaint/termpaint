@@ -11,7 +11,7 @@ void null_callback(void *ctx, termpaint_event *event) {
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
-    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 1;
@@ -19,9 +19,9 @@ int main(int argc, char **argv) {
 
     termpaint_terminal *terminal = termpaint_terminal_new(integration);
     termpaint_terminal_set_event_cb(terminal, null_callback, NULL);
-    termpaint_full_integration_set_terminal(integration, terminal);
+    termpaintx_full_integration_set_terminal(integration, terminal);
     termpaint_terminal_auto_detect(terminal);
-    termpaint_full_integration_wait_for_ready(integration);
+    termpaintx_full_integration_wait_for_ready(integration);
 
     char buff[1000];
     termpaint_terminal_auto_detect_result_text(terminal, buff, sizeof (buff));

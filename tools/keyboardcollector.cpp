@@ -422,20 +422,20 @@ int Main::main() {
     ::terminal = this->terminal;
     surface = termpaint_terminal_get_surface(this->terminal);
 #else
-    termpaint_integration *integration = termpaint_full_integration_from_fd(1, 0, "");
+    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "");
     if (!integration) {
         outStr("Could not init!");
         return 1;
     }
 
     terminal = termpaint_terminal_new(integration);
-    termpaint_full_integration_set_terminal(integration, terminal);
+    termpaintx_full_integration_set_terminal(integration, terminal);
     surface = termpaint_terminal_get_surface(terminal);
     //termpaint_auto_detect(surface);
     //termpaint_full_integration_wait_ready(integration);
 
     poll = [&] {
-        bool ok = termpaint_full_integration_do_iteration(integration);
+        bool ok = termpaintx_full_integration_do_iteration(integration);
         peek_buffer = std::string(termpaint_terminal_peek_input_buffer(terminal), termpaint_terminal_peek_input_buffer_length(terminal));
         return ok;
     };

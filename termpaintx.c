@@ -24,7 +24,7 @@
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
 
-_Bool termpaint_full_integration_available() {
+_Bool termpaintx_full_integration_available() {
     _Bool from_std_fd = false;
     from_std_fd = isatty(0) || isatty(1) || isatty(2);
     if (from_std_fd) {
@@ -39,7 +39,7 @@ _Bool termpaint_full_integration_available() {
     return false;
 }
 
-termpaint_integration *termpaint_full_integration(const char *options) {
+termpaint_integration *termpaintx_full_integration(const char *options) {
     int fd = -1;
     _Bool auto_close = false;
 
@@ -57,17 +57,17 @@ termpaint_integration *termpaint_full_integration(const char *options) {
         }
     }
 
-    return termpaint_full_integration_from_fd(fd, auto_close, options);
+    return termpaintx_full_integration_from_fd(fd, auto_close, options);
 }
 
 
-termpaint_integration *termpaint_full_integration_from_controlling_terminal(const char *options) {
+termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options) {
     int fd = -1;
     fd = open("/dev/tty", O_RDWR | O_NOCTTY | FD_CLOEXEC);
     if (fd == -1) {
         return nullptr;
     }
-    return termpaint_full_integration_from_fd(fd, true, options);
+    return termpaintx_full_integration_from_fd(fd, true, options);
 }
 
 typedef struct termpaint_integration_fd_ {
@@ -180,7 +180,7 @@ bool termpaintp_fd_set_termios(int fd, const char *options) {
     return true;
 }
 
-termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
+termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
     ret->base.free = fd_free;
     ret->base.write = fd_write;
@@ -197,10 +197,10 @@ termpaint_integration *termpaint_full_integration_from_fd(int fd, _Bool auto_clo
     return (termpaint_integration*)ret;
 }
 
-bool termpaint_full_integration_wait_for_ready(termpaint_integration *integration) {
+bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
     while (termpaint_terminal_auto_detect_state(t->terminal) == termpaint_auto_detect_running) {
-        if (!termpaint_full_integration_do_iteration(integration)) {
+        if (!termpaintx_full_integration_do_iteration(integration)) {
             // some kind of error
             break;
         }
@@ -208,7 +208,7 @@ bool termpaint_full_integration_wait_for_ready(termpaint_integration *integratio
     return false;
 }
 
-bool termpaint_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height) {
+bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height) {
     if (fd_is_bad(integration) || !isatty(FDPTR(integration)->fd)) {
         return false;
     }
@@ -221,12 +221,12 @@ bool termpaint_full_integration_terminal_size(termpaint_integration *integration
     return true;
 }
 
-void termpaint_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal) {
+void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal) {
     termpaint_integration_fd *t = FDPTR(integration);
     t->terminal = terminal;
 }
 
-bool termpaint_full_integration_do_iteration(termpaint_integration *integration) {
+bool termpaintx_full_integration_do_iteration(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
 
     char buff[1000];

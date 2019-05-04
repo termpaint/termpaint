@@ -55,7 +55,7 @@ bool init() {
     event_current->next = NULL;
     event_current->string = NULL;
 
-    integration = termpaint_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+    integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 0;
@@ -63,12 +63,12 @@ bool init() {
 
     terminal = termpaint_terminal_new(integration);
     termpaint_terminal_set_event_cb(terminal, event_callback, NULL);
-    termpaint_full_integration_set_terminal(integration, terminal);
+    termpaintx_full_integration_set_terminal(integration, terminal);
     surface = termpaint_terminal_get_surface(terminal);
     termpaint_terminal_auto_detect(terminal);
-    termpaint_full_integration_wait_for_ready(integration);
+    termpaintx_full_integration_wait_for_ready(integration);
     int width, height;
-    termpaint_full_integration_terminal_size(integration, &width, &height);
+    termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
     rescue_fd = termpaint_ttyrescue_start(termpaint_terminal_restore_sequence(terminal));
 
@@ -84,7 +84,7 @@ event* key_wait() {
     termpaint_terminal_flush(terminal, false);
 
     while (!event_current->next) {
-        if (!termpaint_full_integration_do_iteration(integration)) {
+        if (!termpaintx_full_integration_do_iteration(integration)) {
             // some kind of error
             cleanup();
             exit(1);
