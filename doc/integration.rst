@@ -110,3 +110,68 @@ An example using this integration looks like this::
   termpaint_terminal_free_with_restore(terminal);
 
 TODO document termpaint_ttyrescue
+
+termpaintx
+----------
+
+termpaintx offers a very simple premade integration and a few functions that might be useful for custom integrations.
+
+.. c:function:: _Bool termpaintx_full_integration_available()
+
+  Checks if the program is connected to a terminal. (using `isatty(3) <http://man7.org/linux/man-pages/man3/isatty.3.html>`__)
+
+  This function checks if :c:func:`termpaintx_full_integration` will likely succeed.
+
+.. c:function:: termpaint_integration *termpaintx_full_integration(const char *options)
+
+  creates an integration object with the given options. It tries stdin, stdout, stderr and the processes controling
+  terminal.
+
+  ``options`` is a space separated list of options.
+
+  Supported options:
+
+    ``+kbdsigint``
+
+      Do not disable kernel keyboard interrupt handling (usually Ctrl-C)
+
+    ``+kbdsigquit``
+
+      Do not disable kernel keyboard quit handling (usually Ctrl-\)
+
+    ``+kbdsigtstp``
+
+      Do not disable kernel keyboard suspend handling (usually Ctrl-Z)
+
+.. c:function:: termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options)
+
+  creates an integration object with the given options. It tries the processes controlling terminal.
+
+.. c:function:: termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options)
+
+  creates an integration object with the given options. It uses file descriptor ``fd``. If ``auto_close`` is true, the
+  file descriptor will be closed when the integration is deallocated.
+
+.. c:function:: _Bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integration)
+
+  Waits for the auto-detection to be finished. It internally calls :c:func:`termpaint_full_integration_do_iteration`
+  while waiting.
+
+.. c:function:: void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal)
+
+  Sets the terminal object to be managed by this integration object. This needs to be called before using
+  :c:func:`termpaint_full_integration_do_iteration`
+
+.. c:function:: _Bool termpaintx_full_integration_do_iteration(termpaint_integration *integration)
+
+  Waits for input from the terminal and passes it to the connected terminal object.
+
+.. c:function:: _Bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height)
+
+  Stores the current terminal size into ``width`` and ``height``. This function relies on the terminal size cached in
+  the kernel.
+
+.. c:function:: _Bool termpaintx_fd_set_termios(int fd, const char *options)
+
+  This function can be used to get the kernel terminal setup without using the full integration. Accepts the same
+  options as :c:func:`termpaintx_full_integration`
