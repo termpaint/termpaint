@@ -19,6 +19,9 @@ _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_do_iteration(termpaint_integ
 
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height);
 
+_tERMPAINT_PUBLIC _Bool termpaintx_fd_set_termios(int fd, const char *options);
+_tERMPAINT_PUBLIC _Bool termpaintx_fd_terminal_size(int fd, int *width, int *height);
+
 #ifdef __cplusplus
 }
 #endif

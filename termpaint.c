@@ -2280,21 +2280,19 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
 static bool termpaintp_has_option(const char *options, const char *name) {
     const char *p = options;
     int name_len = strlen(name);
-    const char *last_possible_location = options + strlen(options) - name_len;
     while (1) {
         const char *found = strstr(p, name);
         if (!found) {
             break;
         }
         if (found == options || found[-1] == ' ') {
-            if (found == last_possible_location || found[name_len] == ' ') {
+            if (found[name_len] == 0 || found[name_len] == ' ') {
                 return true;
             }
         }
         p = found + name_len;
     }
     return false;
-
 }
 
 void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options) {

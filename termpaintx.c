@@ -139,13 +139,22 @@ static void fd_request_callback(struct termpaint_integration_ *integration) {
     FDPTR(integration)->awaiting_response = true;
 }
 
-static char *termpaintp_pad_options(const char *options) {
-    size_t optlen = strlen(options);
-    char *ret = calloc(1, strlen(options) + 3);
-    ret[0] = ' ';
-    memcpy(ret + 1, options, optlen);
-    ret[optlen+1] = ' ';
-    return ret;
+static bool termpaintp_has_option(const char *options, const char *name) {
+    const char *p = options;
+    int name_len = strlen(name);
+    while (1) {
+        const char *found = strstr(p, name);
+        if (!found) {
+            break;
+        }
+        if (found == options || found[-1] == ' ') {
+            if (found[name_len] == 0 || found[name_len] == ' ') {
+                return true;
+            }
+        }
+        p = found + name_len;
+    }
+    return false;
 }
 
 bool termpaintp_fd_set_termios(int fd, const char *options) {
@@ -158,9 +167,9 @@ bool termpaintp_fd_set_termios(int fd, const char *options) {
     tattr.c_cc[VMIN] = 1;
     tattr.c_cc[VTIME] = 0;
 
-    bool allow_interrupt = strstr(options, " +kbdsigint ");
-    bool allow_quit = strstr(options, " +kbdsigquit ");
-    bool allow_suspend = strstr(options, " +kbdsigtstp ");
+    bool allow_interrupt = termpaintp_has_option(options, "+kbdsigint");
+    bool allow_quit = termpaintp_has_option(options, "+kbdsigquit");
+    bool allow_suspend = termpaintp_has_option(options, "+kbdsigtstp");
 
     if (!(allow_interrupt || allow_quit || allow_suspend)) {
         tattr.c_lflag &= ~ISIG;
@@ -180,6 +189,11 @@ bool termpaintp_fd_set_termios(int fd, const char *options) {
     return true;
 }
 
+bool termpaintx_fd_set_termios(int fd, const char *options) {
+    termpaintp_fd_set_termios(fd, options);
+    return true;
+}
+
 termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
     ret->base.free = fd_free;
@@ -187,7 +201,7 @@ termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_cl
     ret->base.flush = fd_flush;
     ret->base.is_bad = fd_is_bad;
     ret->base.request_callback = fd_request_callback;
-    ret->options = termpaintp_pad_options(options);
+    ret->options = strdup(options);
     ret->fd = fd;
     ret->auto_close = auto_close;
     ret->awaiting_response = false;
@@ -212,13 +226,7 @@ bool termpaintx_full_integration_terminal_size(termpaint_integration *integratio
     if (fd_is_bad(integration) || !isatty(FDPTR(integration)->fd)) {
         return false;
     }
-    struct winsize s;
-    if (ioctl(FDPTR(integration)->fd, TIOCGWINSZ, &s) < 0) {
-        return false;
-    }
-    *width = s.ws_col;
-    *height = s.ws_row;
-    return true;
+    return termpaintx_fd_terminal_size(FDPTR(integration)->fd, width, height);
 }
 
 void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal) {
@@ -255,3 +263,12 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     return true;
 }
 
+bool termpaintx_fd_terminal_size(int fd, int *width, int *height) {
+    struct winsize s;
+    if (ioctl(fd, TIOCGWINSZ, &s) < 0) {
+        return false;
+    }
+    *width = s.ws_col;
+    *height = s.ws_row;
+    return true;
+}
