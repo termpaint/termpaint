@@ -13,6 +13,16 @@ add_project_arguments('-std=gnu++14', language : 'cpp')
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'cpp')
 
+main_lib_cargs = []
+
+if get_option('errorlog')
+  debugwin_inc = custom_target('debugwin_inc', output: ['debugwin.py.inc'],
+      command: [find_program('./filetoinc.py'), 'debugwin', files('debugwin.py'), '@OUTPUT0@'])
+  main_lib_cargs += '-DUSE_TK_DEBUGLOG'
+else
+  debugwin_inc = []
+endif
+
 #ide:editable-filelist
 main_lib_files = [
   'termpaint.c',
@@ -21,9 +31,13 @@ main_lib_files = [
   'termpaintx.c',
   'termpaintx_ttyrescue.c',
   'ttyrescue.c',
+  debugwin_inc
 ]
 
-main_lib = library('termpaint', main_lib_files, c_args: '-DTERMPAINT_RESCUE_EMBEDDED', install: true)
+main_lib_cargs += '-DTERMPAINT_RESCUE_EMBEDDED'
+main_lib = library('termpaint', main_lib_files,
+  c_args: main_lib_cargs,
+  install: true)
 
 main_lib_installed_headers = [
   'termpaint.h',

@@ -1,4 +1,11 @@
+#define _GNU_SOURCE
 #include "termpaintx.h"
+
+#ifdef USE_TK_DEBUGLOG
+#include <fcntl.h>
+#include <unistd.h>
+#include <spawn.h>
+#endif
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -272,3 +279,80 @@ bool termpaintx_fd_terminal_size(int fd, int *width, int *height) {
     *height = s.ws_row;
     return true;
 }
+
+static void termpaintx_dummy_log(struct termpaint_integration_ *integration, char *data, int length) {
+    (void)integration;
+    (void)data;
+    (void)length;
+}
+
+#ifdef USE_TK_DEBUGLOG
+
+#include "debugwin.py.inc"
+
+static int logfd = -1;
+
+static void termpaintx_fd_log(struct termpaint_integration_ *integration, char *data, int length) {
+    (void)integration;
+    write(logfd, data, length);
+}
+
+
+extern char **environ;
+
+termpaint_logging_func termpaintx_enable_tk_logging(void) {
+
+    if (logfd >= 0) {
+        return termpaintx_fd_log;
+    }
+
+    int pipeends[2];
+
+    if (pipe2(pipeends, O_CLOEXEC) < 0) {
+        return termpaintx_dummy_log;
+    }
+    logfd = pipeends[1];
+
+    int readend = pipeends[0];
+
+    posix_spawnattr_t attr;
+    posix_spawn_file_actions_t file_actions;
+
+    posix_spawn_file_actions_init(&file_actions);
+    if (readend != 1) {
+        posix_spawn_file_actions_addclose(&file_actions, 1);
+    }
+    if (readend != 2) {
+        posix_spawn_file_actions_addclose(&file_actions, 2);
+    }
+    if (readend != 0) {
+        posix_spawn_file_actions_addclose(&file_actions, 0);
+        posix_spawn_file_actions_adddup2(&file_actions, readend, 0);
+    }
+
+    posix_spawnattr_init(&attr);
+    posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF);
+    sigset_t mask;
+    sigfillset(&mask);
+    posix_spawnattr_getsigdefault(&attr, &mask);
+
+    char * argv[] = {
+        "python3",
+        "-E",
+        "-c", (char*)debugwin,
+        nullptr
+    };
+
+    posix_spawnp(nullptr, "python3", &file_actions, &attr,
+                     argv, environ);
+
+    posix_spawn_file_actions_destroy(&file_actions);
+    posix_spawnattr_destroy(&attr);
+
+    return termpaintx_fd_log;
+}
+#else
+termpaint_logging_func termpaintx_enable_tk_logging(void) {
+    return termpaintx_dummy_log;
+}
+#endif

@@ -22,6 +22,10 @@ _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_terminal_size(termpaint_inte
 _tERMPAINT_PUBLIC _Bool termpaintx_fd_set_termios(int fd, const char *options);
 _tERMPAINT_PUBLIC _Bool termpaintx_fd_terminal_size(int fd, int *width, int *height);
 
+typedef void (*termpaint_logging_func)(struct termpaint_integration_ *integration, char *data, int length);
+
+_tERMPAINT_PUBLIC termpaint_logging_func termpaintx_enable_tk_logging(void);
+
 #ifdef __cplusplus
 }
 #endif

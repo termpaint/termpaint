@@ -1,1 +1,2 @@
 option('ssh', type : 'boolean', value : false)
+option('errorlog', type : 'boolean', value : false)
