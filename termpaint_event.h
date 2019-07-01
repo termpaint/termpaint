@@ -74,6 +74,7 @@ _tERMPAINT_PUBLIC const char *termpaint_input_f12();
 #define TERMPAINT_EV_MODE_REPORT 7
 #define TERMPAINT_EV_COLOR_SLOT_REPORT 8
 #define TERMPAINT_EV_REPAINT_REQUESTED 9
+#define TERMPAINT_EV_MOUSE 10
 
 #define TERMPAINT_EV_RAW_PRI_DEV_ATTRIB 100
 #define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 101
@@ -84,6 +85,10 @@ _tERMPAINT_PUBLIC const char *termpaint_input_f12();
 #define TERMPAINT_MOD_CTRL 2
 #define TERMPAINT_MOD_ALT 4
 #define TERMPAINT_MOD_ALTGR 8
+
+#define TERMPAINT_MOUSE_PRESS 1
+#define TERMPAINT_MOUSE_RELEASE 2
+#define TERMPAINT_MOUSE_MOVE 3
 
 struct termpaint_event_ {
     int type;
@@ -101,6 +106,16 @@ struct termpaint_event_ {
             const char *atom;
             int modifier;
         } key;
+
+        // EV_MOUSE
+        struct {
+            int x;
+            int y;
+            int raw_btn_and_flags;
+            int action; // TERMPAINT_MOUSE_*
+            int button; // button == 3 means release with unknown button
+            int modifier;
+        } mouse;
 
         // EV_CURSOR_POSITION
         struct {

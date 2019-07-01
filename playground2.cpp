@@ -82,6 +82,28 @@ void event_handler(void *user_data, termpaint_event *event) {
         pretty += (event->c.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
         pretty += " ";
         pretty += std::string { event->c.string, event->c.length };
+    } else if (event->type == TERMPAINT_EV_MOUSE) {
+        if ((event->mouse.modifier & ~(TERMPAINT_MOD_SHIFT|TERMPAINT_MOD_ALT|TERMPAINT_MOD_CTRL)) == 0) {
+            pretty += (event->mouse.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
+            pretty += (event->mouse.modifier & TERMPAINT_MOD_ALT) ? "A" : " ";
+            pretty += (event->mouse.modifier & TERMPAINT_MOD_CTRL) ? "C" : " ";
+        } else {
+            char buf[100];
+            snprintf(buf, 100, "%03d", event->mouse.modifier);
+            pretty += buf;
+        }
+        pretty += " Mouse ";
+        if (event->mouse.action == TERMPAINT_MOUSE_PRESS) {
+            pretty += std::to_string(event->mouse.button) + " press";
+        } else if (event->mouse.action == TERMPAINT_MOUSE_MOVE) {
+            pretty += "move";
+        } else if (event->mouse.button != 3) {
+            pretty += std::to_string(event->mouse.button) + " release";
+        } else {
+            pretty += "some release";
+        }
+        pretty += ": x=" + std::to_string(event->mouse.x) + " y=" + std::to_string(event->mouse.y)
+                + " rawbtn=" + std::to_string(event->mouse.raw_btn_and_flags);
     } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
         pretty = "Cursor position report: x=" + std::to_string(event->cursor_position.x) + " y=" + std::to_string(event->cursor_position.y);
     } else if (event->type == TERMPAINT_EV_MODE_REPORT) {

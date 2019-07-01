@@ -646,7 +646,8 @@ enum termpaint_input_state {
     tpis_csi,
     tpis_cmd_str,
     tpis_str_terminator_esc,
-    tpid_utf8_5, tpid_utf8_4, tpid_utf8_3, tpid_utf8_2, tpid_utf8_1
+    tpid_utf8_5, tpid_utf8_4, tpid_utf8_3, tpid_utf8_2, tpid_utf8_1,
+    tpis_mouse_btn, tpis_mouse_col, tpis_mouse_row
 };
 
 struct termpaint_input_ {
@@ -657,6 +658,8 @@ struct termpaint_input_ {
     _Bool esc_pending;
 
     _Bool expect_cursor_position_report;
+    _Bool expect_mouse_char_mode;
+    _Bool expect_mouse_multibyte_mode;
 
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
@@ -696,6 +699,95 @@ static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t lengt
     }
 
     return false;
+}
+
+static bool termpaintp_input_parse_dec_3(const unsigned char *data, size_t length, int *a, int *b, int *c) {
+    int val = 0;
+    int state = 0;
+    for (int i = 0; i < length; i++) {
+        if (data[i] >= '0' && data[i] <= '9') {
+            val = val * 10 + data[i] - '0';
+        } else if (state == 0 && data[i] == ';') {
+            *a = val;
+            val = 0;
+            state = 1;
+        } else if (state == 1 && data[i] == ';') {
+            *b = val;
+            val = 0;
+            state = 2;
+        } else {
+            return false;
+        }
+    }
+    if (state == 2) {
+        *c = val;
+        return true;
+    }
+
+    return false;
+}
+
+static bool termpaintp_input_parse_mb_3(const unsigned char *data, size_t length, int *a, int *b, int *c) {
+    if (length < 3) { // three values -> at least 3 bytes
+        return false;
+    }
+    const int len_a = termpaintp_utf8_len(data[0]);
+    if (len_a >= length // including first byte of b
+            || !termpaintp_check_valid_sequence(data, len_a)) {
+        return false;
+    }
+    *a = termpaintp_utf8_decode_from_utf8(data, len_a);
+
+    const int len_b = termpaintp_utf8_len(data[len_a]);
+    if (len_a + len_b >= length // including first byte of c
+            || !termpaintp_check_valid_sequence(data + len_a, len_b)) {
+        return false;
+    }
+    *b = termpaintp_utf8_decode_from_utf8(data + len_a, len_b);
+
+    const int len_c = termpaintp_utf8_len(data[len_a + len_b]);
+    if (len_a + len_b + len_c != length // don't allow trailing garbage
+            || !termpaintp_check_valid_sequence(data + len_a + len_b, len_c)) {
+        return false;
+    }
+    *c = termpaintp_utf8_decode_from_utf8(data + len_a + len_b, len_c);
+    return true;
+}
+
+static void termpaintp_input_translate_mouse_flags(termpaint_event* event, int mode) {
+    // mode = 0 -> release if button is 3 (all modes except 1006)
+    // mode = 1 -> release from final (mode 1006 with 'm' as final)
+    // mode = 2 -> press from final (mode 1006 with 'M' as final)
+
+    // shuffle the bits from the raw button and flags
+    event->mouse.button = event->mouse.raw_btn_and_flags & 0x3;
+    if (event->mouse.raw_btn_and_flags & 0x40) {
+        event->mouse.button |= 4;
+    }
+    if (event->mouse.raw_btn_and_flags & 0x80) {
+        event->mouse.button |= 8;
+    }
+
+    event->mouse.modifier = 0;
+    if (event->mouse.raw_btn_and_flags & 0x4) {
+        event->mouse.modifier |= TERMPAINT_MOD_SHIFT;
+    }
+    if (event->mouse.raw_btn_and_flags & 0x8) {
+        event->mouse.modifier |= TERMPAINT_MOD_ALT;
+    }
+    if (event->mouse.raw_btn_and_flags & 0x10) {
+        event->mouse.modifier |= TERMPAINT_MOD_CTRL;
+    }
+
+    if (event->mouse.raw_btn_and_flags & 0x20) {
+        event->mouse.action = TERMPAINT_MOUSE_MOVE;
+    } else if (mode == 0) {
+        event->mouse.action = event->mouse.button != 3 ? TERMPAINT_MOUSE_PRESS : TERMPAINT_MOUSE_RELEASE;
+    } else if (mode == 1) {
+        event->mouse.action = TERMPAINT_MOUSE_RELEASE;
+    } else {
+        event->mouse.action = TERMPAINT_MOUSE_PRESS;
+    }
 }
 
 static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data, size_t length, _Bool overflow) {
@@ -885,6 +977,61 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 ++i;
                 qm = true;
             }
+
+            if (!qm && !event.type && length >= 6 && data[2] == 'M') {
+                if (length == 6) {
+                    if (data[3] >= 32 && data[4] > 32 && data[5] > 32) {
+                        // only translate non overflow mouse reports (some terminals overflow into the C0 range,
+                        // ignore those too)
+                        event.type = TERMPAINT_EV_MOUSE;
+                        event.mouse.raw_btn_and_flags = data[3] - ' ';
+                        event.mouse.x = data[4] - '!';
+                        event.mouse.y = data[5] - '!';
+                        termpaintp_input_translate_mouse_flags(&event, 0);
+                    }
+                } else {
+                    int x, y, btn;
+                    if (termpaintp_input_parse_mb_3(data + 3, length - 3, &btn, &x, &y)) {
+                        if (btn >= 32 && x > 32 && y > 32) {
+                            // here no overflow should be possible. But the substractions would yield negative values
+                            // otherwise
+                            event.mouse.raw_btn_and_flags = btn - ' ';
+                            event.mouse.x = x - '!';
+                            event.mouse.y = y - '!';
+                            termpaintp_input_translate_mouse_flags(&event, 0);
+                            event.type = TERMPAINT_EV_MOUSE;
+                        }
+                    }
+                }
+            }
+
+            if (!qm && !event.type && length > 7 && data[2] != '<' && data[length - 1] == 'M') {
+                // urxvt mouse mode 1015
+                int x, y, btn;
+                if (termpaintp_input_parse_dec_3(data + 2, length - 3, &btn, &x, &y)
+                        && btn >= ' ' && x > 0 && y > 0) {
+                    event.type = TERMPAINT_EV_MOUSE;
+                    event.mouse.raw_btn_and_flags = btn - ' ';
+                    event.mouse.x = x - 1;
+                    event.mouse.y = y - 1;
+                    termpaintp_input_translate_mouse_flags(&event, 0);
+                }
+            }
+
+            if (!qm && !event.type && length > 8 && data[2] == '<' && (data[length - 1] == 'M' || data[length - 1] == 'm')) {
+                // mouse mode 1006
+                int x, y, btn;
+                if (termpaintp_input_parse_dec_3(data + 3, length - 4, &btn, &x, &y)
+                        && x > 0 && y > 0) {
+                    event.type = TERMPAINT_EV_MOUSE;
+                    event.mouse.raw_btn_and_flags = btn;
+                    event.mouse.x = x - 1;
+                    event.mouse.y = y - 1;
+                    termpaintp_input_translate_mouse_flags(&event, data[length - 1] == 'm' ? 1 : 2);
+                }
+            }
+
+
             if ((!event.type || ctx->expect_cursor_position_report) && length > 5 && data[length-1] == 'R') { // both plain and qm
                 int x, y;
                 if (termpaintp_input_parse_dec_2(data + i, length - i - 1, &y, &x)) {
@@ -1005,6 +1152,37 @@ void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *, termp
     ctx->event_user_data = user_data;
 }
 
+bool termpaintp_input_legacy_mouse_bytes_finished(termpaint_input *ctx) {
+    const unsigned char cur_ch = ctx->buff[ctx->used - 1];
+    if (0xc0 == (0xc0 & cur_ch)) {
+        // start of multi code unit sequence.
+        if (ctx->used >= 2 && (0xc0 == (0xc0 & ctx->buff[ctx->used - 2]))) {
+            // multiple start characters without continuation -> bogus
+            return true;
+        } else {
+            return false;
+        }
+    } else if (0x80 == (0x80 & cur_ch)) {
+        // continuation
+        for (int j = ctx->used - 2; j > 0; j--) {
+            if (j <= ctx->used - 5 || !(0x80 & ctx->buff[j])) {
+                return true;
+            }
+            if ((ctx->buff[j] & 0xc0) == 0xc0) {
+                int len = termpaintp_utf8_len(ctx->buff[j]);
+                if (len <= ctx->used - j) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    } else {
+        return true;
+    }
+}
+
 bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned length) {
     const unsigned char *data = (const unsigned char*)data_s;
 
@@ -1096,7 +1274,9 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpis_csi:
-                if (data[i] >= '@' && data[i] <= '~' && (data[i] != '[' || ctx->used != 3 /* linux vt*/)) {
+                if (data[i] == 'M' && data[i - 1] == '[' && (ctx->expect_mouse_char_mode || ctx->expect_mouse_multibyte_mode)) {
+                    ctx->state = tpis_mouse_btn;
+                } else if (data[i] >= '@' && data[i] <= '~' && (data[i] != '[' || ctx->used != 3 /* linux vt*/)) {
                     finished = true;
                 } else if (data[i] == '\e') {
                     retrigger = true;
@@ -1158,6 +1338,33 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     finished = true;
                 }
                 break;
+            case tpis_mouse_btn:
+                if (!ctx->expect_mouse_multibyte_mode) {
+                    ctx->state = tpis_mouse_col;
+                } else {
+                    if (termpaintp_input_legacy_mouse_bytes_finished(ctx)) {
+                        ctx->state = tpis_mouse_col;
+                    }
+                }
+                break;
+            case tpis_mouse_col:
+                if (!ctx->expect_mouse_multibyte_mode) {
+                    ctx->state = tpis_mouse_row;
+                } else {
+                    if (termpaintp_input_legacy_mouse_bytes_finished(ctx)) {
+                        ctx->state = tpis_mouse_row;
+                    }
+                }
+                break;
+            case tpis_mouse_row:
+                if (!ctx->expect_mouse_multibyte_mode) {
+                    finished = true;
+                } else {
+                    if (termpaintp_input_legacy_mouse_bytes_finished(ctx)) {
+                        finished = true;
+                    }
+                }
+                break;
         }
         if (finished) {
             termpaintp_input_raw(ctx, ctx->buff, ctx->used, ctx->overflow);
@@ -1198,4 +1405,17 @@ int termpaint_input_peek_buffer_length(const termpaint_input *ctx) {
 
 void termpaint_input_expect_cursor_position_report(termpaint_input *ctx) {
     ctx->expect_cursor_position_report = true;
+}
+
+void termpaint_input_expect_legacy_mouse_reports(termpaint_input *ctx, int s) {
+    if (s == TERMPAINT_INPUT_EXPECT_LEGACY_MOUSE) {
+        ctx->expect_mouse_char_mode = true;
+        ctx->expect_mouse_multibyte_mode = false;
+    } else if (s == TERMPAINT_INPUT_EXPECT_LEGACY_MOUSE_MODE_1005) {
+        ctx->expect_mouse_char_mode = false;
+        ctx->expect_mouse_multibyte_mode = true;
+    } else {
+        ctx->expect_mouse_char_mode = false;
+        ctx->expect_mouse_multibyte_mode = false;
+    }
 }
