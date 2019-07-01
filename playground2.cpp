@@ -127,10 +127,10 @@ void display_esc(int x, int y, const std::string &data) {
             i += 2;
         } else if (0xc0 == (0xe0 & u8(data[i])) && i+1 < data.length()) {
             if (((unsigned char)data[i]) == 0xc2 && ((unsigned char)data[i+1]) < 0xa0) { // C1 and non breaking space
-                char x = ((unsigned char)data[i+1]) >> 4;
-                char a = char(x < 10 ? '0' + x : 'a' + x - 10);
-                x = data[i+1] & 0xf;
-                char b = char(x < 10 ? '0' + x : 'a' + x - 10);
+                char v = ((unsigned char)data[i+1]) >> 4;
+                char a = char(v < 10 ? '0' + v : 'a' + v - 10);
+                v = data[i+1] & 0xf;
+                char b = char(v < 10 ? '0' + v : 'a' + v - 10);
                 char buf[7] = {'\\', 'u', '0', '0', a, b, 0};
                 termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f0000);
                 x += 6;
