@@ -191,7 +191,7 @@ void render() {
     int y = 2;
     for (DisplayEvent &event : ring) {
         display_esc(5, y, event.raw);
-        termpaint_surface_write_with_colors(surface, 20, y, event.eventString.data(), 0xff0000, 0x1000000);
+        termpaint_surface_write_with_colors(surface, 30, y, event.eventString.data(), 0xff0000, 0x1000000);
         ++y;
     }
 
