@@ -114,13 +114,16 @@ int main(int argc, char **argv) {
     // 'a' + U+0308 COMBINING DIAERESIS + U+0324 COMBINING DIAERESIS BELOW
     termpaint_surface_write_with_colors(surface, 10, 6, "a\xcc\x88\xcc\xa4X", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
 
-    // 'a' + U+E0100 VARIATION SELECTOR-17 + U+E0100 VARIATION SELECTOR-18 (nonsense)
+    // 'a' + U+E0100 VARIATION SELECTOR-17 + U+E0101 VARIATION SELECTOR-18 (nonsense)
     termpaint_surface_write_with_colors(surface, 10, 7, "a\xf3\xa0\x84\x80\xf3\xa0\x84\x81X", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
 
-    // 'a' + U+E0100 VARIATION SELECTOR-17 + U+FEFF ZERO WIDTH NO-BREAK SPACE (nonsense)
+    // 'a' + U+E0100 VARIATION SELECTOR-17 + U+FE00 VARIATION SELECTOR-1 (nonsense)
     termpaint_surface_write_with_colors(surface, 10, 8, "a\xf3\xa0\x84\x80\xef\xb8\x80X", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
 
-    termpaint_surface_write_with_colors(surface, 10, 9, "あ3あ67あX", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    // 'a' + U+E0100 VARIATION SELECTOR-17 + U+FEFF ZERO WIDTH NO-BREAK SPACE (nonsense)
+    termpaint_surface_write_with_colors(surface, 10, 9, "a\xf3\xa0\x84\x80\xef\xbb\xbfX", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_colors(surface, 10, 10, "あ3あ67あX", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
 
     key_wait();
 
