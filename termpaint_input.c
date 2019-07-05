@@ -660,6 +660,7 @@ struct termpaint_input_ {
     _Bool expect_cursor_position_report;
     _Bool expect_mouse_char_mode;
     _Bool expect_mouse_multibyte_mode;
+    _Bool expect_apc;
 
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
@@ -1260,7 +1261,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     ctx->state = tpis_csi;
                 } else if (data[i] == ']') {
                     ctx->state = tpis_cmd_str;
-                } else if (data[i] == '_') { // APC
+                } else if (ctx->expect_apc && data[i] == '_') { // APC
                     ctx->state = tpis_cmd_str;
                 } else if (0xfc == (0xfe & data[i])) { // meta -> ESC can produce these
                     ctx->state = tpid_utf8_5;
