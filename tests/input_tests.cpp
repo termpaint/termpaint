@@ -225,10 +225,10 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
 
     for (auto caseval: cases) {
         jobject caseobj = caseval.get<jobject>();
-        std::string sectionName = caseobj["keyId"].get<std::string>();
+        std::string rawInputHex = caseobj["raw"].get<std::string>();
+        std::string sectionName = caseobj["keyId"].get<std::string>() + "-" + rawInputHex;
 
         SECTION( sectionName ) {
-            std::string rawInputHex = caseobj["raw"].get<std::string>();
             CAPTURE(rawInputHex);
             std::string rawInput;
             for (int i=0; i < rawInputHex.size(); i+=2) {
@@ -300,10 +300,28 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
                 }
             };
 
-            if (rawInputHex == "1b"
-                    || rawInputHex == "1b1b"
+            if (rawInputHex == "1b" // ESC: the traditional hard case
+                    || rawInputHex == "1b1b" // alt ESC
                     || rawInputHex == "1b50"
-                    || rawInputHex == "1b4f") {
+                    || rawInputHex == "1b4f"
+                    // various urxvt sequences end in '$', which is not a final character for CSI
+                    || rawInputHex == "1b5b323324" // urxvt F11.S
+                    || rawInputHex == "1b1b5b323324" // urxvt F11.SA
+                    || rawInputHex == "1b5b323424" // urxvt F12.S
+                    || rawInputHex == "1b1b5b323424" // urxvt F12.SA
+                    || rawInputHex == "1b5b3224" // urxvt Insert.S
+                    || rawInputHex == "1b1b5b3224" // urxvt Insert.SA
+                    || rawInputHex == "1b5b3324" // urxvt Delete.S
+                    || rawInputHex == "1b1b5b3324" // urxvt Delete.SA
+                    || rawInputHex == "1b5b3524" // urxvt PageUp.S
+                    || rawInputHex == "1b1b5b3524" // urxvt PageUp.SA
+                    || rawInputHex == "1b5b3624" // urxvt PageDown.S
+                    || rawInputHex == "1b1b5b3624" // urxvt PageDown.SA
+                    || rawInputHex == "1b5b3724" // urxvt Home.S
+                    || rawInputHex == "1b1b5b3724" // urxvt Home.SA
+                    || rawInputHex == "1b5b3824" // urxvt End.S
+                    || rawInputHex == "1b1b5b3824" // urxvt End.SA
+                    ) {
                 expectSync = true;
             }
 
