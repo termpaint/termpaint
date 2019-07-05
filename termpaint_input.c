@@ -925,21 +925,38 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 codepoint = p;
             }
 
-            if (state == 1 && codepoint > 0 && codepoint <= 0x7FFFFFFF) {
-                // TODO exclude C0 space, C1 space and 0x7f
-                event.type = TERMPAINT_EV_CHAR;
-                event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
-                event.c.string = (char*)buffer;
-                event.c.modifier = 0;
-                mod = mod - 1;
-                if (mod & 1) {
-                    event.c.modifier |= MOD_SHIFT;
-                }
-                if (mod & 2) {
-                    event.c.modifier |= MOD_ALT;
-                }
-                if (mod & 4) {
-                    event.c.modifier |= MOD_CTRL;
+            if (state == 1) {
+                if (codepoint == 8) {
+                    event.type = TERMPAINT_EV_KEY;
+                    event.key.length = 0;
+                    event.key.atom = ATOM_backspace;
+                    event.key.modifier = 0;
+                    mod = mod - 1;
+                    if (mod & 1) {
+                        event.key.modifier |= MOD_SHIFT;
+                    }
+                    if (mod & 2) {
+                        event.key.modifier |= MOD_ALT;
+                    }
+                    if (mod & 4) {
+                        event.key.modifier |= MOD_CTRL;
+                    }
+                } else if (codepoint > 0 && codepoint <= 0x7FFFFFFF) {
+                    // TODO exclude C0 space, C1 space and 0x7f
+                    event.type = TERMPAINT_EV_CHAR;
+                    event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
+                    event.c.string = (char*)buffer;
+                    event.c.modifier = 0;
+                    mod = mod - 1;
+                    if (mod & 1) {
+                        event.c.modifier |= MOD_SHIFT;
+                    }
+                    if (mod & 2) {
+                        event.c.modifier |= MOD_ALT;
+                    }
+                    if (mod & 4) {
+                        event.c.modifier |= MOD_CTRL;
+                    }
                 }
             }
         }
