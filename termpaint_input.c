@@ -96,14 +96,32 @@ struct key_mapping_entry_ {
 };
 typedef struct key_mapping_entry_ key_mapping_entry;
 
-#define XTERM_MODS(PREFIX, POSTFIX, ATOM)                               \
-{ PREFIX "2" POSTFIX, ATOM,                      MOD_SHIFT },       \
+#define XTERM_MODS(PREFIX, POSTFIX, ATOM)                           \
+    { PREFIX "2" POSTFIX, ATOM,                      MOD_SHIFT },   \
     { PREFIX "3" POSTFIX, ATOM,            MOD_ALT             },   \
     { PREFIX "4" POSTFIX, ATOM,            MOD_ALT | MOD_SHIFT },   \
     { PREFIX "5" POSTFIX, ATOM, MOD_CTRL                       },   \
     { PREFIX "6" POSTFIX, ATOM, MOD_CTRL           | MOD_SHIFT },   \
     { PREFIX "7" POSTFIX, ATOM, MOD_CTRL | MOD_ALT             },   \
     { PREFIX "8" POSTFIX, ATOM, MOD_CTRL | MOD_ALT | MOD_SHIFT }
+
+// xterm has 2 settings where a '>' is added to the CSI sequences added, support that too
+// ESC[>2;3m and ESC[>1;3m
+#define XTERM_MODS_GT(STR, POSTFIX, ATOM)                                 \
+    { "\033["  STR "2" POSTFIX, ATOM,                      MOD_SHIFT },   \
+    { "\033[>" STR "2" POSTFIX, ATOM,                      MOD_SHIFT },   \
+    { "\033["  STR "3" POSTFIX, ATOM,            MOD_ALT             },   \
+    { "\033[>" STR "3" POSTFIX, ATOM,            MOD_ALT             },   \
+    { "\033["  STR "4" POSTFIX, ATOM,            MOD_ALT | MOD_SHIFT },   \
+    { "\033[>" STR "4" POSTFIX, ATOM,            MOD_ALT | MOD_SHIFT },   \
+    { "\033["  STR "5" POSTFIX, ATOM, MOD_CTRL                       },   \
+    { "\033[>" STR "5" POSTFIX, ATOM, MOD_CTRL                       },   \
+    { "\033["  STR "6" POSTFIX, ATOM, MOD_CTRL           | MOD_SHIFT },   \
+    { "\033[>" STR "6" POSTFIX, ATOM, MOD_CTRL           | MOD_SHIFT },   \
+    { "\033["  STR "7" POSTFIX, ATOM, MOD_CTRL | MOD_ALT             },   \
+    { "\033[>" STR "7" POSTFIX, ATOM, MOD_CTRL | MOD_ALT             },   \
+    { "\033["  STR "8" POSTFIX, ATOM, MOD_CTRL | MOD_ALT | MOD_SHIFT },   \
+    { "\033[>" STR "8" POSTFIX, ATOM, MOD_CTRL | MOD_ALT | MOD_SHIFT }
 
 // keyboard settings to consider:
 // xterm:
@@ -164,7 +182,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[3@", ATOM_delete, MOD_CTRL | MOD_ALT | MOD_SHIFT},
     { "\e[3;1~", ATOM_delete, MOD_ALTGR },
     { "\e[F", ATOM_end, 0},
-    XTERM_MODS("\e[1;", "F", ATOM_end),
+    XTERM_MODS_GT("1;", "F", ATOM_end),
     { "\eOF", ATOM_end,  0},
     { "\e[4~", ATOM_end, 0},
     { "\e[8~", ATOM_end, 0},
@@ -177,7 +195,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[8@", ATOM_end, MOD_CTRL | MOD_ALT | MOD_SHIFT},
     { "\e[1;1F", ATOM_end, MOD_ALTGR},
     { "\e[H", ATOM_home, 0},
-    XTERM_MODS("\e[1;", "H", ATOM_home),
+    XTERM_MODS_GT("1;", "H", ATOM_home),
     { "\eOH", ATOM_home,  0},
     { "\e[1~", ATOM_home, 0},
     { "\e[7~", ATOM_home, 0},
@@ -221,7 +239,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[5;1~", ATOM_page_up, MOD_ALTGR},
 
     { "\e[B", ATOM_arrow_down, 0 },
-    XTERM_MODS("\e[1;", "B", ATOM_arrow_down),
+    XTERM_MODS_GT("1;", "B", ATOM_arrow_down),
     { "\eOB", ATOM_arrow_down, 0 },
     { "\e[b", ATOM_arrow_down, MOD_SHIFT },
     { "\eOb", ATOM_arrow_down, MOD_CTRL },
@@ -230,7 +248,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\eOb", ATOM_arrow_down, MOD_CTRL | MOD_ALT },
     { "\e[1;1B", ATOM_arrow_down, MOD_ALTGR },
     { "\e[D", ATOM_arrow_left, 0 },
-    XTERM_MODS("\e[1;", "D", ATOM_arrow_left),
+    XTERM_MODS_GT("1;", "D", ATOM_arrow_left),
     { "\eOD", ATOM_arrow_left, 0 },
     { "\e[d", ATOM_arrow_left, MOD_SHIFT },
     { "\eOd", ATOM_arrow_left, MOD_CTRL },
@@ -239,7 +257,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\eOd", ATOM_arrow_left, MOD_CTRL | MOD_ALT },
     { "\e[1;1D", ATOM_arrow_left, MOD_ALTGR },
     { "\e[C", ATOM_arrow_right, 0 },
-    XTERM_MODS("\e[1;", "C", ATOM_arrow_right),
+    XTERM_MODS_GT("1;", "C", ATOM_arrow_right),
     { "\eOC", ATOM_arrow_right, 0 },
     { "\e[c", ATOM_arrow_right, MOD_SHIFT },
     { "\eOc", ATOM_arrow_right, MOD_CTRL },
@@ -248,7 +266,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\eOc", ATOM_arrow_right, MOD_CTRL | MOD_ALT },
     { "\e[1;1C", ATOM_arrow_right, MOD_ALTGR },
     { "\e[A", ATOM_arrow_up, 0 },
-    XTERM_MODS("\e[1;", "A", ATOM_arrow_up),
+    XTERM_MODS_GT("1;", "A", ATOM_arrow_up),
     { "\eOA", ATOM_arrow_up, 0 },
     { "\e[a", ATOM_arrow_up, MOD_SHIFT },
     { "\eOa", ATOM_arrow_up, MOD_CTRL },
@@ -346,7 +364,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\eOu",  ATOM_numpad5,                                     0 },
     { "\e\eOu",ATOM_numpad5,                   MOD_ALT             },
     { "\e[E", ATOM_numpad5, 0 },
-    XTERM_MODS("\e[1;", "E", ATOM_numpad5),
+    XTERM_MODS_GT("1;", "E", ATOM_numpad5),
     { "\eOE", ATOM_numpad5, 0 },
     { "\e[G",  ATOM_numpad5,                                     0 },
 
@@ -397,7 +415,7 @@ static key_mapping_entry key_mapping_table[] = {
 
 
     { "\eOP", ATOM_f1, 0 },
-    XTERM_MODS("\e[1;", "P", ATOM_f1),
+    XTERM_MODS_GT("1;", "P", ATOM_f1),
     XTERM_MODS("\eO", "P", ATOM_f1),
     { "\e[[A", ATOM_f1, 0 },
     { "\e[25~", ATOM_f1, MOD_SHIFT },
@@ -410,7 +428,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[11~", ATOM_f1, MOD_ALT },
     { "\e\e[11^", ATOM_f1, MOD_CTRL | MOD_ALT },
     { "\eOQ", ATOM_f2, 0 },
-    XTERM_MODS("\e[1;", "Q", ATOM_f2),
+    XTERM_MODS_GT("1;", "Q", ATOM_f2),
     XTERM_MODS("\eO", "Q", ATOM_f2),
     { "\e[[B", ATOM_f2, 0 },
     { "\e[26~", ATOM_f2, MOD_SHIFT },
@@ -423,7 +441,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[12~", ATOM_f2, MOD_ALT },
     { "\e\e[12^", ATOM_f2, MOD_CTRL | MOD_ALT },
     { "\eOR", ATOM_f3, 0 },
-    XTERM_MODS("\e[1;", "R", ATOM_f3),
+    XTERM_MODS_GT("1;", "R", ATOM_f3),
     XTERM_MODS("\eO", "R", ATOM_f3),
     { "\e[[C", ATOM_f3, 0 },
     { "\e[28~", ATOM_f3, MOD_SHIFT },
@@ -436,7 +454,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[13~", ATOM_f3, MOD_ALT },
     { "\e\e[13^", ATOM_f3, MOD_CTRL | MOD_ALT },
     { "\eOS", ATOM_f4, 0 },
-    XTERM_MODS("\e[1;", "S", ATOM_f4),    
+    XTERM_MODS_GT("1;", "S", ATOM_f4),
     XTERM_MODS("\eO", "S", ATOM_f4),
     { "\e[[D", ATOM_f4, 0 },
     { "\eO1S", ATOM_f4, MOD_ALTGR },
@@ -451,7 +469,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[15^", ATOM_f5, MOD_CTRL },
     { "\e\e[15~", ATOM_f5, MOD_ALT },
     { "\e\e[15^", ATOM_f5, MOD_CTRL | MOD_ALT },
-    XTERM_MODS("\e[15;", "~", ATOM_f5),
+    XTERM_MODS_GT("15;", "~", ATOM_f5),
     { "\e[[E", ATOM_f5, 0 },
     { "\e[31~", ATOM_f5, MOD_SHIFT },
     { "\e[31^", ATOM_f5, MOD_CTRL | MOD_SHIFT },
@@ -462,7 +480,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[17^", ATOM_f6, MOD_CTRL },
     { "\e\e[17~", ATOM_f6, MOD_ALT },
     { "\e\e[17^", ATOM_f6, MOD_CTRL | MOD_ALT },
-    XTERM_MODS("\e[17;", "~", ATOM_f6),
+    XTERM_MODS_GT("17;", "~", ATOM_f6),
     { "\e[32~", ATOM_f6, MOD_SHIFT },
     { "\e[32^", ATOM_f6, MOD_CTRL | MOD_SHIFT },
     { "\e\e[32~", ATOM_f6, MOD_ALT | MOD_SHIFT },
@@ -472,7 +490,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[18^", ATOM_f7, MOD_CTRL },
     { "\e\e[18~", ATOM_f7, MOD_ALT },
     { "\e\e[18^", ATOM_f7, MOD_CTRL | MOD_ALT },
-    XTERM_MODS("\e[18;", "~", ATOM_f7),
+    XTERM_MODS_GT("18;", "~", ATOM_f7),
     { "\e[33~", ATOM_f7, MOD_SHIFT },
     { "\e[33^", ATOM_f7, MOD_CTRL | MOD_SHIFT },
     { "\e\e[33~", ATOM_f7, MOD_ALT | MOD_SHIFT },
@@ -482,7 +500,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[19^", ATOM_f8, MOD_CTRL },
     { "\e\e[19~", ATOM_f8, MOD_ALT },
     { "\e\e[19^", ATOM_f8, MOD_CTRL | MOD_ALT },
-    XTERM_MODS("\e[19;", "~", ATOM_f8),
+    XTERM_MODS_GT("19;", "~", ATOM_f8),
     { "\e[34~", ATOM_f8, MOD_SHIFT },
     { "\e[34^", ATOM_f8, MOD_CTRL | MOD_SHIFT },
     { "\e\e[34~", ATOM_f8, MOD_ALT | MOD_SHIFT },
@@ -492,13 +510,13 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e[20^", ATOM_f9, MOD_CTRL },
     { "\e\e[20~", ATOM_f9, MOD_ALT },
     { "\e\e[20^", ATOM_f9, MOD_CTRL | MOD_ALT },
-    XTERM_MODS("\e[20;", "~", ATOM_f9),
+    XTERM_MODS_GT("20;", "~", ATOM_f9),
     { "\e[20;1~", ATOM_f9, MOD_ALTGR },
     { "\e[21~", ATOM_f10, 0 },
     { "\e[21^", ATOM_f10, MOD_CTRL },
     { "\e\e[21~", ATOM_f10, MOD_ALT },
     { "\e\e[21^", ATOM_f10, MOD_CTRL | MOD_ALT },
-    XTERM_MODS("\e[21;", "~", ATOM_f10),
+    XTERM_MODS_GT("21;", "~", ATOM_f10),
     { "\e[21;1~", ATOM_f10, MOD_ALTGR },
     { "\e[23~", ATOM_f11, 0 },
     { "\e[23$", ATOM_f11, MOD_SHIFT },
@@ -508,7 +526,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[23$", ATOM_f11, MOD_ALT | MOD_SHIFT },
     { "\e\e[23^", ATOM_f11, MOD_CTRL | MOD_ALT },
     { "\e\e[23@", ATOM_f11, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    XTERM_MODS("\e[23;", "~", ATOM_f11),
+    XTERM_MODS_GT("23;", "~", ATOM_f11),
     { "\e[23;1~", ATOM_f11, MOD_ALTGR },
     { "\e[24~", ATOM_f12, 0 },
     { "\e[24$", ATOM_f12, MOD_SHIFT },
@@ -518,7 +536,7 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\e[24$", ATOM_f12, MOD_ALT | MOD_SHIFT },
     { "\e\e[24^", ATOM_f12, MOD_CTRL | MOD_ALT },
     { "\e\e[24@", ATOM_f12, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    XTERM_MODS("\e[24;", "~", ATOM_f12),
+    XTERM_MODS_GT("24;", "~", ATOM_f12),
     { "\e[24;1~", ATOM_f12, MOD_ALTGR },
 
 
