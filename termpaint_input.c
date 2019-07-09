@@ -912,6 +912,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                     (length >= 9 && memcmp(data, "\e[27;", 5) == 0 && data[length-1] == '~')
                  || (length >= 6 && data[0] == '\e' && data[1] == '[' && data[length-1] == 'u'))) {
             // TODO \e[<mod>;<char>u
+            // Note: CSI parsing here needs to reject sequences with prefix or postfix modifiers
             unsigned i;
             if (data[length-1] == 'u') {
                 i = 2;
@@ -1007,14 +1008,61 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         }
 
         if (length > 2 && data[0] == '\033' && data[1] == '[') {
-            int i = 2;
-            bool qm = false;
-            if (length > 3 && data[i] == '?') {
-                ++i;
-                qm = true;
+            int params_start = 2;
+            int params_len = length - 3;
+
+            // scan for shape
+            char prefix_modifier = 0;
+            char postfix_modifier = 0;
+            char final = 0;
+            bool ok = true;
+            for (int j = 2; j < length; j++) {
+                if ('0' <= data[j] && data[j] <= ';') {
+                    // mid part
+                } else if ('<' <= data[j] && data[j] <= '?') {
+                    // prefix modifier
+                    if (j == 2) {
+                        // at the very beginning
+                        prefix_modifier = data[j];
+                        ++params_start;
+                        --params_len;
+                    } else {
+                        // at an unexpected place
+                        ok = false;
+                        break;
+                    }
+                } else if (' ' <= data[j] && data[j] <= '/') {
+                    // postfix modifier
+                    if (j == length - 2) {
+                        // just before final character
+                        postfix_modifier = data[j];
+                        --params_len;
+                    } else {
+                        // at an unexpected place
+                        ok = false;
+                        break;
+                    }
+                } else if ('@' <= data[j] && data[j] <= 127) {
+                    // final character
+                    if (j == length - 1) {
+                        // and actually in the final byte
+                        final = data[j];
+                    } else {
+                        // at an unexpected place
+                        ok = false;
+                        break;
+                    }
+                } else {
+                    ok = false;
+                    break;
+                }
             }
 
-            if (!qm && !event.type && length >= 6 && data[2] == 'M') {
+#define SEQ(f, pre, post) (((pre) << 16) | ((post) << 8) | (f))
+            int32_t sequence_id = ok ? SEQ(final, prefix_modifier, postfix_modifier) : 0;
+
+            // the CSI sequence is just a prefix in legacy mouse modes.
+            if (!event.type && length >= 6 && data[2] == 'M') {
                 if (length == 6) {
                     if (data[3] >= 32 && data[4] > 32 && data[5] > 32) {
                         // only translate non overflow mouse reports (some terminals overflow into the C0 range,
@@ -1041,7 +1089,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
             }
 
-            if (!qm && !event.type && length > 7 && data[2] != '<' && data[length - 1] == 'M') {
+            if (!event.type && sequence_id == SEQ('M', 0, 0) && length > 7) {
                 // urxvt mouse mode 1015
                 int x, y, btn;
                 if (termpaintp_input_parse_dec_3(data + 2, length - 3, &btn, &x, &y)
@@ -1054,7 +1102,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
             }
 
-            if (!qm && !event.type && length > 8 && data[2] == '<' && (data[length - 1] == 'M' || data[length - 1] == 'm')) {
+            if (!event.type && length > 8 && (sequence_id == SEQ('M', '<', 0) || sequence_id == SEQ('m', '<', 0))) {
                 // mouse mode 1006
                 int x, y, btn;
                 if (termpaintp_input_parse_dec_3(data + 3, length - 4, &btn, &x, &y)
@@ -1068,49 +1116,52 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
 
 
-            if ((!event.type || ctx->expect_cursor_position_report) && length > 5 && data[length-1] == 'R') { // both plain and qm
+            if ((!event.type || ctx->expect_cursor_position_report)
+                    && length > 5 && (sequence_id == SEQ('R', 0, 0) || sequence_id == SEQ('R', '?', 0))) {
                 int x, y;
-                if (termpaintp_input_parse_dec_2(data + i, length - i - 1, &y, &x)) {
+                if (termpaintp_input_parse_dec_2(data + params_start, params_len, &y, &x)) {
                     event.type = TERMPAINT_EV_CURSOR_POSITION;
                     event.cursor_position.x = x - 1;
                     event.cursor_position.y = y - 1;
-                    if (!qm) {
+                    if (prefix_modifier == 0) {
                         ctx->expect_cursor_position_report = false;
                     }
-                    event.cursor_position.safe = qm;
+                    event.cursor_position.safe = prefix_modifier == '?';
                 }
             }
 
             if (!event.type) {
-                if (length > 5 && data[length-1] == 'y' && data[length-2] == '$') { // both plain and qm
+                if (length > 5 &&
+                        (sequence_id == SEQ('y', 0, '$') || sequence_id == SEQ('y', '?', '$'))) {
                     int mode, status;
-                    if (termpaintp_input_parse_dec_2(data + i, length - i - 2, &mode, &status)) {
+                    if (termpaintp_input_parse_dec_2(data + params_start, params_len, &mode, &status)) {
                         event.type = TERMPAINT_EV_MODE_REPORT;
                         event.mode.number = mode;
-                        event.mode.kind = qm ? 1 : 0;
+                        event.mode.kind = (prefix_modifier == '?') ? 1 : 0;
                         event.mode.status = status;
                     }
                 }
 
-                if (!qm && length > 3 && data[2] == '>' && data[length-1] == 'c') {
+                if (sequence_id == SEQ('c', '>', 0)) {
                     event.type = TERMPAINT_EV_RAW_SEC_DEV_ATTRIB;
                     event.raw.string = (const char*)data;
                     event.raw.length = length;
                 }
 
-                if (qm && data[length-1] == 'c') {
+                if (sequence_id == SEQ('c', '?', 0)) {
                     event.type = TERMPAINT_EV_RAW_PRI_DEV_ATTRIB;
                     event.raw.string = (const char*)data;
                     event.raw.length = length;
                 }
 
-                // qm == true is possible here, VTE < 0.54 answer this to CSI 1x
-                if (length > 2 && data[length-1] == 'x') {
+                // prefix_modifier == '?' is possible here, VTE < 0.54 answers this to CSI 1x
+                if (sequence_id == SEQ('x', 0, 0) || sequence_id == SEQ('x', '?', 0)) {
                     event.type = TERMPAINT_EV_RAW_DECREQTPARM;
                     event.raw.string = (const char*)data;
                     event.raw.length = length;
                 }
             }
+#undef SEQ
         }
 
         if (!event.type && length > 5 && data[0] == '\033' && data[1] == ']' && data[length-1] == '\\' && data[length-2] == '\033') {
