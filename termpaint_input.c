@@ -981,7 +981,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
         }
         if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
-            // bogus: tokenizer should ensure that this is exactly one valid utf8 codepoint
+            // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
             event.c.length = length-1;
             event.c.string = (const char*)data+1;
@@ -994,7 +994,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.c.modifier = MOD_ALT;
         }
         if (!event.type && length >= 1 && (0xc0 == (0xc0 & data[0]))) {
-            // tokenizer should ensure that this is exactly one valid utf8 codepoint
+            // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data, length) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
             event.c.length = length;
             event.c.string = (const char*)data;
@@ -1273,7 +1273,6 @@ bool termpaintp_input_legacy_mouse_bytes_finished(termpaint_input *ctx) {
 bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned length) {
     const unsigned char *data = (const unsigned char*)data_s;
 
-    // TODO utf8
     for (unsigned i = 0; i < length; i++) {
         // Protect against overlong sequences
         if (ctx->used == MAX_SEQ_LENGTH) {
@@ -1292,9 +1291,9 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
 
         switch (ctx->state) {
             case tpis_base:
-                // assert(ctx->used == 0);
+                // expected: ctx->used == 0
 
-                // detect valid utf-8 multi char start bytes
+                // detect possible utf-8 multi char start bytes
                 if (0xfc == (0xfe & data[i])) {
                     ctx->state = tpid_utf8_5;
                 } else if (0xf8 == (0xfc & data[i])) {
@@ -1332,7 +1331,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     ctx->state = tpis_cmd_str;
                 } else if (ctx->expect_apc && data[i] == '_') { // APC
                     ctx->state = tpis_cmd_str;
-                } else if (0xfc == (0xfe & data[i])) { // meta -> ESC can produce these
+                } else if (0xfc == (0xfe & data[i])) { // meta -> ESC can produce utf-8 sequences preceeded by an ESC
                     ctx->state = tpid_utf8_5;
                 } else if (0xf8 == (0xfc & data[i])) {
                     ctx->state = tpid_utf8_4;
