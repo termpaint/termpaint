@@ -1801,6 +1801,14 @@ int termpaint_terminal_peek_input_buffer_length(const termpaint_terminal *term) 
     return termpaint_input_peek_buffer_length(term->input);
 }
 
+void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term) {
+    termpaint_input_expect_cursor_position_report(term->input);
+}
+
+void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s) {
+    termpaint_input_expect_legacy_mouse_reports(term->input, s);
+}
+
 static void termpaintp_patch_misparsing(termpaint_terminal *terminal, termpaint_integration *integration,
                                         termpaint_event *event) {
     if (terminal->initial_cursor_y == event->cursor_position.y) {

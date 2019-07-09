@@ -68,6 +68,9 @@ _tERMPAINT_PUBLIC void termpaint_terminal_add_input_data(termpaint_terminal *ter
 _tERMPAINT_PUBLIC const char* termpaint_terminal_peek_input_buffer(const termpaint_terminal *term);
 _tERMPAINT_PUBLIC int termpaint_terminal_peek_input_buffer_length(const termpaint_terminal *term);
 
+_tERMPAINT_PUBLIC void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term);
+_tERMPAINT_PUBLIC void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s);
+
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal);
 enum termpaint_auto_detect_state_enum { termpaint_auto_detect_none,
                                                  termpaint_auto_detect_running,
