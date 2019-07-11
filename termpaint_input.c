@@ -632,6 +632,8 @@ static key_mapping_entry key_mapping_table[] = {
 
 
 void termpaintp_input_selfcheck() {
+    static bool finished;
+    if (finished) return;
     bool ok = true;
     for (key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
         for (key_mapping_entry* entry_b = entry_a; entry_b->sequence != nullptr; entry_b++) {
@@ -644,6 +646,7 @@ void termpaintp_input_selfcheck() {
     if (!ok) {
         exit(55);
     }
+    finished = true;
 }
 
 void termpaintp_input_dump_table() {
