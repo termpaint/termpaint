@@ -851,7 +851,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 } else if (ctx->event_cb) {
                     termpaint_event event;
                     event.type = TERMPAINT_EV_KEY;
-                    event.key.length = 0;
+                    event.key.length = strlen(ATOM_escape);
                     event.key.atom = ATOM_escape;
                     event.key.modifier = 0;
                     ctx->event_cb(ctx->event_user_data, &event);
@@ -880,12 +880,12 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         event.modifier = 0;*/
     } else if (length == 1 && data[0] == 0) {
         event.type = TERMPAINT_EV_KEY;
-        event.key.length = 0;
+        event.key.length = strlen(ATOM_space);
         event.key.atom = ATOM_space;
         event.key.modifier = MOD_CTRL;
     } else if (length == 2 && data[0] == '\e' && data[1] == 0) {
         event.type = TERMPAINT_EV_KEY;
-        event.key.length = 0;
+        event.key.length = strlen(ATOM_space);
         event.key.atom = ATOM_space;
         event.key.modifier = MOD_CTRL | MOD_ALT;
     } else {
@@ -901,7 +901,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                     break;
                 } else {
                     event.type = TERMPAINT_EV_KEY;
-                    event.key.length = 0;
+                    event.key.length = strlen(entry->atom);
                     event.key.atom = entry->atom;
                     event.key.modifier = entry->modifiers;
                     break;
@@ -951,7 +951,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             if (state == 1) {
                 if (codepoint == 8) {
                     event.type = TERMPAINT_EV_KEY;
-                    event.key.length = 0;
+                    event.key.length = strlen(ATOM_backspace);
                     event.key.atom = ATOM_backspace;
                     event.key.modifier = 0;
                     mod = mod - 1;
