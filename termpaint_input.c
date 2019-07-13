@@ -1285,8 +1285,10 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             ctx->overflow = 1;
         }
 
-        ctx->buff[ctx->used] = data[i];
+        const unsigned char cur_ch = data[i];
+        ctx->buff[ctx->used] = cur_ch;
         ++ctx->used;
+        // Don't use data or i after here!
 
         bool finished = false;
         bool retrigger = false;
@@ -1297,54 +1299,54 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 // expected: ctx->used == 0
 
                 // detect possible utf-8 multi char start bytes
-                if (0xfc == (0xfe & data[i])) {
+                if (0xfc == (0xfe & cur_ch)) {
                     ctx->state = tpid_utf8_5;
-                } else if (0xf8 == (0xfc & data[i])) {
+                } else if (0xf8 == (0xfc & cur_ch)) {
                     ctx->state = tpid_utf8_4;
-                } else if (0xf0 == (0xf8 & data[i])) {
+                } else if (0xf0 == (0xf8 & cur_ch)) {
                     ctx->state = tpid_utf8_3;
-                } else if (0xe0 == (0xf0 & data[i])) {
+                } else if (0xe0 == (0xf0 & cur_ch)) {
                     ctx->state = tpid_utf8_2;
-                } else if (0xc0 == (0xe0 & data[i])) {
+                } else if (0xc0 == (0xe0 & cur_ch)) {
                     ctx->state = tpid_utf8_1;
 
                 // escape sequence starts
-                } else if (data[i] == '\e') {
+                } else if (cur_ch == '\e') {
                     ctx->state = tpis_esc;
-                } else if (data[i] == 0x8f) { // SS3
+                } else if (cur_ch == 0x8f) { // SS3
                     ctx->state = tpis_ss3;
-                } else if (data[i] == 0x90) { // DCS
+                } else if (cur_ch == 0x90) { // DCS
                     ctx->state = tpis_cmd_str;
-                } else if (data[i] == 0x9b) { // CSI
+                } else if (cur_ch == 0x9b) { // CSI
                     ctx->state = tpis_csi;
-                } else if (data[i] == 0x9d) { // OSC
+                } else if (cur_ch == 0x9d) { // OSC
                     ctx->state = tpis_cmd_str;
                 } else {
                     finished = true;
                 }
                 break;
             case tpis_esc:
-                if (data[i] == 'O') {
+                if (cur_ch == 'O') {
                     ctx->state = tpis_ss3;
-                } else if (data[i] == 'P') {
+                } else if (cur_ch == 'P') {
                     ctx->state = tpis_cmd_str;
-                } else if (data[i] == '[') {
+                } else if (cur_ch == '[') {
                     ctx->state = tpis_csi;
-                } else if (data[i] == ']') {
+                } else if (cur_ch == ']') {
                     ctx->state = tpis_cmd_str;
-                } else if (ctx->expect_apc && data[i] == '_') { // APC
+                } else if (ctx->expect_apc && cur_ch == '_') { // APC
                     ctx->state = tpis_cmd_str;
-                } else if (0xfc == (0xfe & data[i])) { // meta -> ESC can produce utf-8 sequences preceeded by an ESC
+                } else if (0xfc == (0xfe & cur_ch)) { // meta -> ESC can produce utf-8 sequences preceeded by an ESC
                     ctx->state = tpid_utf8_5;
-                } else if (0xf8 == (0xfc & data[i])) {
+                } else if (0xf8 == (0xfc & cur_ch)) {
                     ctx->state = tpid_utf8_4;
-                } else if (0xf0 == (0xf8 & data[i])) {
+                } else if (0xf0 == (0xf8 & cur_ch)) {
                     ctx->state = tpid_utf8_3;
-                } else if (0xe0 == (0xf0 & data[i])) {
+                } else if (0xe0 == (0xf0 & cur_ch)) {
                     ctx->state = tpid_utf8_2;
-                } else if (0xc0 == (0xe0 & data[i])) {
+                } else if (0xc0 == (0xe0 & cur_ch)) {
                     ctx->state = tpid_utf8_1;
-                } else if (data[i] == '\e') {
+                } else if (cur_ch == '\e') {
                     retrigger = true;
                 } else {
                     finished = true;
@@ -1354,33 +1356,33 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 // this ss3 stuff is totally undocumented. But various codes
                 // are seen in the wild that extend these codes by embedding
                 // parameters
-                if ((data[i] >= '0' && data[i] <= '9') || data[i] == ';') {
+                if ((cur_ch >= '0' && cur_ch <= '9') || cur_ch == ';') {
                     ;
-                } else if (data[i] == '\e') {
+                } else if (cur_ch == '\e') {
                     retrigger = true;
                 } else {
                     finished = true;
                 }
                 break;
             case tpis_csi:
-                if (data[i] == 'M' && data[i - 1] == '[' && (ctx->expect_mouse_char_mode || ctx->expect_mouse_multibyte_mode)) {
+                if (ctx->used == 3 && cur_ch == 'M' && ctx->buff[ctx->used - 2] == '[' && (ctx->expect_mouse_char_mode || ctx->expect_mouse_multibyte_mode)) {
                     ctx->state = tpis_mouse_btn;
-                } else if (data[i] >= '@' && data[i] <= '~' && (data[i] != '[' || ctx->used != 3 /* linux vt*/)) {
+                } else if (cur_ch >= '@' && cur_ch <= '~' && (cur_ch != '[' || ctx->used != 3 /* linux vt*/)) {
                     finished = true;
-                } else if (data[i] == '\e') {
+                } else if (cur_ch == '\e') {
                     retrigger = true;
                 }
                 break;
             case tpis_cmd_str:
-                if (data[i] == '\e') {
+                if (cur_ch == '\e') {
                     ctx->state = tpis_str_terminator_esc;
-                } else if (data[i] == 0x9c) {
+                } else if (cur_ch == 0x9c) {
                     finished = true;
                 }
                 break;
             case tpis_str_terminator_esc:
                 // we expect a '\\' here. But every other char also aborts parsing
-                if (data[i] == '[') {
+                if (cur_ch == '[') {
                     // as a workaround for retriggering:
                     retrigger2 = true;
                 } else {
@@ -1388,7 +1390,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpid_utf8_5:
-                if ((data[i] & 0xc0) != 0x80) {
+                if ((cur_ch & 0xc0) != 0x80) {
                     // encoding error, abort sequence
                     retrigger = true;
                 } else {
@@ -1396,7 +1398,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpid_utf8_4:
-                if ((data[i] & 0xc0) != 0x80) {
+                if ((cur_ch & 0xc0) != 0x80) {
                     // encoding error, abort sequence
                     retrigger = true;
                 } else {
@@ -1404,7 +1406,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpid_utf8_3:
-                if ((data[i] & 0xc0) != 0x80) {
+                if ((cur_ch & 0xc0) != 0x80) {
                     // encoding error, abort sequence
                     retrigger = true;
                 } else {
@@ -1412,7 +1414,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpid_utf8_2:
-                if ((data[i] & 0xc0) != 0x80) {
+                if ((cur_ch & 0xc0) != 0x80) {
                     // encoding error, abort sequence
                     retrigger = true;
                 } else {
@@ -1420,7 +1422,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 }
                 break;
             case tpid_utf8_1:
-                if ((data[i] & 0xc0) != 0x80) {
+                if ((cur_ch & 0xc0) != 0x80) {
                     // encoding error, abort sequence
                     retrigger = true;
                 } else {
