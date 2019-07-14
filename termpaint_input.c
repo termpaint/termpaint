@@ -698,12 +698,25 @@ static void termpaintp_input_reset(termpaint_input *ctx) {
     ctx->state = tpis_base;
 }
 
+static bool termpaintp_input_checked_append_digit(int *to_update, int base, int value) {
+    int tmp;
+    if (termpaint_smul_overflow(*to_update, base, &tmp)) {
+        return false;
+    }
+    if (termpaint_sadd_overflow(tmp, value, to_update)) {
+        return false;
+    }
+    return true;
+}
+
 static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t length, int *a, int *b) {
     int val = 0;
     int state = 0;
     for (int i = 0; i < length; i++) {
         if (data[i] >= '0' && data[i] <= '9') {
-            val = val * 10 + data[i]-'0';
+            if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
+                return false;
+            }
         } else if (state == 0 && data[i] == ';') {
             *a = val;
             val = 0;
@@ -728,7 +741,9 @@ static bool termpaintp_input_parse_dec_3(const unsigned char *data, size_t lengt
     int state = 0;
     for (int i = 0; i < length; i++) {
         if (data[i] >= '0' && data[i] <= '9') {
-            val = val * 10 + data[i] - '0';
+            if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
+                return false;
+            }
         } else if (state == 0 && data[i] == ';') {
             *a = val;
             val = 0;
@@ -932,7 +947,10 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             int mod, codepoint;
             for (; i < length-1; i++) {
                 if (data[i] >= '0' && data[i] <= '9') {
-                    p = p * 10 + data[i]-'0';
+                    if (!termpaintp_input_checked_append_digit(&p, 10, data[i] - '0')) {
+                        state = -1;
+                        break;
+                    }
                 } else if (state == 0 && data[i] == ';') {
                     first = p;
                     p = 0;
@@ -1182,7 +1200,10 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                         // finished
                         break;
                     } else if ('0' <= data[i] && data[i] <= '9') {
-                        num = num * 10 + (data[i] - '0');
+                        if (!termpaintp_input_checked_append_digit(&num, 10, data[i] - '0')) {
+                            num = -1;
+                            break;
+                        }
                     } else {
                         // bail
                         num = -1;
