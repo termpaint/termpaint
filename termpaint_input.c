@@ -1006,7 +1006,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.c.string = (const char*)data;
             event.c.modifier = 0;
         }
-        if (!event.type && length > 0 && data[0] > 32 && data[0] < 127) {
+        if (!event.type && length == 1 && data[0] > 32 && data[0] < 127) {
             event.type = TERMPAINT_EV_CHAR;
             event.c.length = length;
             event.c.string = (const char*)data;
