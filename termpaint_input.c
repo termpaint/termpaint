@@ -878,6 +878,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         /*event.length = 0;
         event.atom_or_string = 0;
         event.modifier = 0;*/
+    } else if (length == 0) {
+        // length == 0 should only be possible with overflow. Bailing here removes some conditions later.
+        return;
     } else if (length == 1 && data[0] == 0) {
         event.type = TERMPAINT_EV_KEY;
         event.key.length = strlen(ATOM_space);
@@ -996,7 +999,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.c.string = (const char*)data+1;
             event.c.modifier = MOD_ALT;
         }
-        if (!event.type && length >= 1 && (0xc0 == (0xc0 & data[0]))) {
+        if (!event.type && (0xc0 == (0xc0 & data[0]))) {
             // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data, length) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
             event.c.length = length;
@@ -1462,7 +1465,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             termpaintp_input_reset(ctx);
         } else if (retrigger2) {
             // current and previous char is not part of sequence
-            if (ctx->used >= 2) {
+            if (ctx->used > 2) {
                 termpaintp_input_raw(ctx, ctx->buff, ctx->used - 2, ctx->overflow);
             } else {
                 termpaintp_input_raw(ctx, ctx->buff, 0, ctx->overflow);
