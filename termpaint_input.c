@@ -1143,7 +1143,8 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             if ((!event.type || ctx->expect_cursor_position_report)
                     && length > 5 && (sequence_id == SEQ('R', 0, 0) || sequence_id == SEQ('R', '?', 0))) {
                 int x, y;
-                if (termpaintp_input_parse_dec_2(data + params_start, params_len, &y, &x)) {
+                if (termpaintp_input_parse_dec_2(data + params_start, params_len, &y, &x)
+                        && x > 0 && y > 0) {
                     event.type = TERMPAINT_EV_CURSOR_POSITION;
                     event.cursor_position.x = x - 1;
                     event.cursor_position.y = y - 1;
