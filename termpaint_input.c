@@ -969,7 +969,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 codepoint = p;
             }
 
-            if (state == 1) {
+            if (state == 1 && mod > 0) {
                 if (codepoint == 8) {
                     event.type = TERMPAINT_EV_KEY;
                     event.key.length = strlen(ATOM_backspace);
