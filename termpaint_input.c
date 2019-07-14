@@ -1211,14 +1211,11 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                         break;
                     }
                 }
-                if (num_end == 0) {
-                    num = -1;
-                }
             } else {
                 num = -1;
             }
 
-            if ((num >= 10 && num <= 14) || num == 17 || num == 19 || (num >= 705 && num <= 708)) {
+            if (num_end && ((num >= 10 && num <= 14) || num == 17 || num == 19 || (num >= 705 && num <= 708))) {
                 event.type = TERMPAINT_EV_COLOR_SLOT_REPORT;
                 event.color_slot_report.slot = num;
                 event.color_slot_report.color = (const char*)data + num_end + 1;
