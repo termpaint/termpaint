@@ -625,6 +625,8 @@ static key_mapping_entry key_mapping_table[] = {
     { "\e\x7f", ATOM_backspace, MOD_ALT },
     XTERM_MODS("\e[27;", ";127~", ATOM_backspace), // modifiy other keys mode
     XTERM_MODS("\e[127;", "u", ATOM_backspace), // modifiy other keys mode
+    XTERM_MODS("\e[27;", ";8~", ATOM_backspace), // modifiy other keys mode
+    XTERM_MODS("\e[8;", "u", ATOM_backspace), // modifiy other keys mode
 
     { "\e[0n", ATOM_i_resync, 0 },
     { 0, 0, 0 }
@@ -970,22 +972,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
 
             if (state == 1 && mod > 0) {
-                if (codepoint == 8) {
-                    event.type = TERMPAINT_EV_KEY;
-                    event.key.length = strlen(ATOM_backspace);
-                    event.key.atom = ATOM_backspace;
-                    event.key.modifier = 0;
-                    mod = mod - 1;
-                    if (mod & 1) {
-                        event.key.modifier |= MOD_SHIFT;
-                    }
-                    if (mod & 2) {
-                        event.key.modifier |= MOD_ALT;
-                    }
-                    if (mod & 4) {
-                        event.key.modifier |= MOD_CTRL;
-                    }
-                } else if (codepoint > 0 && codepoint <= 0x7FFFFFFF) {
+                if (codepoint > 0 && codepoint <= 0x7FFFFFFF) {
                     // TODO exclude C0 space, C1 space and 0x7f
                     event.type = TERMPAINT_EV_CHAR;
                     event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
