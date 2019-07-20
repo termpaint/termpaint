@@ -15,6 +15,9 @@
 #endif
 #define container_of(ptr, type, member) ((type *)((char *)ptr - offsetof(type, member)))
 
+bool pty_requested = false;
+bool start_requested = false;
+
 /* A userdata struct for session. */
 struct session_data_struct {
     /* Pointer to the channel the session will allocate. */
@@ -40,6 +43,7 @@ static int data_function(ssh_session session, ssh_channel channel, void *data,
 static int pty_request(ssh_session session, ssh_channel channel,
                        const char *term, int cols, int rows, int py, int px,
                        void *userdata) {
+    pty_requested = true;
     return SSH_OK;
 }
 
@@ -52,12 +56,14 @@ static int exec_request(ssh_session session, ssh_channel channel,
                         const char *command, void *userdata) {
 
     (void) session;
+    start_requested = true;
     return SSH_OK;
 }
 
 static int shell_request(ssh_session session, ssh_channel channel,
                          void *userdata) {
     (void) session;
+    start_requested = true;
     return SSH_OK;
 }
 
@@ -266,6 +272,13 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
 
     ssh_set_channel_callbacks(sdata.channel, &channel_cb);
 
+    while (!start_requested && ssh_channel_is_open(sdata.channel)) {
+        int res = ssh_event_dopoll(event, -1);
+        if (res == SSH_ERROR) {
+            ssh_channel_close(sdata.channel);
+        }
+    }
+
     main([&] () -> bool {
         newInput = false;
         integration.flush(&integration);
@@ -289,7 +302,7 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
     ssh_channel_close(sdata.channel);
 
     /* Wait up to 5 seconds for the client to terminate the session. */
-    for (n = 0; n < 50 && (ssh_get_status(session) & SSH_CLOSED | SSH_CLOSED_ERROR) == 0; n++) {
+    for (n = 0; n < 50 && (ssh_get_status(session) & (SSH_CLOSED | SSH_CLOSED_ERROR)) == 0; n++) {
         ssh_event_dopoll(event, 100);
     }
 }

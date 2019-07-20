@@ -9,6 +9,7 @@
 #include <functional>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
 #include "termpaint.h"
 #include "termpaintx.h"
@@ -311,7 +312,7 @@ public:
             std::string inputChars;
             termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_event *event) {
                 std::string *inputChars = static_cast<std::string*>(p);
-                if (event->type == TERMPAINT_EV_CHAR) {
+                if (event->type == TERMPAINT_EV_CHAR && event->c.modifier == 0) {
                     *inputChars += std::string(event->c.string, event->c.length);
                 }
                 if (event->type == TERMPAINT_EV_KEY) {
@@ -338,6 +339,47 @@ public:
             }
         }
         return options[choice-1].get<jobject>();
+    }
+
+    std::string input_str(char *message, std::function<bool()> poll) {
+        outStr(message);
+
+        std::string data;
+        bool done = false;
+        while (true) {
+            std::string inputChars;
+            termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_event *event) {
+                std::string *inputChars = static_cast<std::string*>(p);
+                if (event->type == TERMPAINT_EV_CHAR && event->c.modifier == 0) {
+                    *inputChars += std::string(event->c.string, event->c.length);
+                }
+                if (event->type == TERMPAINT_EV_KEY) {
+                    if (event->key.atom == termpaint_input_enter()) {
+                        *inputChars += "\n";
+                    }
+                    if (event->key.atom == termpaint_input_backspace()) {
+                        *inputChars += "\b \b";
+                    }
+                    if (event->key.atom == termpaint_input_space()) {
+                        *inputChars += " ";
+                    }
+                }
+            }, &inputChars);
+            poll();
+
+            if (inputChars.size()) {
+                data.append(inputChars);
+                outStr(inputChars.c_str());
+                inputChars = "";
+                data = std::regex_replace(data, std::regex(".\b \b"), "");
+            }
+
+            if (data.find('\n') != std::string::npos) {
+                outStr("\r");
+                data.pop_back();
+                return data;
+            }
+        }
     }
 
 #else
@@ -390,6 +432,14 @@ int Main::main() {
     jobject root = rootval.get<jobject>();
 
     jobject result;
+
+#ifdef USE_SSH
+    if (!pty_requested) {
+        outStr("need an terminal (pty)!\r\n");
+        return 0;
+    }
+    result["ssh_collected"] = picojson::value(input_str("Enter a name for this session: ", poll));
+#endif
 
     outStr("What terminal are you using: \r\n");
     result["terminal"] = picojson::value(menu(root["terminals"].get<jarray>(), poll)["name"].get<std::string>());
@@ -484,11 +534,15 @@ int Main::main() {
     outStr("\e[?1049l");fflush(stdout);
 
 
-    if (currentPrompt >= prompts.size()) {
-        result["sequences"] = picojson::value(recordedKeypresses);
-        std::ofstream outputfile("collected.json", std::ios::binary);
-        picojson::value(result).serialize(std::ostream_iterator<char>(outputfile), true);
+    result["sequences"] = picojson::value(recordedKeypresses);
+    std::string name = "collected-";
+    if (currentPrompt < prompts.size()) {
+        name = "unfinished-";
     }
+    name += std::to_string(time(nullptr)) + ".json";
+    std::ofstream outputfile(name, std::ios::binary);
+    picojson::value(result).serialize(std::ostream_iterator<char>(outputfile), true);
+    outStr("Trace saved. Thank you.\r\n");
 
     return 0;
 }

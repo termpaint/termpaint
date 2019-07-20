@@ -8,6 +8,8 @@
 #include <termpaint.h>
 #include <termpaint_input.h>
 
+extern bool pty_requested;
+
 class SshServer {
 public:
     SshServer(int port, std::string serverKeyFile);
