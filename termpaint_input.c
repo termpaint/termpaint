@@ -685,6 +685,8 @@ struct termpaint_input_ {
     _Bool expect_mouse_multibyte_mode;
     _Bool expect_apc;
 
+    _Bool extended_unicode;
+
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
     void *raw_filter_user_data;
 
@@ -994,6 +996,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
             // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
+            if (length - 1 > 4 && !ctx->extended_unicode) {
+                event.type = TERMPAINT_EV_INVALID_UTF8;
+            }
             event.c.length = length-1;
             event.c.string = (const char*)data+1;
             event.c.modifier = MOD_ALT;
@@ -1007,6 +1012,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         if (!event.type && (0xc0 == (0xc0 & data[0]))) {
             // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data, length) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
+            if (length > 4 && !ctx->extended_unicode) {
+                event.type = TERMPAINT_EV_INVALID_UTF8;
+            }
             event.c.length = length;
             event.c.string = (const char*)data;
             event.c.modifier = 0;
