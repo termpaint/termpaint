@@ -31,7 +31,7 @@
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
 
-_Bool termpaintx_full_integration_available() {
+_Bool termpaintx_full_integration_available(void) {
     _Bool from_std_fd = false;
     from_std_fd = isatty(0) || isatty(1) || isatty(2);
     if (from_std_fd) {

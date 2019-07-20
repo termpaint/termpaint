@@ -50,7 +50,7 @@ void event_callback(void *userdata, termpaint_event *tp_event) {
     }
 }
 
-bool init() {
+bool init(void) {
     event_current = malloc(sizeof(event));
     event_current->next = NULL;
     event_current->string = NULL;
@@ -75,12 +75,12 @@ bool init() {
     return 1;
 }
 
-void cleanup() {
+void cleanup(void) {
     termpaint_terminal_free_with_restore(terminal);
     termpaint_ttyrescue_stop(rescue_fd);
 }
 
-event* key_wait() {
+event* key_wait(void) {
     termpaint_terminal_flush(terminal, false);
 
     while (!event_current->next) {

@@ -17,7 +17,7 @@ static void output(const char *s) {
 int main(int argc, char** argv) {
     (void) argc; (void) argv;
 #else
-int termpaintp_rescue_embedded() {
+int termpaintp_rescue_embedded(void) {
 #endif
     restore = getenv("TERMPAINT_RESCUE_RESTORE");
 

@@ -21,7 +21,7 @@
 
 #define DEF_ATOM(name, value) \
 static const char ATOM_ ## name[] = value; \
-const char *termpaint_input_ ## name () { return ATOM_ ## name; }
+const char *termpaint_input_ ## name (void) { return ATOM_ ## name; }
 
 
 DEF_ATOM(i_resync, "i_resync")
@@ -633,7 +633,7 @@ static key_mapping_entry key_mapping_table[] = {
 };
 
 
-void termpaintp_input_selfcheck() {
+void termpaintp_input_selfcheck(void) {
     static bool finished;
     if (finished) return;
     bool ok = true;
@@ -651,7 +651,7 @@ void termpaintp_input_selfcheck() {
     finished = true;
 }
 
-void termpaintp_input_dump_table() {
+void termpaintp_input_dump_table(void) {
     FILE * f = fopen("input.dump", "w");
     for (key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
         fputs(entry_a->sequence, f);

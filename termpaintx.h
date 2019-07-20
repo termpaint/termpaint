@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-_tERMPAINT_PUBLIC _Bool termpaintx_full_integration_available();
+_tERMPAINT_PUBLIC _Bool termpaintx_full_integration_available(void);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration(const char *options);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options);

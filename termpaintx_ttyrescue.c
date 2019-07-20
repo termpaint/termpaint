@@ -10,7 +10,7 @@
 #include <sys/prctl.h>
 #endif
 
-int termpaintp_rescue_embedded();
+int termpaintp_rescue_embedded(void);
 
 int termpaint_ttyrescue_start(const char *restore_seq) {
     int pipe[2];
