@@ -2306,6 +2306,9 @@ static bool termpaintp_has_option(const char *options, const char *name) {
 void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options) {
     termpaint_integration *integration = terminal->integration;
 
+    termpaintp_prepend_str(&terminal->restore_seq, "\033[?7h");
+    int_puts(integration, "\033[?7l");
+
     if (!termpaintp_has_option(options, "-altscreen")) {
         termpaintp_prepend_str(&terminal->restore_seq, "\033[?1049l");
         int_puts(integration, "\033[?1049h");
