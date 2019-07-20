@@ -530,6 +530,8 @@ int Main::main() {
         render();
     }
 
+    termpaint_terminal_free(terminal);
+
     outStr(reset.data());
     outStr("\e[?1049l");fflush(stdout);
 
