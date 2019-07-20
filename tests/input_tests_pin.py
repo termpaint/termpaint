@@ -17,9 +17,17 @@ files = [
     'urxvt-nobind-compat-105_de_full-2017-11-22:00.json',
     'xterm-compat+1035_keypad_2019-01-07.json',
     'xterm-nobind--app arrow + app np + esc for alt-105_de_full-2018-05-33:21.json',
+    'xterm-nobind-modother-csiu-105_de_full-2019-07-19.json',
 ]
 
 sequences = {}
+
+sequences['1b5b306e'] = {
+    'raw': '1b5b306e',
+    'type': 'key',
+    'mod': '   ',
+    'key': 'i_resync'
+}
 
 for filename in files:
     f = open('../tools/miscdata/' + filename, 'r')

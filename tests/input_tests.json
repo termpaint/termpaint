@@ -2562,6 +2562,433 @@
         "type": "char"
     },
     {
+        "key": "i_resync",
+        "keyId": "i_resync.",
+        "mod": "   ",
+        "raw": "1b5b306e",
+        "type": "key"
+    },
+    {
+        "chars": "d",
+        "keyId": "d.A",
+        "mod": " A ",
+        "raw": "1b5b3130303b3375",
+        "type": "char"
+    },
+    {
+        "chars": "d",
+        "keyId": "d.C",
+        "mod": "  C",
+        "raw": "1b5b3130303b3575",
+        "type": "char"
+    },
+    {
+        "chars": "d",
+        "keyId": "d.AC",
+        "mod": " AC",
+        "raw": "1b5b3130303b3775",
+        "type": "char"
+    },
+    {
+        "chars": "e",
+        "keyId": "e.A",
+        "mod": " A ",
+        "raw": "1b5b3130313b3375",
+        "type": "char"
+    },
+    {
+        "chars": "e",
+        "keyId": "e.C",
+        "mod": "  C",
+        "raw": "1b5b3130313b3575",
+        "type": "char"
+    },
+    {
+        "chars": "e",
+        "keyId": "e.AC",
+        "mod": " AC",
+        "raw": "1b5b3130313b3775",
+        "type": "char"
+    },
+    {
+        "chars": "f",
+        "keyId": "f.A",
+        "mod": " A ",
+        "raw": "1b5b3130323b3375",
+        "type": "char"
+    },
+    {
+        "chars": "f",
+        "keyId": "f.C",
+        "mod": "  C",
+        "raw": "1b5b3130323b3575",
+        "type": "char"
+    },
+    {
+        "chars": "f",
+        "keyId": "f.AC",
+        "mod": " AC",
+        "raw": "1b5b3130323b3775",
+        "type": "char"
+    },
+    {
+        "chars": "g",
+        "keyId": "g.A",
+        "mod": " A ",
+        "raw": "1b5b3130333b3375",
+        "type": "char"
+    },
+    {
+        "chars": "g",
+        "keyId": "g.C",
+        "mod": "  C",
+        "raw": "1b5b3130333b3575",
+        "type": "char"
+    },
+    {
+        "chars": "g",
+        "keyId": "g.AC",
+        "mod": " AC",
+        "raw": "1b5b3130333b3775",
+        "type": "char"
+    },
+    {
+        "chars": "h",
+        "keyId": "h.A",
+        "mod": " A ",
+        "raw": "1b5b3130343b3375",
+        "type": "char"
+    },
+    {
+        "chars": "h",
+        "keyId": "h.C",
+        "mod": "  C",
+        "raw": "1b5b3130343b3575",
+        "type": "char"
+    },
+    {
+        "chars": "h",
+        "keyId": "h.AC",
+        "mod": " AC",
+        "raw": "1b5b3130343b3775",
+        "type": "char"
+    },
+    {
+        "chars": "i",
+        "keyId": "i.A",
+        "mod": " A ",
+        "raw": "1b5b3130353b3375",
+        "type": "char"
+    },
+    {
+        "chars": "i",
+        "keyId": "i.C",
+        "mod": "  C",
+        "raw": "1b5b3130353b3575",
+        "type": "char"
+    },
+    {
+        "chars": "i",
+        "keyId": "i.AC",
+        "mod": " AC",
+        "raw": "1b5b3130353b3775",
+        "type": "char"
+    },
+    {
+        "chars": "j",
+        "keyId": "j.A",
+        "mod": " A ",
+        "raw": "1b5b3130363b3375",
+        "type": "char"
+    },
+    {
+        "chars": "j",
+        "keyId": "j.C",
+        "mod": "  C",
+        "raw": "1b5b3130363b3575",
+        "type": "char"
+    },
+    {
+        "chars": "j",
+        "keyId": "j.AC",
+        "mod": " AC",
+        "raw": "1b5b3130363b3775",
+        "type": "char"
+    },
+    {
+        "chars": "k",
+        "keyId": "k.A",
+        "mod": " A ",
+        "raw": "1b5b3130373b3375",
+        "type": "char"
+    },
+    {
+        "chars": "k",
+        "keyId": "k.C",
+        "mod": "  C",
+        "raw": "1b5b3130373b3575",
+        "type": "char"
+    },
+    {
+        "chars": "k",
+        "keyId": "k.AC",
+        "mod": " AC",
+        "raw": "1b5b3130373b3775",
+        "type": "char"
+    },
+    {
+        "chars": "l",
+        "keyId": "l.A",
+        "mod": " A ",
+        "raw": "1b5b3130383b3375",
+        "type": "char"
+    },
+    {
+        "chars": "l",
+        "keyId": "l.C",
+        "mod": "  C",
+        "raw": "1b5b3130383b3575",
+        "type": "char"
+    },
+    {
+        "chars": "l",
+        "keyId": "l.AC",
+        "mod": " AC",
+        "raw": "1b5b3130383b3775",
+        "type": "char"
+    },
+    {
+        "chars": "m",
+        "keyId": "m.A",
+        "mod": " A ",
+        "raw": "1b5b3130393b3375",
+        "type": "char"
+    },
+    {
+        "chars": "m",
+        "keyId": "m.C",
+        "mod": "  C",
+        "raw": "1b5b3130393b3575",
+        "type": "char"
+    },
+    {
+        "chars": "m",
+        "keyId": "m.AC",
+        "mod": " AC",
+        "raw": "1b5b3130393b3775",
+        "type": "char"
+    },
+    {
+        "chars": "n",
+        "keyId": "n.A",
+        "mod": " A ",
+        "raw": "1b5b3131303b3375",
+        "type": "char"
+    },
+    {
+        "chars": "n",
+        "keyId": "n.C",
+        "mod": "  C",
+        "raw": "1b5b3131303b3575",
+        "type": "char"
+    },
+    {
+        "chars": "n",
+        "keyId": "n.AC",
+        "mod": " AC",
+        "raw": "1b5b3131303b3775",
+        "type": "char"
+    },
+    {
+        "chars": "o",
+        "keyId": "o.A",
+        "mod": " A ",
+        "raw": "1b5b3131313b3375",
+        "type": "char"
+    },
+    {
+        "chars": "o",
+        "keyId": "o.C",
+        "mod": "  C",
+        "raw": "1b5b3131313b3575",
+        "type": "char"
+    },
+    {
+        "chars": "o",
+        "keyId": "o.AC",
+        "mod": " AC",
+        "raw": "1b5b3131313b3775",
+        "type": "char"
+    },
+    {
+        "chars": "p",
+        "keyId": "p.A",
+        "mod": " A ",
+        "raw": "1b5b3131323b3375",
+        "type": "char"
+    },
+    {
+        "chars": "p",
+        "keyId": "p.C",
+        "mod": "  C",
+        "raw": "1b5b3131323b3575",
+        "type": "char"
+    },
+    {
+        "chars": "p",
+        "keyId": "p.AC",
+        "mod": " AC",
+        "raw": "1b5b3131323b3775",
+        "type": "char"
+    },
+    {
+        "chars": "q",
+        "keyId": "q.A",
+        "mod": " A ",
+        "raw": "1b5b3131333b3375",
+        "type": "char"
+    },
+    {
+        "chars": "q",
+        "keyId": "q.C",
+        "mod": "  C",
+        "raw": "1b5b3131333b3575",
+        "type": "char"
+    },
+    {
+        "chars": "q",
+        "keyId": "q.AC",
+        "mod": " AC",
+        "raw": "1b5b3131333b3775",
+        "type": "char"
+    },
+    {
+        "chars": "r",
+        "keyId": "r.A",
+        "mod": " A ",
+        "raw": "1b5b3131343b3375",
+        "type": "char"
+    },
+    {
+        "chars": "r",
+        "keyId": "r.C",
+        "mod": "  C",
+        "raw": "1b5b3131343b3575",
+        "type": "char"
+    },
+    {
+        "chars": "r",
+        "keyId": "r.AC",
+        "mod": " AC",
+        "raw": "1b5b3131343b3775",
+        "type": "char"
+    },
+    {
+        "chars": "s",
+        "keyId": "s.A",
+        "mod": " A ",
+        "raw": "1b5b3131353b3375",
+        "type": "char"
+    },
+    {
+        "chars": "s",
+        "keyId": "s.C",
+        "mod": "  C",
+        "raw": "1b5b3131353b3575",
+        "type": "char"
+    },
+    {
+        "chars": "s",
+        "keyId": "s.AC",
+        "mod": " AC",
+        "raw": "1b5b3131353b3775",
+        "type": "char"
+    },
+    {
+        "chars": "t",
+        "keyId": "t.A",
+        "mod": " A ",
+        "raw": "1b5b3131363b3375",
+        "type": "char"
+    },
+    {
+        "chars": "t",
+        "keyId": "t.C",
+        "mod": "  C",
+        "raw": "1b5b3131363b3575",
+        "type": "char"
+    },
+    {
+        "chars": "t",
+        "keyId": "t.AC",
+        "mod": " AC",
+        "raw": "1b5b3131363b3775",
+        "type": "char"
+    },
+    {
+        "chars": "u",
+        "keyId": "u.A",
+        "mod": " A ",
+        "raw": "1b5b3131373b3375",
+        "type": "char"
+    },
+    {
+        "chars": "u",
+        "keyId": "u.C",
+        "mod": "  C",
+        "raw": "1b5b3131373b3575",
+        "type": "char"
+    },
+    {
+        "chars": "u",
+        "keyId": "u.AC",
+        "mod": " AC",
+        "raw": "1b5b3131373b3775",
+        "type": "char"
+    },
+    {
+        "chars": "v",
+        "keyId": "v.A",
+        "mod": " A ",
+        "raw": "1b5b3131383b3375",
+        "type": "char"
+    },
+    {
+        "chars": "v",
+        "keyId": "v.C",
+        "mod": "  C",
+        "raw": "1b5b3131383b3575",
+        "type": "char"
+    },
+    {
+        "chars": "v",
+        "keyId": "v.AC",
+        "mod": " AC",
+        "raw": "1b5b3131383b3775",
+        "type": "char"
+    },
+    {
+        "chars": "w",
+        "keyId": "w.A",
+        "mod": " A ",
+        "raw": "1b5b3131393b3375",
+        "type": "char"
+    },
+    {
+        "chars": "w",
+        "keyId": "w.C",
+        "mod": "  C",
+        "raw": "1b5b3131393b3575",
+        "type": "char"
+    },
+    {
+        "chars": "w",
+        "keyId": "w.AC",
+        "mod": " AC",
+        "raw": "1b5b3131393b3775",
+        "type": "char"
+    },
+    {
         "key": "F1",
         "keyId": "F1.C",
         "mod": "  C",
@@ -2576,6 +3003,83 @@
         "type": "key"
     },
     {
+        "chars": "x",
+        "keyId": "x.A",
+        "mod": " A ",
+        "raw": "1b5b3132303b3375",
+        "type": "char"
+    },
+    {
+        "chars": "x",
+        "keyId": "x.C",
+        "mod": "  C",
+        "raw": "1b5b3132303b3575",
+        "type": "char"
+    },
+    {
+        "chars": "x",
+        "keyId": "x.AC",
+        "mod": " AC",
+        "raw": "1b5b3132303b3775",
+        "type": "char"
+    },
+    {
+        "chars": "y",
+        "keyId": "y.A",
+        "mod": " A ",
+        "raw": "1b5b3132313b3375",
+        "type": "char"
+    },
+    {
+        "chars": "y",
+        "keyId": "y.C",
+        "mod": "  C",
+        "raw": "1b5b3132313b3575",
+        "type": "char"
+    },
+    {
+        "chars": "y",
+        "keyId": "y.AC",
+        "mod": " AC",
+        "raw": "1b5b3132313b3775",
+        "type": "char"
+    },
+    {
+        "chars": "z",
+        "keyId": "z.A",
+        "mod": " A ",
+        "raw": "1b5b3132323b3375",
+        "type": "char"
+    },
+    {
+        "chars": "z",
+        "keyId": "z.AC",
+        "mod": " AC",
+        "raw": "1b5b3132323b3775",
+        "type": "char"
+    },
+    {
+        "key": "Backspace",
+        "keyId": "Backspace.S",
+        "mod": "S  ",
+        "raw": "1b5b3132373b3275",
+        "type": "key"
+    },
+    {
+        "key": "Backspace",
+        "keyId": "Backspace.A",
+        "mod": " A ",
+        "raw": "1b5b3132373b3375",
+        "type": "key"
+    },
+    {
+        "key": "Backspace",
+        "keyId": "Backspace.SA",
+        "mod": "SA ",
+        "raw": "1b5b3132373b3475",
+        "type": "key"
+    },
+    {
         "key": "F2",
         "keyId": "F2.C",
         "mod": "  C",
@@ -2587,6 +3091,48 @@
         "keyId": "F2.",
         "mod": "   ",
         "raw": "1b5b31327e",
+        "type": "key"
+    },
+    {
+        "key": "Enter",
+        "keyId": "Enter.S",
+        "mod": "S  ",
+        "raw": "1b5b31333b3275",
+        "type": "key"
+    },
+    {
+        "key": "Enter",
+        "keyId": "Enter.SA",
+        "mod": "SA ",
+        "raw": "1b5b31333b3475",
+        "type": "key"
+    },
+    {
+        "key": "Enter",
+        "keyId": "Enter.C",
+        "mod": "  C",
+        "raw": "1b5b31333b3575",
+        "type": "key"
+    },
+    {
+        "key": "Enter",
+        "keyId": "Enter.SC",
+        "mod": "S C",
+        "raw": "1b5b31333b3675",
+        "type": "key"
+    },
+    {
+        "key": "Enter",
+        "keyId": "Enter.AC",
+        "mod": " AC",
+        "raw": "1b5b31333b3775",
+        "type": "key"
+    },
+    {
+        "key": "Enter",
+        "keyId": "Enter.SAC",
+        "mod": "SAC",
+        "raw": "1b5b31333b3875",
         "type": "key"
     },
     {
@@ -2674,6 +3220,48 @@
         "type": "key"
     },
     {
+        "chars": "\u00a7",
+        "keyId": "\u00a7.SA",
+        "mod": "SA ",
+        "raw": "1b5b3136373b3475",
+        "type": "char"
+    },
+    {
+        "chars": "\u00a7",
+        "keyId": "\u00a7.SC",
+        "mod": "S C",
+        "raw": "1b5b3136373b3675",
+        "type": "char"
+    },
+    {
+        "chars": "\u00a7",
+        "keyId": "\u00a7.SAC",
+        "mod": "SAC",
+        "raw": "1b5b3136373b3875",
+        "type": "char"
+    },
+    {
+        "chars": "\u00b0",
+        "keyId": "\u00b0.SA",
+        "mod": "SA ",
+        "raw": "1b5b3137363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "\u00b0",
+        "keyId": "\u00b0.SC",
+        "mod": "S C",
+        "raw": "1b5b3137363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "\u00b0",
+        "keyId": "\u00b0.SAC",
+        "mod": "SAC",
+        "raw": "1b5b3137363b3875",
+        "type": "char"
+    },
+    {
         "key": "F6",
         "keyId": "F6.S",
         "mod": "S  ",
@@ -2730,6 +3318,27 @@
         "type": "key"
     },
     {
+        "chars": "\u00b4",
+        "keyId": "\u00b4.A",
+        "mod": " A ",
+        "raw": "1b5b3138303b3375",
+        "type": "char"
+    },
+    {
+        "chars": "\u00b4",
+        "keyId": "\u00b4.C",
+        "mod": "  C",
+        "raw": "1b5b3138303b3575",
+        "type": "char"
+    },
+    {
+        "chars": "\u00b4",
+        "keyId": "\u00b4.AC",
+        "mod": " AC",
+        "raw": "1b5b3138303b3775",
+        "type": "char"
+    },
+    {
         "key": "F7",
         "keyId": "F7.S",
         "mod": "S  ",
@@ -2784,6 +3393,27 @@
         "mod": "   ",
         "raw": "1b5b31387e",
         "type": "key"
+    },
+    {
+        "chars": "\u00c4",
+        "keyId": "\u00c4.SA",
+        "mod": "SA ",
+        "raw": "1b5b3139363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "\u00c4",
+        "keyId": "\u00c4.SC",
+        "mod": "S C",
+        "raw": "1b5b3139363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "\u00c4",
+        "keyId": "\u00c4.SAC",
+        "mod": "SAC",
+        "raw": "1b5b3139363b3875",
+        "type": "char"
     },
     {
         "key": "F8",
@@ -3423,6 +4053,27 @@
         "type": "key"
     },
     {
+        "chars": "\u00d6",
+        "keyId": "\u00d6.SA",
+        "mod": "SA ",
+        "raw": "1b5b3231343b3475",
+        "type": "char"
+    },
+    {
+        "chars": "\u00d6",
+        "keyId": "\u00d6.SC",
+        "mod": "S C",
+        "raw": "1b5b3231343b3675",
+        "type": "char"
+    },
+    {
+        "chars": "\u00d6",
+        "keyId": "\u00d6.SAC",
+        "mod": "SAC",
+        "raw": "1b5b3231343b3875",
+        "type": "char"
+    },
+    {
         "key": "F10",
         "keyId": "F10.S",
         "mod": "S  ",
@@ -3477,6 +4128,69 @@
         "mod": "   ",
         "raw": "1b5b32317e",
         "type": "key"
+    },
+    {
+        "chars": "\u00dc",
+        "keyId": "\u00dc.SA",
+        "mod": "SA ",
+        "raw": "1b5b3232303b3475",
+        "type": "char"
+    },
+    {
+        "chars": "\u00dc",
+        "keyId": "\u00dc.SC",
+        "mod": "S C",
+        "raw": "1b5b3232303b3675",
+        "type": "char"
+    },
+    {
+        "chars": "\u00dc",
+        "keyId": "\u00dc.SAC",
+        "mod": "SAC",
+        "raw": "1b5b3232303b3875",
+        "type": "char"
+    },
+    {
+        "chars": "\u00df",
+        "keyId": "\u00df.A",
+        "mod": " A ",
+        "raw": "1b5b3232333b3375",
+        "type": "char"
+    },
+    {
+        "chars": "\u00df",
+        "keyId": "\u00df.C",
+        "mod": "  C",
+        "raw": "1b5b3232333b3575",
+        "type": "char"
+    },
+    {
+        "chars": "\u00df",
+        "keyId": "\u00df.AC",
+        "mod": " AC",
+        "raw": "1b5b3232333b3775",
+        "type": "char"
+    },
+    {
+        "chars": "\u00e4",
+        "keyId": "\u00e4.A",
+        "mod": " A ",
+        "raw": "1b5b3232383b3375",
+        "type": "char"
+    },
+    {
+        "chars": "\u00e4",
+        "keyId": "\u00e4.C",
+        "mod": "  C",
+        "raw": "1b5b3232383b3575",
+        "type": "char"
+    },
+    {
+        "chars": "\u00e4",
+        "keyId": "\u00e4.AC",
+        "mod": " AC",
+        "raw": "1b5b3232383b3775",
+        "type": "char"
     },
     {
         "key": "F11",
@@ -3556,6 +4270,27 @@
         "type": "key"
     },
     {
+        "chars": "\u00f6",
+        "keyId": "\u00f6.A",
+        "mod": " A ",
+        "raw": "1b5b3234363b3375",
+        "type": "char"
+    },
+    {
+        "chars": "\u00f6",
+        "keyId": "\u00f6.C",
+        "mod": "  C",
+        "raw": "1b5b3234363b3575",
+        "type": "char"
+    },
+    {
+        "chars": "\u00f6",
+        "keyId": "\u00f6.AC",
+        "mod": " AC",
+        "raw": "1b5b3234363b3775",
+        "type": "char"
+    },
+    {
         "key": "F12",
         "keyId": "F12.S",
         "mod": "S  ",
@@ -3617,6 +4352,27 @@
         "mod": "   ",
         "raw": "1b5b32347e",
         "type": "key"
+    },
+    {
+        "chars": "\u00fc",
+        "keyId": "\u00fc.A",
+        "mod": " A ",
+        "raw": "1b5b3235323b3375",
+        "type": "char"
+    },
+    {
+        "chars": "\u00fc",
+        "keyId": "\u00fc.C",
+        "mod": "  C",
+        "raw": "1b5b3235323b3575",
+        "type": "char"
+    },
+    {
+        "chars": "\u00fc",
+        "keyId": "\u00fc.AC",
+        "mod": " AC",
+        "raw": "1b5b3235323b3775",
+        "type": "char"
     },
     {
         "key": "F1",
@@ -4221,6 +4977,13 @@
         "type": "char"
     },
     {
+        "key": "Escape",
+        "keyId": "Escape.A",
+        "mod": " A ",
+        "raw": "1b5b32373b3375",
+        "type": "key"
+    },
+    {
         "key": "Backspace",
         "keyId": "Backspace.SA",
         "mod": "SA ",
@@ -4592,6 +5355,13 @@
         "type": "key"
     },
     {
+        "key": "Escape",
+        "keyId": "Escape.SA",
+        "mod": "SA ",
+        "raw": "1b5b32373b3475",
+        "type": "key"
+    },
+    {
         "chars": "d",
         "keyId": "d.C",
         "mod": "  C",
@@ -4939,6 +5709,13 @@
         "keyId": "Tab.C",
         "mod": "  C",
         "raw": "1b5b32373b353b397e",
+        "type": "key"
+    },
+    {
+        "key": "Escape",
+        "keyId": "Escape.C",
+        "mod": "  C",
+        "raw": "1b5b32373b3575",
         "type": "key"
     },
     {
@@ -5310,6 +6087,13 @@
         "keyId": "Tab.SC",
         "mod": "S C",
         "raw": "1b5b32373b363b397e",
+        "type": "key"
+    },
+    {
+        "key": "Escape",
+        "keyId": "Escape.SC",
+        "mod": "S C",
+        "raw": "1b5b32373b3675",
         "type": "key"
     },
     {
@@ -6027,6 +6811,13 @@
         "type": "key"
     },
     {
+        "key": "Escape",
+        "keyId": "Escape.SAC",
+        "mod": "SAC",
+        "raw": "1b5b32373b3875",
+        "type": "key"
+    },
+    {
         "key": "F3",
         "keyId": "F3.SC",
         "mod": "S C",
@@ -6146,6 +6937,55 @@
         "type": "key"
     },
     {
+        "key": "Space",
+        "keyId": "Space.S",
+        "mod": "S  ",
+        "raw": "1b5b33323b3275",
+        "type": "key"
+    },
+    {
+        "key": "Space",
+        "keyId": "Space.A",
+        "mod": " A ",
+        "raw": "1b5b33323b3375",
+        "type": "key"
+    },
+    {
+        "key": "Space",
+        "keyId": "Space.SA",
+        "mod": "SA ",
+        "raw": "1b5b33323b3475",
+        "type": "key"
+    },
+    {
+        "key": "Space",
+        "keyId": "Space.C",
+        "mod": "  C",
+        "raw": "1b5b33323b3575",
+        "type": "key"
+    },
+    {
+        "key": "Space",
+        "keyId": "Space.SC",
+        "mod": "S C",
+        "raw": "1b5b33323b3675",
+        "type": "key"
+    },
+    {
+        "key": "Space",
+        "keyId": "Space.AC",
+        "mod": " AC",
+        "raw": "1b5b33323b3775",
+        "type": "key"
+    },
+    {
+        "key": "Space",
+        "keyId": "Space.SAC",
+        "mod": "SAC",
+        "raw": "1b5b33323b3875",
+        "type": "key"
+    },
+    {
         "key": "F6",
         "keyId": "F6.SC",
         "mod": "S C",
@@ -6158,6 +6998,27 @@
         "mod": "S  ",
         "raw": "1b5b33327e",
         "type": "key"
+    },
+    {
+        "chars": "!",
+        "keyId": "!.SA",
+        "mod": "SA ",
+        "raw": "1b5b33333b3475",
+        "type": "char"
+    },
+    {
+        "chars": "!",
+        "keyId": "!.SC",
+        "mod": "S C",
+        "raw": "1b5b33333b3675",
+        "type": "char"
+    },
+    {
+        "chars": "!",
+        "keyId": "!.SAC",
+        "mod": "SAC",
+        "raw": "1b5b33333b3875",
+        "type": "char"
     },
     {
         "key": "F7",
@@ -6174,6 +7035,27 @@
         "type": "key"
     },
     {
+        "chars": "\"",
+        "keyId": "\".SA",
+        "mod": "SA ",
+        "raw": "1b5b33343b3475",
+        "type": "char"
+    },
+    {
+        "chars": "\"",
+        "keyId": "\".SC",
+        "mod": "S C",
+        "raw": "1b5b33343b3675",
+        "type": "char"
+    },
+    {
+        "chars": "\"",
+        "keyId": "\".SAC",
+        "mod": "SAC",
+        "raw": "1b5b33343b3875",
+        "type": "char"
+    },
+    {
         "key": "F8",
         "keyId": "F8.SC",
         "mod": "S C",
@@ -6186,6 +7068,111 @@
         "mod": "S  ",
         "raw": "1b5b33347e",
         "type": "key"
+    },
+    {
+        "chars": "#",
+        "keyId": "#.A",
+        "mod": " A ",
+        "raw": "1b5b33353b3375",
+        "type": "char"
+    },
+    {
+        "chars": "#",
+        "keyId": "#.C",
+        "mod": "  C",
+        "raw": "1b5b33353b3575",
+        "type": "char"
+    },
+    {
+        "chars": "#",
+        "keyId": "#.AC",
+        "mod": " AC",
+        "raw": "1b5b33353b3775",
+        "type": "char"
+    },
+    {
+        "chars": "$",
+        "keyId": "$.SA",
+        "mod": "SA ",
+        "raw": "1b5b33363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "$",
+        "keyId": "$.SC",
+        "mod": "S C",
+        "raw": "1b5b33363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "$",
+        "keyId": "$.SAC",
+        "mod": "SAC",
+        "raw": "1b5b33363b3875",
+        "type": "char"
+    },
+    {
+        "chars": "%",
+        "keyId": "%.SA",
+        "mod": "SA ",
+        "raw": "1b5b33373b3475",
+        "type": "char"
+    },
+    {
+        "chars": "%",
+        "keyId": "%.SC",
+        "mod": "S C",
+        "raw": "1b5b33373b3675",
+        "type": "char"
+    },
+    {
+        "chars": "%",
+        "keyId": "%.SAC",
+        "mod": "SAC",
+        "raw": "1b5b33373b3875",
+        "type": "char"
+    },
+    {
+        "chars": "&",
+        "keyId": "&.SA",
+        "mod": "SA ",
+        "raw": "1b5b33383b3475",
+        "type": "char"
+    },
+    {
+        "chars": "&",
+        "keyId": "&.SC",
+        "mod": "S C",
+        "raw": "1b5b33383b3675",
+        "type": "char"
+    },
+    {
+        "chars": "&",
+        "keyId": "&.SAC",
+        "mod": "SAC",
+        "raw": "1b5b33383b3875",
+        "type": "char"
+    },
+    {
+        "chars": "'",
+        "keyId": "'.SA",
+        "mod": "SA ",
+        "raw": "1b5b33393b3475",
+        "type": "char"
+    },
+    {
+        "chars": "'",
+        "keyId": "'.SC",
+        "mod": "S C",
+        "raw": "1b5b33393b3675",
+        "type": "char"
+    },
+    {
+        "chars": "'",
+        "keyId": "'.SAC",
+        "mod": "SAC",
+        "raw": "1b5b33393b3875",
+        "type": "char"
     },
     {
         "key": "Delete",
@@ -6258,6 +7245,216 @@
         "type": "key"
     },
     {
+        "chars": "(",
+        "keyId": "(.SA",
+        "mod": "SA ",
+        "raw": "1b5b34303b3475",
+        "type": "char"
+    },
+    {
+        "chars": "(",
+        "keyId": "(.SC",
+        "mod": "S C",
+        "raw": "1b5b34303b3675",
+        "type": "char"
+    },
+    {
+        "chars": "(",
+        "keyId": "(.SAC",
+        "mod": "SAC",
+        "raw": "1b5b34303b3875",
+        "type": "char"
+    },
+    {
+        "chars": ")",
+        "keyId": ").SA",
+        "mod": "SA ",
+        "raw": "1b5b34313b3475",
+        "type": "char"
+    },
+    {
+        "chars": ")",
+        "keyId": ").SC",
+        "mod": "S C",
+        "raw": "1b5b34313b3675",
+        "type": "char"
+    },
+    {
+        "chars": ")",
+        "keyId": ").SAC",
+        "mod": "SAC",
+        "raw": "1b5b34313b3875",
+        "type": "char"
+    },
+    {
+        "chars": "*",
+        "keyId": "*.SA",
+        "mod": "SA ",
+        "raw": "1b5b34323b3475",
+        "type": "char"
+    },
+    {
+        "chars": "*",
+        "keyId": "*.SC",
+        "mod": "S C",
+        "raw": "1b5b34323b3675",
+        "type": "char"
+    },
+    {
+        "chars": "*",
+        "keyId": "*.SAC",
+        "mod": "SAC",
+        "raw": "1b5b34323b3875",
+        "type": "char"
+    },
+    {
+        "chars": "+",
+        "keyId": "+.A",
+        "mod": " A ",
+        "raw": "1b5b34333b3375",
+        "type": "char"
+    },
+    {
+        "chars": "+",
+        "keyId": "+.C",
+        "mod": "  C",
+        "raw": "1b5b34333b3575",
+        "type": "char"
+    },
+    {
+        "chars": "+",
+        "keyId": "+.AC",
+        "mod": " AC",
+        "raw": "1b5b34333b3775",
+        "type": "char"
+    },
+    {
+        "chars": ",",
+        "keyId": ",.A",
+        "mod": " A ",
+        "raw": "1b5b34343b3375",
+        "type": "char"
+    },
+    {
+        "chars": ",",
+        "keyId": ",.C",
+        "mod": "  C",
+        "raw": "1b5b34343b3575",
+        "type": "char"
+    },
+    {
+        "chars": ",",
+        "keyId": ",.AC",
+        "mod": " AC",
+        "raw": "1b5b34343b3775",
+        "type": "char"
+    },
+    {
+        "chars": "-",
+        "keyId": "-.A",
+        "mod": " A ",
+        "raw": "1b5b34353b3375",
+        "type": "char"
+    },
+    {
+        "chars": "-",
+        "keyId": "-.C",
+        "mod": "  C",
+        "raw": "1b5b34353b3575",
+        "type": "char"
+    },
+    {
+        "chars": "-",
+        "keyId": "-.AC",
+        "mod": " AC",
+        "raw": "1b5b34353b3775",
+        "type": "char"
+    },
+    {
+        "chars": ".",
+        "keyId": "..A",
+        "mod": " A ",
+        "raw": "1b5b34363b3375",
+        "type": "char"
+    },
+    {
+        "chars": ".",
+        "keyId": "..C",
+        "mod": "  C",
+        "raw": "1b5b34363b3575",
+        "type": "char"
+    },
+    {
+        "chars": ".",
+        "keyId": "..AC",
+        "mod": " AC",
+        "raw": "1b5b34363b3775",
+        "type": "char"
+    },
+    {
+        "chars": "/",
+        "keyId": "/.SA",
+        "mod": "SA ",
+        "raw": "1b5b34373b3475",
+        "type": "char"
+    },
+    {
+        "chars": "/",
+        "keyId": "/.SC",
+        "mod": "S C",
+        "raw": "1b5b34373b3675",
+        "type": "char"
+    },
+    {
+        "chars": "/",
+        "keyId": "/.SAC",
+        "mod": "SAC",
+        "raw": "1b5b34373b3875",
+        "type": "char"
+    },
+    {
+        "chars": "0",
+        "keyId": "0.A",
+        "mod": " A ",
+        "raw": "1b5b34383b3375",
+        "type": "char"
+    },
+    {
+        "chars": "0",
+        "keyId": "0.C",
+        "mod": "  C",
+        "raw": "1b5b34383b3575",
+        "type": "char"
+    },
+    {
+        "chars": "0",
+        "keyId": "0.AC",
+        "mod": " AC",
+        "raw": "1b5b34383b3775",
+        "type": "char"
+    },
+    {
+        "chars": "1",
+        "keyId": "1.A",
+        "mod": " A ",
+        "raw": "1b5b34393b3375",
+        "type": "char"
+    },
+    {
+        "chars": "1",
+        "keyId": "1.C",
+        "mod": "  C",
+        "raw": "1b5b34393b3575",
+        "type": "char"
+    },
+    {
+        "chars": "1",
+        "keyId": "1.AC",
+        "mod": " AC",
+        "raw": "1b5b34393b3775",
+        "type": "char"
+    },
+    {
         "key": "End",
         "keyId": "End.",
         "mod": "   ",
@@ -6270,6 +7467,216 @@
         "mod": "S  ",
         "raw": "1b5b3524",
         "type": "key"
+    },
+    {
+        "chars": "2",
+        "keyId": "2.A",
+        "mod": " A ",
+        "raw": "1b5b35303b3375",
+        "type": "char"
+    },
+    {
+        "chars": "2",
+        "keyId": "2.C",
+        "mod": "  C",
+        "raw": "1b5b35303b3575",
+        "type": "char"
+    },
+    {
+        "chars": "2",
+        "keyId": "2.AC",
+        "mod": " AC",
+        "raw": "1b5b35303b3775",
+        "type": "char"
+    },
+    {
+        "chars": "3",
+        "keyId": "3.A",
+        "mod": " A ",
+        "raw": "1b5b35313b3375",
+        "type": "char"
+    },
+    {
+        "chars": "3",
+        "keyId": "3.C",
+        "mod": "  C",
+        "raw": "1b5b35313b3575",
+        "type": "char"
+    },
+    {
+        "chars": "3",
+        "keyId": "3.AC",
+        "mod": " AC",
+        "raw": "1b5b35313b3775",
+        "type": "char"
+    },
+    {
+        "chars": "4",
+        "keyId": "4.A",
+        "mod": " A ",
+        "raw": "1b5b35323b3375",
+        "type": "char"
+    },
+    {
+        "chars": "4",
+        "keyId": "4.C",
+        "mod": "  C",
+        "raw": "1b5b35323b3575",
+        "type": "char"
+    },
+    {
+        "chars": "4",
+        "keyId": "4.AC",
+        "mod": " AC",
+        "raw": "1b5b35323b3775",
+        "type": "char"
+    },
+    {
+        "chars": "5",
+        "keyId": "5.A",
+        "mod": " A ",
+        "raw": "1b5b35333b3375",
+        "type": "char"
+    },
+    {
+        "chars": "5",
+        "keyId": "5.C",
+        "mod": "  C",
+        "raw": "1b5b35333b3575",
+        "type": "char"
+    },
+    {
+        "chars": "5",
+        "keyId": "5.AC",
+        "mod": " AC",
+        "raw": "1b5b35333b3775",
+        "type": "char"
+    },
+    {
+        "chars": "6",
+        "keyId": "6.A",
+        "mod": " A ",
+        "raw": "1b5b35343b3375",
+        "type": "char"
+    },
+    {
+        "chars": "6",
+        "keyId": "6.C",
+        "mod": "  C",
+        "raw": "1b5b35343b3575",
+        "type": "char"
+    },
+    {
+        "chars": "6",
+        "keyId": "6.AC",
+        "mod": " AC",
+        "raw": "1b5b35343b3775",
+        "type": "char"
+    },
+    {
+        "chars": "7",
+        "keyId": "7.A",
+        "mod": " A ",
+        "raw": "1b5b35353b3375",
+        "type": "char"
+    },
+    {
+        "chars": "7",
+        "keyId": "7.C",
+        "mod": "  C",
+        "raw": "1b5b35353b3575",
+        "type": "char"
+    },
+    {
+        "chars": "7",
+        "keyId": "7.AC",
+        "mod": " AC",
+        "raw": "1b5b35353b3775",
+        "type": "char"
+    },
+    {
+        "chars": "8",
+        "keyId": "8.A",
+        "mod": " A ",
+        "raw": "1b5b35363b3375",
+        "type": "char"
+    },
+    {
+        "chars": "8",
+        "keyId": "8.C",
+        "mod": "  C",
+        "raw": "1b5b35363b3575",
+        "type": "char"
+    },
+    {
+        "chars": "8",
+        "keyId": "8.AC",
+        "mod": " AC",
+        "raw": "1b5b35363b3775",
+        "type": "char"
+    },
+    {
+        "chars": "9",
+        "keyId": "9.A",
+        "mod": " A ",
+        "raw": "1b5b35373b3375",
+        "type": "char"
+    },
+    {
+        "chars": "9",
+        "keyId": "9.C",
+        "mod": "  C",
+        "raw": "1b5b35373b3575",
+        "type": "char"
+    },
+    {
+        "chars": "9",
+        "keyId": "9.AC",
+        "mod": " AC",
+        "raw": "1b5b35373b3775",
+        "type": "char"
+    },
+    {
+        "chars": ":",
+        "keyId": ":.SA",
+        "mod": "SA ",
+        "raw": "1b5b35383b3475",
+        "type": "char"
+    },
+    {
+        "chars": ":",
+        "keyId": ":.SC",
+        "mod": "S C",
+        "raw": "1b5b35383b3675",
+        "type": "char"
+    },
+    {
+        "chars": ":",
+        "keyId": ":.SAC",
+        "mod": "SAC",
+        "raw": "1b5b35383b3875",
+        "type": "char"
+    },
+    {
+        "chars": ";",
+        "keyId": ";.SA",
+        "mod": "SA ",
+        "raw": "1b5b35393b3475",
+        "type": "char"
+    },
+    {
+        "chars": ";",
+        "keyId": ";.SC",
+        "mod": "S C",
+        "raw": "1b5b35393b3675",
+        "type": "char"
+    },
+    {
+        "chars": ";",
+        "keyId": ";.SAC",
+        "mod": "SAC",
+        "raw": "1b5b35393b3875",
+        "type": "char"
     },
     {
         "key": "PageUp",
@@ -6349,6 +7756,230 @@
         "type": "key"
     },
     {
+        "chars": "<",
+        "keyId": "<.A",
+        "mod": " A ",
+        "raw": "1b5b36303b3375",
+        "type": "char"
+    },
+    {
+        "chars": "<",
+        "keyId": "<.C",
+        "mod": "  C",
+        "raw": "1b5b36303b3575",
+        "type": "char"
+    },
+    {
+        "chars": "<",
+        "keyId": "<.AC",
+        "mod": " AC",
+        "raw": "1b5b36303b3775",
+        "type": "char"
+    },
+    {
+        "chars": "=",
+        "keyId": "=.SA",
+        "mod": "SA ",
+        "raw": "1b5b36313b3475",
+        "type": "char"
+    },
+    {
+        "chars": "=",
+        "keyId": "=.SC",
+        "mod": "S C",
+        "raw": "1b5b36313b3675",
+        "type": "char"
+    },
+    {
+        "chars": "=",
+        "keyId": "=.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36313b3875",
+        "type": "char"
+    },
+    {
+        "chars": ">",
+        "keyId": ">.SA",
+        "mod": "SA ",
+        "raw": "1b5b36323b3475",
+        "type": "char"
+    },
+    {
+        "chars": ">",
+        "keyId": ">.SC",
+        "mod": "S C",
+        "raw": "1b5b36323b3675",
+        "type": "char"
+    },
+    {
+        "chars": ">",
+        "keyId": ">.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36323b3875",
+        "type": "char"
+    },
+    {
+        "chars": "?",
+        "keyId": "?.SA",
+        "mod": "SA ",
+        "raw": "1b5b36333b3475",
+        "type": "char"
+    },
+    {
+        "chars": "?",
+        "keyId": "?.SC",
+        "mod": "S C",
+        "raw": "1b5b36333b3675",
+        "type": "char"
+    },
+    {
+        "chars": "?",
+        "keyId": "?.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36333b3875",
+        "type": "char"
+    },
+    {
+        "chars": "A",
+        "keyId": "A.S",
+        "mod": "S  ",
+        "raw": "1b5b36353b3275",
+        "type": "char"
+    },
+    {
+        "chars": "A",
+        "keyId": "A.SA",
+        "mod": "SA ",
+        "raw": "1b5b36353b3475",
+        "type": "char"
+    },
+    {
+        "chars": "A",
+        "keyId": "A.SC",
+        "mod": "S C",
+        "raw": "1b5b36353b3675",
+        "type": "char"
+    },
+    {
+        "chars": "A",
+        "keyId": "A.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36353b3875",
+        "type": "char"
+    },
+    {
+        "chars": "B",
+        "keyId": "B.S",
+        "mod": "S  ",
+        "raw": "1b5b36363b3275",
+        "type": "char"
+    },
+    {
+        "chars": "B",
+        "keyId": "B.SA",
+        "mod": "SA ",
+        "raw": "1b5b36363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "B",
+        "keyId": "B.SC",
+        "mod": "S C",
+        "raw": "1b5b36363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "B",
+        "keyId": "B.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36363b3875",
+        "type": "char"
+    },
+    {
+        "chars": "C",
+        "keyId": "C.S",
+        "mod": "S  ",
+        "raw": "1b5b36373b3275",
+        "type": "char"
+    },
+    {
+        "chars": "C",
+        "keyId": "C.SA",
+        "mod": "SA ",
+        "raw": "1b5b36373b3475",
+        "type": "char"
+    },
+    {
+        "chars": "C",
+        "keyId": "C.SC",
+        "mod": "S C",
+        "raw": "1b5b36373b3675",
+        "type": "char"
+    },
+    {
+        "chars": "C",
+        "keyId": "C.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36373b3875",
+        "type": "char"
+    },
+    {
+        "chars": "D",
+        "keyId": "D.S",
+        "mod": "S  ",
+        "raw": "1b5b36383b3275",
+        "type": "char"
+    },
+    {
+        "chars": "D",
+        "keyId": "D.SA",
+        "mod": "SA ",
+        "raw": "1b5b36383b3475",
+        "type": "char"
+    },
+    {
+        "chars": "D",
+        "keyId": "D.SC",
+        "mod": "S C",
+        "raw": "1b5b36383b3675",
+        "type": "char"
+    },
+    {
+        "chars": "D",
+        "keyId": "D.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36383b3875",
+        "type": "char"
+    },
+    {
+        "chars": "E",
+        "keyId": "E.S",
+        "mod": "S  ",
+        "raw": "1b5b36393b3275",
+        "type": "char"
+    },
+    {
+        "chars": "E",
+        "keyId": "E.SA",
+        "mod": "SA ",
+        "raw": "1b5b36393b3475",
+        "type": "char"
+    },
+    {
+        "chars": "E",
+        "keyId": "E.SC",
+        "mod": "S C",
+        "raw": "1b5b36393b3675",
+        "type": "char"
+    },
+    {
+        "chars": "E",
+        "keyId": "E.SAC",
+        "mod": "SAC",
+        "raw": "1b5b36393b3875",
+        "type": "char"
+    },
+    {
         "key": "PageDown",
         "keyId": "PageDown.S",
         "mod": "S  ",
@@ -6426,6 +8057,286 @@
         "type": "key"
     },
     {
+        "chars": "F",
+        "keyId": "F.S",
+        "mod": "S  ",
+        "raw": "1b5b37303b3275",
+        "type": "char"
+    },
+    {
+        "chars": "F",
+        "keyId": "F.SA",
+        "mod": "SA ",
+        "raw": "1b5b37303b3475",
+        "type": "char"
+    },
+    {
+        "chars": "F",
+        "keyId": "F.SC",
+        "mod": "S C",
+        "raw": "1b5b37303b3675",
+        "type": "char"
+    },
+    {
+        "chars": "F",
+        "keyId": "F.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37303b3875",
+        "type": "char"
+    },
+    {
+        "chars": "G",
+        "keyId": "G.S",
+        "mod": "S  ",
+        "raw": "1b5b37313b3275",
+        "type": "char"
+    },
+    {
+        "chars": "G",
+        "keyId": "G.SA",
+        "mod": "SA ",
+        "raw": "1b5b37313b3475",
+        "type": "char"
+    },
+    {
+        "chars": "G",
+        "keyId": "G.SC",
+        "mod": "S C",
+        "raw": "1b5b37313b3675",
+        "type": "char"
+    },
+    {
+        "chars": "G",
+        "keyId": "G.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37313b3875",
+        "type": "char"
+    },
+    {
+        "chars": "H",
+        "keyId": "H.S",
+        "mod": "S  ",
+        "raw": "1b5b37323b3275",
+        "type": "char"
+    },
+    {
+        "chars": "H",
+        "keyId": "H.SA",
+        "mod": "SA ",
+        "raw": "1b5b37323b3475",
+        "type": "char"
+    },
+    {
+        "chars": "H",
+        "keyId": "H.SC",
+        "mod": "S C",
+        "raw": "1b5b37323b3675",
+        "type": "char"
+    },
+    {
+        "chars": "H",
+        "keyId": "H.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37323b3875",
+        "type": "char"
+    },
+    {
+        "chars": "I",
+        "keyId": "I.S",
+        "mod": "S  ",
+        "raw": "1b5b37333b3275",
+        "type": "char"
+    },
+    {
+        "chars": "I",
+        "keyId": "I.SA",
+        "mod": "SA ",
+        "raw": "1b5b37333b3475",
+        "type": "char"
+    },
+    {
+        "chars": "I",
+        "keyId": "I.SC",
+        "mod": "S C",
+        "raw": "1b5b37333b3675",
+        "type": "char"
+    },
+    {
+        "chars": "I",
+        "keyId": "I.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37333b3875",
+        "type": "char"
+    },
+    {
+        "chars": "J",
+        "keyId": "J.S",
+        "mod": "S  ",
+        "raw": "1b5b37343b3275",
+        "type": "char"
+    },
+    {
+        "chars": "J",
+        "keyId": "J.SA",
+        "mod": "SA ",
+        "raw": "1b5b37343b3475",
+        "type": "char"
+    },
+    {
+        "chars": "J",
+        "keyId": "J.SC",
+        "mod": "S C",
+        "raw": "1b5b37343b3675",
+        "type": "char"
+    },
+    {
+        "chars": "J",
+        "keyId": "J.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37343b3875",
+        "type": "char"
+    },
+    {
+        "chars": "K",
+        "keyId": "K.S",
+        "mod": "S  ",
+        "raw": "1b5b37353b3275",
+        "type": "char"
+    },
+    {
+        "chars": "K",
+        "keyId": "K.SA",
+        "mod": "SA ",
+        "raw": "1b5b37353b3475",
+        "type": "char"
+    },
+    {
+        "chars": "K",
+        "keyId": "K.SC",
+        "mod": "S C",
+        "raw": "1b5b37353b3675",
+        "type": "char"
+    },
+    {
+        "chars": "K",
+        "keyId": "K.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37353b3875",
+        "type": "char"
+    },
+    {
+        "chars": "L",
+        "keyId": "L.S",
+        "mod": "S  ",
+        "raw": "1b5b37363b3275",
+        "type": "char"
+    },
+    {
+        "chars": "L",
+        "keyId": "L.SA",
+        "mod": "SA ",
+        "raw": "1b5b37363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "L",
+        "keyId": "L.SC",
+        "mod": "S C",
+        "raw": "1b5b37363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "L",
+        "keyId": "L.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37363b3875",
+        "type": "char"
+    },
+    {
+        "chars": "M",
+        "keyId": "M.S",
+        "mod": "S  ",
+        "raw": "1b5b37373b3275",
+        "type": "char"
+    },
+    {
+        "chars": "M",
+        "keyId": "M.SA",
+        "mod": "SA ",
+        "raw": "1b5b37373b3475",
+        "type": "char"
+    },
+    {
+        "chars": "M",
+        "keyId": "M.SC",
+        "mod": "S C",
+        "raw": "1b5b37373b3675",
+        "type": "char"
+    },
+    {
+        "chars": "M",
+        "keyId": "M.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37373b3875",
+        "type": "char"
+    },
+    {
+        "chars": "N",
+        "keyId": "N.S",
+        "mod": "S  ",
+        "raw": "1b5b37383b3275",
+        "type": "char"
+    },
+    {
+        "chars": "N",
+        "keyId": "N.SA",
+        "mod": "SA ",
+        "raw": "1b5b37383b3475",
+        "type": "char"
+    },
+    {
+        "chars": "N",
+        "keyId": "N.SC",
+        "mod": "S C",
+        "raw": "1b5b37383b3675",
+        "type": "char"
+    },
+    {
+        "chars": "N",
+        "keyId": "N.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37383b3875",
+        "type": "char"
+    },
+    {
+        "chars": "O",
+        "keyId": "O.S",
+        "mod": "S  ",
+        "raw": "1b5b37393b3275",
+        "type": "char"
+    },
+    {
+        "chars": "O",
+        "keyId": "O.SA",
+        "mod": "SA ",
+        "raw": "1b5b37393b3475",
+        "type": "char"
+    },
+    {
+        "chars": "O",
+        "keyId": "O.SC",
+        "mod": "S C",
+        "raw": "1b5b37393b3675",
+        "type": "char"
+    },
+    {
+        "chars": "O",
+        "keyId": "O.SAC",
+        "mod": "SAC",
+        "raw": "1b5b37393b3875",
+        "type": "char"
+    },
+    {
         "key": "Home",
         "keyId": "Home.SC",
         "mod": "S C",
@@ -6454,6 +8365,300 @@
         "type": "key"
     },
     {
+        "chars": "P",
+        "keyId": "P.S",
+        "mod": "S  ",
+        "raw": "1b5b38303b3275",
+        "type": "char"
+    },
+    {
+        "chars": "P",
+        "keyId": "P.SA",
+        "mod": "SA ",
+        "raw": "1b5b38303b3475",
+        "type": "char"
+    },
+    {
+        "chars": "P",
+        "keyId": "P.SC",
+        "mod": "S C",
+        "raw": "1b5b38303b3675",
+        "type": "char"
+    },
+    {
+        "chars": "P",
+        "keyId": "P.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38303b3875",
+        "type": "char"
+    },
+    {
+        "chars": "Q",
+        "keyId": "Q.S",
+        "mod": "S  ",
+        "raw": "1b5b38313b3275",
+        "type": "char"
+    },
+    {
+        "chars": "Q",
+        "keyId": "Q.SA",
+        "mod": "SA ",
+        "raw": "1b5b38313b3475",
+        "type": "char"
+    },
+    {
+        "chars": "Q",
+        "keyId": "Q.SC",
+        "mod": "S C",
+        "raw": "1b5b38313b3675",
+        "type": "char"
+    },
+    {
+        "chars": "Q",
+        "keyId": "Q.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38313b3875",
+        "type": "char"
+    },
+    {
+        "chars": "R",
+        "keyId": "R.S",
+        "mod": "S  ",
+        "raw": "1b5b38323b3275",
+        "type": "char"
+    },
+    {
+        "chars": "R",
+        "keyId": "R.SA",
+        "mod": "SA ",
+        "raw": "1b5b38323b3475",
+        "type": "char"
+    },
+    {
+        "chars": "R",
+        "keyId": "R.SC",
+        "mod": "S C",
+        "raw": "1b5b38323b3675",
+        "type": "char"
+    },
+    {
+        "chars": "R",
+        "keyId": "R.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38323b3875",
+        "type": "char"
+    },
+    {
+        "chars": "S",
+        "keyId": "S.S",
+        "mod": "S  ",
+        "raw": "1b5b38333b3275",
+        "type": "char"
+    },
+    {
+        "chars": "S",
+        "keyId": "S.SA",
+        "mod": "SA ",
+        "raw": "1b5b38333b3475",
+        "type": "char"
+    },
+    {
+        "chars": "S",
+        "keyId": "S.SC",
+        "mod": "S C",
+        "raw": "1b5b38333b3675",
+        "type": "char"
+    },
+    {
+        "chars": "S",
+        "keyId": "S.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38333b3875",
+        "type": "char"
+    },
+    {
+        "chars": "T",
+        "keyId": "T.S",
+        "mod": "S  ",
+        "raw": "1b5b38343b3275",
+        "type": "char"
+    },
+    {
+        "chars": "T",
+        "keyId": "T.SA",
+        "mod": "SA ",
+        "raw": "1b5b38343b3475",
+        "type": "char"
+    },
+    {
+        "chars": "T",
+        "keyId": "T.SC",
+        "mod": "S C",
+        "raw": "1b5b38343b3675",
+        "type": "char"
+    },
+    {
+        "chars": "T",
+        "keyId": "T.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38343b3875",
+        "type": "char"
+    },
+    {
+        "chars": "U",
+        "keyId": "U.S",
+        "mod": "S  ",
+        "raw": "1b5b38353b3275",
+        "type": "char"
+    },
+    {
+        "chars": "U",
+        "keyId": "U.SA",
+        "mod": "SA ",
+        "raw": "1b5b38353b3475",
+        "type": "char"
+    },
+    {
+        "chars": "U",
+        "keyId": "U.SC",
+        "mod": "S C",
+        "raw": "1b5b38353b3675",
+        "type": "char"
+    },
+    {
+        "chars": "U",
+        "keyId": "U.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38353b3875",
+        "type": "char"
+    },
+    {
+        "chars": "V",
+        "keyId": "V.S",
+        "mod": "S  ",
+        "raw": "1b5b38363b3275",
+        "type": "char"
+    },
+    {
+        "chars": "V",
+        "keyId": "V.SA",
+        "mod": "SA ",
+        "raw": "1b5b38363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "V",
+        "keyId": "V.SC",
+        "mod": "S C",
+        "raw": "1b5b38363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "V",
+        "keyId": "V.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38363b3875",
+        "type": "char"
+    },
+    {
+        "chars": "W",
+        "keyId": "W.S",
+        "mod": "S  ",
+        "raw": "1b5b38373b3275",
+        "type": "char"
+    },
+    {
+        "chars": "W",
+        "keyId": "W.SA",
+        "mod": "SA ",
+        "raw": "1b5b38373b3475",
+        "type": "char"
+    },
+    {
+        "chars": "W",
+        "keyId": "W.SC",
+        "mod": "S C",
+        "raw": "1b5b38373b3675",
+        "type": "char"
+    },
+    {
+        "chars": "W",
+        "keyId": "W.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38373b3875",
+        "type": "char"
+    },
+    {
+        "chars": "X",
+        "keyId": "X.S",
+        "mod": "S  ",
+        "raw": "1b5b38383b3275",
+        "type": "char"
+    },
+    {
+        "chars": "X",
+        "keyId": "X.SA",
+        "mod": "SA ",
+        "raw": "1b5b38383b3475",
+        "type": "char"
+    },
+    {
+        "chars": "X",
+        "keyId": "X.SC",
+        "mod": "S C",
+        "raw": "1b5b38383b3675",
+        "type": "char"
+    },
+    {
+        "chars": "X",
+        "keyId": "X.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38383b3875",
+        "type": "char"
+    },
+    {
+        "chars": "Y",
+        "keyId": "Y.S",
+        "mod": "S  ",
+        "raw": "1b5b38393b3275",
+        "type": "char"
+    },
+    {
+        "chars": "Y",
+        "keyId": "Y.SA",
+        "mod": "SA ",
+        "raw": "1b5b38393b3475",
+        "type": "char"
+    },
+    {
+        "chars": "Y",
+        "keyId": "Y.SC",
+        "mod": "S C",
+        "raw": "1b5b38393b3675",
+        "type": "char"
+    },
+    {
+        "chars": "Y",
+        "keyId": "Y.SAC",
+        "mod": "SAC",
+        "raw": "1b5b38393b3875",
+        "type": "char"
+    },
+    {
+        "key": "Backspace",
+        "keyId": "Backspace.SC",
+        "mod": "S C",
+        "raw": "1b5b383b3675",
+        "type": "key"
+    },
+    {
+        "key": "Backspace",
+        "keyId": "Backspace.SAC",
+        "mod": "SAC",
+        "raw": "1b5b383b3875",
+        "type": "key"
+    },
+    {
         "key": "End",
         "keyId": "End.SC",
         "mod": "S C",
@@ -6472,6 +8677,202 @@
         "keyId": "End.",
         "mod": "   ",
         "raw": "1b5b387e",
+        "type": "key"
+    },
+    {
+        "chars": "Z",
+        "keyId": "Z.S",
+        "mod": "S  ",
+        "raw": "1b5b39303b3275",
+        "type": "char"
+    },
+    {
+        "chars": "Z",
+        "keyId": "Z.SA",
+        "mod": "SA ",
+        "raw": "1b5b39303b3475",
+        "type": "char"
+    },
+    {
+        "chars": "Z",
+        "keyId": "Z.SC",
+        "mod": "S C",
+        "raw": "1b5b39303b3675",
+        "type": "char"
+    },
+    {
+        "chars": "Z",
+        "keyId": "Z.SAC",
+        "mod": "SAC",
+        "raw": "1b5b39303b3875",
+        "type": "char"
+    },
+    {
+        "chars": "^",
+        "keyId": "^.A",
+        "mod": " A ",
+        "raw": "1b5b39343b3375",
+        "type": "char"
+    },
+    {
+        "chars": "^",
+        "keyId": "^.C",
+        "mod": "  C",
+        "raw": "1b5b39343b3575",
+        "type": "char"
+    },
+    {
+        "chars": "^",
+        "keyId": "^.AC",
+        "mod": " AC",
+        "raw": "1b5b39343b3775",
+        "type": "char"
+    },
+    {
+        "chars": "_",
+        "keyId": "_.S",
+        "mod": "S  ",
+        "raw": "1b5b39353b3275",
+        "type": "char"
+    },
+    {
+        "chars": "_",
+        "keyId": "_.SA",
+        "mod": "SA ",
+        "raw": "1b5b39353b3475",
+        "type": "char"
+    },
+    {
+        "chars": "_",
+        "keyId": "_.SC",
+        "mod": "S C",
+        "raw": "1b5b39353b3675",
+        "type": "char"
+    },
+    {
+        "chars": "_",
+        "keyId": "_.SAC",
+        "mod": "SAC",
+        "raw": "1b5b39353b3875",
+        "type": "char"
+    },
+    {
+        "chars": "`",
+        "keyId": "`.S",
+        "mod": "S  ",
+        "raw": "1b5b39363b3275",
+        "type": "char"
+    },
+    {
+        "chars": "`",
+        "keyId": "`.SA",
+        "mod": "SA ",
+        "raw": "1b5b39363b3475",
+        "type": "char"
+    },
+    {
+        "chars": "`",
+        "keyId": "`.SC",
+        "mod": "S C",
+        "raw": "1b5b39363b3675",
+        "type": "char"
+    },
+    {
+        "chars": "`",
+        "keyId": "`.SAC",
+        "mod": "SAC",
+        "raw": "1b5b39363b3875",
+        "type": "char"
+    },
+    {
+        "chars": "a",
+        "keyId": "a.A",
+        "mod": " A ",
+        "raw": "1b5b39373b3375",
+        "type": "char"
+    },
+    {
+        "chars": "a",
+        "keyId": "a.C",
+        "mod": "  C",
+        "raw": "1b5b39373b3575",
+        "type": "char"
+    },
+    {
+        "chars": "a",
+        "keyId": "a.AC",
+        "mod": " AC",
+        "raw": "1b5b39373b3775",
+        "type": "char"
+    },
+    {
+        "chars": "b",
+        "keyId": "b.A",
+        "mod": " A ",
+        "raw": "1b5b39383b3375",
+        "type": "char"
+    },
+    {
+        "chars": "b",
+        "keyId": "b.C",
+        "mod": "  C",
+        "raw": "1b5b39383b3575",
+        "type": "char"
+    },
+    {
+        "chars": "b",
+        "keyId": "b.AC",
+        "mod": " AC",
+        "raw": "1b5b39383b3775",
+        "type": "char"
+    },
+    {
+        "chars": "c",
+        "keyId": "c.A",
+        "mod": " A ",
+        "raw": "1b5b39393b3375",
+        "type": "char"
+    },
+    {
+        "chars": "c",
+        "keyId": "c.AC",
+        "mod": " AC",
+        "raw": "1b5b39393b3775",
+        "type": "char"
+    },
+    {
+        "key": "Tab",
+        "keyId": "Tab.SA",
+        "mod": "SA ",
+        "raw": "1b5b393b3475",
+        "type": "key"
+    },
+    {
+        "key": "Tab",
+        "keyId": "Tab.C",
+        "mod": "  C",
+        "raw": "1b5b393b3575",
+        "type": "key"
+    },
+    {
+        "key": "Tab",
+        "keyId": "Tab.SC",
+        "mod": "S C",
+        "raw": "1b5b393b3675",
+        "type": "key"
+    },
+    {
+        "key": "Tab",
+        "keyId": "Tab.AC",
+        "mod": " AC",
+        "raw": "1b5b393b3775",
+        "type": "key"
+    },
+    {
+        "key": "Tab",
+        "keyId": "Tab.SAC",
+        "mod": "SAC",
+        "raw": "1b5b393b3875",
         "type": "key"
     },
     {
