@@ -1169,6 +1169,12 @@ static void int_put_num(termpaint_integration *integration, int num) {
     integration->write(integration, buf, len);
 }
 
+static void int_awaiting_response(termpaint_integration *integration) {
+    if (integration->awaiting_response) {
+        integration->awaiting_response(integration);
+    }
+}
+
 static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
@@ -1645,6 +1651,7 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
         int_puts(integration, "\033]");
         int_put_num(integration, color_slot);
         int_puts(integration, ";?\033\\");
+        int_awaiting_response(integration);
         int_flush(integration);
         entry->save_initiated = true;
     } else {
@@ -1788,6 +1795,7 @@ void termpaint_terminal_callback(termpaint_terminal *term) {
         term->data_pending_after_input_received = false;
         termpaint_integration *integration = term->integration;
         int_puts(integration, "\033[5n");
+        int_awaiting_response(integration);
         int_flush(integration);
     }
 }
@@ -1895,6 +1903,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             int_puts(integration, "\033[6n");
             int_puts(integration, "\033[>c");
             int_puts(integration, "\033[5n");
+            int_awaiting_response(integration);
             terminal->ad_state = AD_BASICCOMPAT;
             return true;
         case AD_BASICCOMPAT:
@@ -1964,6 +1973,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 // check if finger printing left printed characters
                 termpaint_input_expect_cursor_position_report(terminal->input);
                 int_puts(integration, "\033[6n");
+                int_awaiting_response(integration);
                 terminal->ad_state = AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB;
                 return true;
             }
@@ -1993,6 +2003,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 int_puts(integration, "\033[?6n");
                 int_puts(integration, "\033[1x");
                 int_puts(integration, "\033[5n");
+                int_awaiting_response(integration);
                 terminal->ad_state = AD_FP1_REQ;
                 return true;
             }
@@ -2006,6 +2017,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 // see if "\033[=c" was misparsed
                 termpaint_input_expect_cursor_position_report(terminal->input);
                 int_puts(integration, "\033[6n");
+                int_awaiting_response(integration);
                 terminal->ad_state = AD_FP1_CLEANUP;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_3RD_DEV_ATTRIB) {
@@ -2085,6 +2097,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                     termpaint_input_expect_cursor_position_report(terminal->input);
                     int_puts(integration, "\033[6n");
                 }
+                int_awaiting_response(integration);
                 terminal->ad_state = AD_FP1_CLEANUP;
                 return true;
             }
@@ -2139,6 +2152,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
                 int_puts(integration, "\033[6n"); // detect if "\033[=c" was misparsed
                 int_puts(integration, "\033[>0;1c");
                 int_puts(integration, "\033[5n");
+                int_awaiting_response(integration);
                 terminal->ad_state = AD_FP2_REQ;
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
@@ -2169,6 +2183,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 int_puts(integration, "\033[>0;1c");
                 int_puts(integration, "\033[5n");
+                int_awaiting_response(integration);
                 terminal->ad_state = AD_FP2_CURSOR_DONE;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0) {
