@@ -74,7 +74,7 @@ void event_handler(void *user_data, termpaint_event *event) {
             pretty += buf;
         }
         pretty += " ";
-        pretty += event->key.atom;
+        pretty += std::string { event->key.atom, event->key.length };
     } else if (event->type == TERMPAINT_EV_CHAR) {
         pretty = "C: ";
         pretty += (event->c.modifier & TERMPAINT_MOD_SHIFT) ? "S" : " ";
