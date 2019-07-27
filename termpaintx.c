@@ -84,7 +84,7 @@ typedef struct termpaint_integration_fd_ {
     int fd;
     bool auto_close;
     struct termios original_terminal_attributes;
-    bool awaiting_response;
+    bool callback_requested;
     termpaint_terminal *terminal;
 } termpaint_integration_fd;
 
@@ -144,7 +144,7 @@ static void fd_write(termpaint_integration* integration, char *data, int length)
 }
 
 static void fd_request_callback(struct termpaint_integration_ *integration) {
-    FDPTR(integration)->awaiting_response = true;
+    FDPTR(integration)->callback_requested = true;
 }
 
 static bool termpaintp_has_option(const char *options, const char *name) {
@@ -212,7 +212,7 @@ termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_cl
     ret->options = strdup(options);
     ret->fd = fd;
     ret->auto_close = auto_close;
-    ret->awaiting_response = false;
+    ret->callback_requested = false;
 
     tcgetattr(ret->fd, &ret->original_terminal_attributes);
     termpaintp_fd_set_termios(ret->fd, options);
@@ -273,8 +273,8 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     }
     termpaint_terminal_add_input_data(t->terminal, buff, amount);
 
-    if (t->awaiting_response) {
-        t->awaiting_response = false;
+    if (t->callback_requested) {
+        t->callback_requested = false;
         struct pollfd info;
         info.fd = t->fd;
         info.events = POLLIN;
@@ -314,8 +314,8 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
         }
         termpaint_terminal_add_input_data(t->terminal, buff, amount);
 
-        if (t->awaiting_response) {
-            t->awaiting_response = false;
+        if (t->callback_requested) {
+            t->callback_requested = false;
             int remaining = *milliseconds - (int)(1000 * difftime(time(nullptr), start_time));
             if (remaining > 0) {
                 struct pollfd info;
