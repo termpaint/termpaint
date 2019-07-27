@@ -2829,3 +2829,9 @@ void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *tit
     int_puts(integration, "\033\\");
     int_flush(integration);
 }
+
+void termpaint_terminal_bell(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
+    int_puts(integration, "\a");
+    int_flush(integration);
+}
