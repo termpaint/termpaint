@@ -19,6 +19,7 @@ extern "C" {
 
 _tERMPAINT_PUBLIC const char *termpaint_input_i_resync(void);
 
+// Keys
 _tERMPAINT_PUBLIC const char *termpaint_input_enter(void);
 _tERMPAINT_PUBLIC const char *termpaint_input_space(void);
 _tERMPAINT_PUBLIC const char *termpaint_input_tab(void);
@@ -64,6 +65,10 @@ _tERMPAINT_PUBLIC const char *termpaint_input_f10(void);
 _tERMPAINT_PUBLIC const char *termpaint_input_f11(void);
 _tERMPAINT_PUBLIC const char *termpaint_input_f12(void);
 
+// Misc Events
+_tERMPAINT_PUBLIC const char *termpaint_input_focus_in(void);
+_tERMPAINT_PUBLIC const char *termpaint_input_focus_out(void);
+
 #define TERMPAINT_EV_UNKNOWN 0
 #define TERMPAINT_EV_CHAR 1
 #define TERMPAINT_EV_KEY 2
@@ -75,6 +80,7 @@ _tERMPAINT_PUBLIC const char *termpaint_input_f12(void);
 #define TERMPAINT_EV_COLOR_SLOT_REPORT 8
 #define TERMPAINT_EV_REPAINT_REQUESTED 9
 #define TERMPAINT_EV_MOUSE 10
+#define TERMPAINT_EV_MISC 11
 
 #define TERMPAINT_EV_RAW_PRI_DEV_ATTRIB 100
 #define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 101
@@ -116,6 +122,12 @@ struct termpaint_event_ {
             int button; // button == 3 means release with unknown button
             int modifier;
         } mouse;
+
+        // EV_EVENT
+        struct {
+            unsigned length;
+            const char *atom;
+        } misc;
 
         // EV_CURSOR_POSITION
         struct {

@@ -78,6 +78,10 @@ DEF_ATOM(f10, "F10")
 DEF_ATOM(f11, "F11")
 DEF_ATOM(f12, "F12")
 
+// Misc Events
+DEF_ATOM(focus_in, "FocusIn")
+DEF_ATOM(focus_out, "FocusOut")
+
 
 
 #define MOD_CTRL TERMPAINT_MOD_CTRL
@@ -1148,6 +1152,14 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                     }
                     event.cursor_position.safe = prefix_modifier == '?';
                 }
+            }
+
+            if (!event.type && params_len == 0
+                    && (sequence_id == SEQ('O', 0, 0) || sequence_id == SEQ('I', 0, 0))) {
+                event.type = TERMPAINT_EV_MISC;
+                event.misc.atom = sequence_id == SEQ('I', 0, 0) ? termpaint_input_focus_in()
+                                                                  : termpaint_input_focus_out();
+                event.misc.length = strlen(event.misc.atom);
             }
 
             if (!event.type) {

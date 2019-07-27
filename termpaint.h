@@ -76,6 +76,8 @@ _tERMPAINT_PUBLIC void termpaint_terminal_bell(termpaint_terminal *term);
 
 _tERMPAINT_PUBLIC void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode);
 
+_tERMPAINT_PUBLIC void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, _Bool enabled);
+
 _tERMPAINT_PUBLIC void termpaint_terminal_callback(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *user_data, termpaint_event* event), void *user_data);

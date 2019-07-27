@@ -222,6 +222,7 @@ typedef struct termpaint_terminal_ {
     unsigned did_terminal_push_title : 1;
     unsigned did_terminal_add_mouse_to_restore : 1;
     unsigned did_terminal_enable_mouse : 1;
+    unsigned did_terminal_add_focusreporting_to_restore : 1;
 
     int cursor_prev_data;
 
@@ -2870,5 +2871,21 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
         int_puts(integration, "\033[1000?h\033[?1002h\033[?1003h");
     }
 
+    int_flush(integration);
+}
+
+void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, bool enabled) {
+    if (enabled && !term->did_terminal_add_focusreporting_to_restore) {
+        term->did_terminal_add_focusreporting_to_restore = true;
+         termpaintp_prepend_str(&term->restore_seq, "\033[?1004l");
+    }
+
+    termpaint_integration *integration = term->integration;
+
+    if (enabled) {
+        int_puts(integration, "\033[?1004h");
+    } else {
+        int_puts(integration, "\033[?1004l");
+    }
     int_flush(integration);
 }

@@ -104,6 +104,9 @@ void event_handler(void *user_data, termpaint_event *event) {
         }
         pretty += ": x=" + std::to_string(event->mouse.x) + " y=" + std::to_string(event->mouse.y)
                 + " rawbtn=" + std::to_string(event->mouse.raw_btn_and_flags);
+    } else if (event->type == TERMPAINT_EV_MISC) {
+        pretty += "Misc: ";
+        pretty += std::string { event->misc.atom, event->misc.length };
     } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
         pretty = "Cursor position report: x=" + std::to_string(event->cursor_position.x) + " y=" + std::to_string(event->cursor_position.y);
     } else if (event->type == TERMPAINT_EV_MODE_REPORT) {
