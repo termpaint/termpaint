@@ -61,6 +61,12 @@ _tERMPAINT_PUBLIC void termpaint_terminal_set_cursor_style(termpaint_terminal *t
 _tERMPAINT_PUBLIC void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int b, int g);
 _tERMPAINT_PUBLIC void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot);
 
+#define TERMPAINT_TITLE_MODE_ENSURE_RESTORE 0
+#define TERMPAINT_TITLE_MODE_PREFER_RESTORE 1
+
+_tERMPAINT_PUBLIC void termpaint_terminal_set_title(termpaint_terminal *term, const char* title, int mode);
+_tERMPAINT_PUBLIC void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char* title, int mode);
+
 _tERMPAINT_PUBLIC void termpaint_terminal_callback(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *user_data, termpaint_event* event), void *user_data);

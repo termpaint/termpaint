@@ -219,6 +219,8 @@ typedef struct termpaint_terminal_ {
     int cursor_style;
     bool cursor_blink;
 
+    unsigned did_terminal_push_title : 1;
+
     int cursor_prev_data;
 
     termpaint_hash colors;
@@ -1129,6 +1131,33 @@ static void int_puts(termpaint_integration *integration, const char *str) {
 
 static void int_write(termpaint_integration *integration, const char *str, int len) {
     integration->write(integration, str, len);
+}
+
+static void int_write_printable(termpaint_integration *integration, const char *str, int len) {
+    int input_bytes_used = 0;
+    while (input_bytes_used < len) {
+        int size = termpaintp_utf8_len(str[input_bytes_used]);
+
+        // check termpaintp_utf8_decode_from_utf8 precondition
+        if (input_bytes_used + size > len) {
+            // bogus, bail
+            return;
+        }
+        if (termpaintp_check_valid_sequence(str + input_bytes_used, size)) {
+            int codepoint = termpaintp_utf8_decode_from_utf8(str + input_bytes_used, size);
+            int new_codepoint = replace_unusable_codepoints(codepoint);
+            if (codepoint == new_codepoint) {
+                int_write(integration, str + input_bytes_used, size);
+            } else {
+                if (new_codepoint < 128) {
+                    char ch;
+                    ch = new_codepoint;
+                    int_write(integration, &ch, 1);
+                }
+            }
+        }
+        input_bytes_used += size;
+    }
 }
 
 static void int_put_num(termpaint_integration *integration, int num) {
@@ -2738,4 +2767,65 @@ _Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const 
         }
     }
     return false;
+}
+
+static bool termpaint_terminal_supports_title_push_pop(termpaint_terminal *term) {
+    if (term->terminal_type == TT_VTE) {
+        // supported since 0.54
+        return term->terminal_version >= 5400;
+    }
+
+    if (term->terminal_type == TT_XTERM) {
+        // supported since late 2009 (#251)
+        return true;
+    }
+
+    if (term->terminal_type == TT_FULL) {
+        // full is promised to claim support for everything
+        return true;
+    }
+
+    return false;
+}
+
+void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, int mode) {
+    if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
+        if (!termpaint_terminal_supports_title_push_pop(term)) {
+            return;
+        }
+    }
+
+    termpaint_integration *integration = term->integration;
+
+    if (!term->did_terminal_push_title) {
+        termpaintp_prepend_str(&term->restore_seq, "\033[23t");
+        int_puts(integration, "\033[22t");
+        term->did_terminal_push_title = true;
+    }
+
+    int_puts(integration, "\033]2;");
+    int_write_printable(integration, title, strlen(title));
+    int_puts(integration, "\033\\");
+    int_flush(integration);
+}
+
+void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *title, int mode) {
+    if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
+        if (!termpaint_terminal_supports_title_push_pop(term)) {
+            return;
+        }
+    }
+
+    termpaint_integration *integration = term->integration;
+
+    if (!term->did_terminal_push_title) {
+        termpaintp_prepend_str(&term->restore_seq, "\033[23t");
+        int_puts(integration, "\033[22t");
+        term->did_terminal_push_title = true;
+    }
+
+    int_puts(integration, "\033]1;");
+    int_write_printable(integration, title, strlen(title));
+    int_puts(integration, "\033\\");
+    int_flush(integration);
 }
