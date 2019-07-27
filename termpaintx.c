@@ -85,11 +85,42 @@ typedef struct termpaint_integration_fd_ {
     bool auto_close;
     struct termios original_terminal_attributes;
     bool callback_requested;
+    bool awaiting_response;
     termpaint_terminal *terminal;
 } termpaint_integration_fd;
 
 static void fd_free(termpaint_integration* integration) {
     termpaint_integration_fd* fd_data = FDPTR(integration);
+    // If terminal auto detection or another operation with response is cut short
+    // by a close the reponse will leak out into the next application.
+    // We can't reliably prevent that here, but this kludge can reduce the likelyhood
+    // by just discarding input for a short amount of time.
+    if (fd_data->awaiting_response) {
+        struct timespec start_time;
+        timespec_get(&start_time, TIME_UTC);
+        while (true) {
+            struct timespec now;
+            timespec_get(&now, TIME_UTC);
+            long time_waited_ms = (now.tv_sec - start_time.tv_sec) * 1000
+                    + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000;
+            if (time_waited_ms >= 100 || time_waited_ms < 0) {
+                break;
+            }
+            int ret;
+            struct pollfd info;
+            info.fd = fd_data->fd;
+            info.events = POLLIN;
+            ret = poll(&info, 1, 100 - time_waited_ms);
+            if (ret == 1) {
+                char buff[1000];
+                int amount = (int)read(fd_data->fd, buff, 999);
+                if (amount < 0) {
+                    break;
+                }
+            }
+        }
+    }
+
     tcsetattr (fd_data->fd, TCSAFLUSH, &fd_data->original_terminal_attributes);
     if (fd_data->auto_close && fd_data->fd != -1) {
         close(fd_data->fd);
@@ -145,6 +176,10 @@ static void fd_write(termpaint_integration* integration, char *data, int length)
 
 static void fd_request_callback(struct termpaint_integration_ *integration) {
     FDPTR(integration)->callback_requested = true;
+}
+
+static void fd_awaiting_response(struct termpaint_integration_ *integration) {
+    FDPTR(integration)->awaiting_response = true;
 }
 
 static bool termpaintp_has_option(const char *options, const char *name) {
@@ -209,10 +244,12 @@ termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_cl
     ret->base.flush = fd_flush;
     ret->base.is_bad = fd_is_bad;
     ret->base.request_callback = fd_request_callback;
+    ret->base.awaiting_response = fd_awaiting_response;
     ret->options = strdup(options);
     ret->fd = fd;
     ret->auto_close = auto_close;
     ret->callback_requested = false;
+    ret->awaiting_response = false;
 
     tcgetattr(ret->fd, &ret->original_terminal_attributes);
     termpaintp_fd_set_termios(ret->fd, options);
@@ -271,6 +308,7 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     if (amount < 0) {
         return false;
     }
+    integration->awaiting_response = false;
     termpaint_terminal_add_input_data(t->terminal, buff, amount);
 
     if (t->callback_requested) {
@@ -284,6 +322,7 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
             if (amount < 0) {
                 return false;
             }
+            integration->awaiting_response = false;
             termpaint_terminal_add_input_data(t->terminal, buff, amount);
         }
         termpaint_terminal_callback(t->terminal);
@@ -312,6 +351,7 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
         if (amount < 0) {
             return false;
         }
+        integration->awaiting_response = false;
         termpaint_terminal_add_input_data(t->terminal, buff, amount);
 
         if (t->callback_requested) {
@@ -328,6 +368,7 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
                 if (amount < 0) {
                     return false;
                 }
+                integration->awaiting_response = false;
                 termpaint_terminal_add_input_data(t->terminal, buff, amount);
             }
             termpaint_terminal_callback(t->terminal);
