@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
     termpaint_terminal_set_event_cb(terminal, null_callback, NULL);
     termpaintx_full_integration_set_terminal(integration, terminal);
     termpaint_terminal_auto_detect(terminal);
-    termpaintx_full_integration_wait_for_ready(integration);
+    termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
+                                           "Terminal auto detection is taking unusually long, press space to abort.");
 
     char buff[1000];
     termpaint_terminal_auto_detect_result_text(terminal, buff, sizeof (buff));

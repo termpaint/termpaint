@@ -15,6 +15,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <signal.h>
+#include <time.h>
 #include <poll.h>
 #include <malloc.h>
 #include <errno.h>
@@ -229,6 +230,27 @@ bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integrati
     return false;
 }
 
+bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, char* message) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    while (termpaint_terminal_auto_detect_state(t->terminal) == termpaint_auto_detect_running) {
+        if (milliseconds > 0) {
+            if (!termpaintx_full_integration_do_iteration_with_timeout(integration, &milliseconds)) {
+                // some kind of error
+                break;
+            }
+            if (milliseconds <= 0) {
+                integration->write(integration, message, strlen(message));
+            }
+        } else {
+            if (!termpaintx_full_integration_do_iteration(integration)) {
+                // some kind of error
+                break;
+            }
+        }
+    }
+    return false;
+}
+
 bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height) {
     if (fd_is_bad(integration) || !isatty(FDPTR(integration)->fd)) {
         return false;
@@ -265,6 +287,54 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
             termpaint_terminal_add_input_data(t->terminal, buff, amount);
         }
         termpaint_terminal_callback(t->terminal);
+    }
+
+    return true;
+}
+
+
+bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration *integration, int *milliseconds) {
+    termpaint_integration_fd *t = FDPTR(integration);
+
+    char buff[1000];
+
+    time_t start_time = time(nullptr);
+
+    int ret;
+    {
+        struct pollfd info;
+        info.fd = t->fd;
+        info.events = POLLIN;
+        ret = poll(&info, 1, *milliseconds);
+    }
+    if (ret == 1) {
+        int amount = (int)read(t->fd, buff, 999);
+        if (amount < 0) {
+            return false;
+        }
+        termpaint_terminal_add_input_data(t->terminal, buff, amount);
+
+        if (t->awaiting_response) {
+            t->awaiting_response = false;
+            int remaining = *milliseconds - (int)(1000 * difftime(time(nullptr), start_time));
+            if (remaining > 0) {
+                struct pollfd info;
+                info.fd = t->fd;
+                info.events = POLLIN;
+                ret = poll(&info, 1, remaining < 100 ? remaining : 100);
+            }
+            if (ret == 1) {
+                int amount = (int)read(t->fd, buff, 999);
+                if (amount < 0) {
+                    return false;
+                }
+                termpaint_terminal_add_input_data(t->terminal, buff, amount);
+            }
+            termpaint_terminal_callback(t->terminal);
+        }
+        *milliseconds -= (int)(1000 * difftime(time(nullptr), start_time));
+    } else {
+        *milliseconds = 0;
     }
 
     return true;

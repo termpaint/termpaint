@@ -13,9 +13,11 @@ _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_contro
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options);
 
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integration);
+_tERMPAINT_PUBLIC _Bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, char* message);
 
 _tERMPAINT_PUBLIC void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal);
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_do_iteration(termpaint_integration *integration);
+_tERMPAINT_PUBLIC _Bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration *integration, int *milliseconds);
 
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height);
 

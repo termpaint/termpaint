@@ -66,7 +66,8 @@ bool init(void) {
     termpaintx_full_integration_set_terminal(integration, terminal);
     surface = termpaint_terminal_get_surface(terminal);
     termpaint_terminal_auto_detect(terminal);
-    termpaintx_full_integration_wait_for_ready(integration);
+    termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
+                                           "Terminal auto detection is taking unusually long, press space to abort.");
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
