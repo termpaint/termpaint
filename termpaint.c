@@ -654,6 +654,7 @@ void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, i
         height += y;
         y = 0;
     }
+    if (width <= 0) return;
     if (x >= surface->width) return;
     if (y >= surface->height) return;
     if (x+width > surface->width) width = surface->width - x;
