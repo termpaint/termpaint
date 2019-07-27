@@ -220,6 +220,8 @@ typedef struct termpaint_terminal_ {
     bool cursor_blink;
 
     unsigned did_terminal_push_title : 1;
+    unsigned did_terminal_add_mouse_to_restore : 1;
+    unsigned did_terminal_enable_mouse : 1;
 
     int cursor_prev_data;
 
@@ -2833,5 +2835,40 @@ void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *tit
 void termpaint_terminal_bell(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
     int_puts(integration, "\a");
+    int_flush(integration);
+}
+
+#define DISABLE_MOUSE_SEQUENCE "\033[?1003l\033[?1002l\033[1000?l\033[?1006l\033[?1015l"
+
+void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode) {
+    termpaint_integration *integration = term->integration;
+
+    if (mouse_mode != TERMPAINT_MOUSE_MODE_OFF) {
+        if (!term->did_terminal_add_mouse_to_restore) {
+            termpaint_terminal_expect_legacy_mouse_reports(term, TERMPAINT_INPUT_EXPECT_LEGACY_MOUSE);
+            termpaintp_prepend_str(&term->restore_seq, DISABLE_MOUSE_SEQUENCE);
+            term->did_terminal_add_mouse_to_restore = true;
+        }
+    } else {
+        if (term->did_terminal_enable_mouse) {
+            term->did_terminal_enable_mouse = false;
+            int_puts(integration, DISABLE_MOUSE_SEQUENCE);
+            int_flush(integration);
+        }
+        return;
+    }
+    if (!term->did_terminal_enable_mouse) {
+        term->did_terminal_enable_mouse = true;
+        int_puts(integration, "\033[1015?h\033[?1006h");
+    }
+
+    if (mouse_mode == TERMPAINT_MOUSE_MODE_CLICKS) {
+        int_puts(integration, "\033[?1002l\033[?1003l\033[1000?h");
+    } else if (mouse_mode == TERMPAINT_MOUSE_MODE_DRAG) {
+        int_puts(integration, "\033[?1003l\033[1000?h\033[?1002h");
+    } else if (mouse_mode == TERMPAINT_MOUSE_MODE_MOVEMENT) {
+        int_puts(integration, "\033[1000?h\033[?1002h\033[?1003h");
+    }
+
     int_flush(integration);
 }
