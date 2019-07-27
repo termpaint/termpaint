@@ -237,7 +237,7 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
 
     integration.free = [] (termpaint_integration* ptr) {
     };
-    integration.write = [] (termpaint_integration* ptr, char *data, int length) {
+    integration.write = [] (termpaint_integration* ptr, const char *data, int length) {
         auto t = container_of(ptr, SshServer, integration);
         t->outputBuffer += std::string(data, length);
         if (t->outputBuffer.size() > 1000) {

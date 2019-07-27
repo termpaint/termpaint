@@ -32,7 +32,7 @@ typedef struct termpaint_terminal_ termpaint_terminal;
 
 typedef struct termpaint_integration_ {
     void (*free)(struct termpaint_integration_ *integration);
-    void (*write)(struct termpaint_integration_ *integration, char *data, int length);
+    void (*write)(struct termpaint_integration_ *integration, const char *data, int length);
     void (*flush)(struct termpaint_integration_ *integration);
     _Bool (*is_bad)(struct termpaint_integration_ *integration);
     void (*request_callback)(struct termpaint_integration_ *integration);
@@ -80,7 +80,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_result_text(const termpain
 _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(unsigned fg, unsigned bg);
-_tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone(termpaint_attr* attr);
+_tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone(const termpaint_attr* attr);
 _tERMPAINT_PUBLIC void termpaint_attr_free(termpaint_attr* attr);
 _tERMPAINT_PUBLIC void termpaint_attr_set_fg(termpaint_attr* attr, unsigned fg);
 _tERMPAINT_PUBLIC void termpaint_attr_set_bg(termpaint_attr* attr, unsigned bg);
@@ -136,24 +136,24 @@ _tERMPAINT_PUBLIC void termpaint_surface_peek_patch(const termpaint_surface *sur
 _tERMPAINT_PUBLIC const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x, int y, int *len, int *left, int *right);
 _tERMPAINT_PUBLIC _Bool termpaint_surface_same_contents(const termpaint_surface *surface1, const termpaint_surface *surface2);
 
-_tERMPAINT_PUBLIC termpaint_text_measurement* termpaint_text_measurement_new(termpaint_surface *surface);
+_tERMPAINT_PUBLIC termpaint_text_measurement* termpaint_text_measurement_new(const termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_free(termpaint_text_measurement *m);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_reset(termpaint_text_measurement *m);
 
-_tERMPAINT_PUBLIC int termpaint_text_measurement_pending_ref(termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_pending_ref(const termpaint_text_measurement *m);
 
-_tERMPAINT_PUBLIC int termpaint_text_measurement_last_codepoints(termpaint_text_measurement *m);
-_tERMPAINT_PUBLIC int termpaint_text_measurement_last_clusters(termpaint_text_measurement *m);
-_tERMPAINT_PUBLIC int termpaint_text_measurement_last_width(termpaint_text_measurement *m);
-_tERMPAINT_PUBLIC int termpaint_text_measurement_last_ref(termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_last_codepoints(const termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_last_clusters(const termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_last_width(const termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_last_ref(const termpaint_text_measurement *m);
 
-_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_codepoints(termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_codepoints(const termpaint_text_measurement *m);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_set_limit_codepoints(termpaint_text_measurement *m, int new_value);
-_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_clusters(termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_clusters(const termpaint_text_measurement *m);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_set_limit_clusters(termpaint_text_measurement *m, int new_value);
-_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_width(termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_width(const termpaint_text_measurement *m);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_set_limit_width(termpaint_text_measurement *m, int new_value);
-_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_ref(termpaint_text_measurement *m);
+_tERMPAINT_PUBLIC int termpaint_text_measurement_limit_ref(const termpaint_text_measurement *m);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_set_limit_ref(termpaint_text_measurement *m, int new_value);
 
 #define TERMPAINT_MEASURE_LIMIT_REACHED 1

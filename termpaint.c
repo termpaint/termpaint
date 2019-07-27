@@ -1123,11 +1123,11 @@ int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint
     return termpaintp_char_width(codepoint);
 }
 
-static void int_puts(termpaint_integration *integration, char *str) {
+static void int_puts(termpaint_integration *integration, const char *str) {
     integration->write(integration, str, strlen(str));
 }
 
-static void int_write(termpaint_integration *integration, char *str, int len) {
+static void int_write(termpaint_integration *integration, const char *str, int len) {
     integration->write(integration, str, len);
 }
 
@@ -2346,7 +2346,7 @@ void termpaint_attr_free(termpaint_attr *attr) {
     free(attr);
 }
 
-termpaint_attr *termpaint_attr_clone(termpaint_attr *orig) {
+termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
     attr->fg_color = orig->fg_color;
     attr->bg_color = orig->bg_color;
@@ -2421,7 +2421,7 @@ void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *s
     }
 }
 
-termpaint_text_measurement *termpaint_text_measurement_new(termpaint_surface *surface) {
+termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surface *surface) {
     termpaint_text_measurement *m = malloc(sizeof(termpaint_text_measurement));
     termpaint_text_measurement_reset(m);
     return m;
@@ -2451,7 +2451,7 @@ void termpaint_text_measurement_reset(termpaint_text_measurement *m) {
 }
 
 
-int termpaint_text_measurement_pending_ref(termpaint_text_measurement *m) {
+int termpaint_text_measurement_pending_ref(const termpaint_text_measurement *m) {
     int result = m->pending_ref;
     if (m->decoder_state == TMD_PARTIAL_UTF16) {
         result += 1;
@@ -2462,23 +2462,23 @@ int termpaint_text_measurement_pending_ref(termpaint_text_measurement *m) {
 }
 
 
-int termpaint_text_measurement_last_codepoints(termpaint_text_measurement *m) {
+int termpaint_text_measurement_last_codepoints(const termpaint_text_measurement *m) {
     return m->last_codepoints;
 }
 
-int termpaint_text_measurement_last_clusters(termpaint_text_measurement *m) {
+int termpaint_text_measurement_last_clusters(const termpaint_text_measurement *m) {
     return m->last_clusters;
 }
 
-int termpaint_text_measurement_last_width(termpaint_text_measurement *m) {
+int termpaint_text_measurement_last_width(const termpaint_text_measurement *m) {
     return m->last_width;
 }
 
-int termpaint_text_measurement_last_ref(termpaint_text_measurement *m) {
+int termpaint_text_measurement_last_ref(const termpaint_text_measurement *m) {
     return m->last_ref;
 }
 
-int termpaint_text_measurement_limit_codepoints(termpaint_text_measurement *m) {
+int termpaint_text_measurement_limit_codepoints(const termpaint_text_measurement *m) {
     return m->limit_codepoints;
 }
 
@@ -2486,7 +2486,7 @@ void termpaint_text_measurement_set_limit_codepoints(termpaint_text_measurement 
     m->limit_codepoints = new_value;
 }
 
-int termpaint_text_measurement_limit_clusters(termpaint_text_measurement *m) {
+int termpaint_text_measurement_limit_clusters(const termpaint_text_measurement *m) {
     return m->limit_clusters;
 }
 
@@ -2494,7 +2494,7 @@ void termpaint_text_measurement_set_limit_clusters(termpaint_text_measurement *m
     m->limit_clusters = new_value;
 }
 
-int termpaint_text_measurement_limit_width(termpaint_text_measurement *m) {
+int termpaint_text_measurement_limit_width(const termpaint_text_measurement *m) {
     return m->limit_width;
 }
 
@@ -2502,7 +2502,7 @@ void termpaint_text_measurement_set_limit_width(termpaint_text_measurement *m, i
     m->limit_width = new_value;
 }
 
-int termpaint_text_measurement_limit_ref(termpaint_text_measurement *m) {
+int termpaint_text_measurement_limit_ref(const termpaint_text_measurement *m) {
     return m->limit_ref;
 }
 
