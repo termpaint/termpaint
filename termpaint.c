@@ -1291,10 +1291,16 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 
 void termpaint_terminal_free(termpaint_terminal *term) {
     free(term->auto_detect_sec_device_attributes);
-    term->auto_detect_sec_device_attributes = 0;
+    term->auto_detect_sec_device_attributes = nullptr;
     termpaintp_surface_destroy(&term->primary);
+    free(term->restore_seq);
+    term->restore_seq = nullptr;
+    termpaint_input_free(term->input);
+    term->input = nullptr;
     term->integration->free(term->integration);
+    term->integration = nullptr;
     termpaintp_hash_destroy(&term->colors);
+    free(term);
 }
 
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
@@ -1938,6 +1944,7 @@ static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, t
         case AD_BASIC_CURPOS_RECVED:
             if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->support_parsing_csi_gt_sequences = true;
+                free(terminal->auto_detect_sec_device_attributes);
                 terminal->auto_detect_sec_device_attributes = malloc(event->raw.length + 1);
                 memcpy(terminal->auto_detect_sec_device_attributes, event->raw.string, event->raw.length);
                 terminal->auto_detect_sec_device_attributes[event->raw.length] = 0;
