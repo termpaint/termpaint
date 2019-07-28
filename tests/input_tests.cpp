@@ -677,6 +677,33 @@ TEST_CASE("input: events using raw") {
     termpaint_input_free(input_ctx);
 }
 
+TEST_CASE("input: misc events") {
+    struct TestCase { const std::string sequence; const std::string event; };
+    const auto testCase = GENERATE(
+        TestCase{ "\033[I", "FocusIn" },
+        TestCase{ "\033[O", "FocusOut" }
+    );
+    enum { START, GOT_EVENT } state = START;
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
+        if (state == GOT_EVENT) {
+            FAIL("more events than expected");
+        } else if (state == START) {
+            REQUIRE(event->type == TERMPAINT_EV_MISC);
+            REQUIRE(std::string(event->misc.atom, event->misc.length) == testCase.event);
+            state = GOT_EVENT;
+        } else {
+            FAIL("unexpected state " << state);
+        }
+    };
+    termpaint_input *input_ctx = termpaint_input_new();
+    wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+    termpaint_input_add_data(input_ctx, testCase.sequence.data(), testCase.sequence.size());
+    REQUIRE(state == GOT_EVENT);
+    REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
+}
+
 TEST_CASE("input: cursor position report") {
     struct TestCase { const std::string sequence; bool expect; bool safe; int x; int y; };
     const auto testCase = GENERATE(
@@ -1057,6 +1084,9 @@ TEST_CASE("input: atoms") {
     TEST_ATOM(f10, "F10");
     TEST_ATOM(f11, "F11");
     TEST_ATOM(f12, "F12");
+
+    TEST_ATOM(focus_in, "FocusIn");
+    TEST_ATOM(focus_out, "FocusOut");
 }
 
 TEST_CASE("input: peek buffer") {
