@@ -405,8 +405,8 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
             if (surface->patches[i].unused) {
                 free(surface->patches[i].setup);
                 free(surface->patches[i].cleanup);
-                surface->patches[i].setup = NULL;
-                surface->patches[i].cleanup = NULL;
+                surface->patches[i].setup = nullptr;
+                surface->patches[i].cleanup = nullptr;
 
                 if (free_slot == -1) {
                     free_slot = i;
@@ -1378,7 +1378,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
             cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
-            if (c->text_len == 0 && c->text_overflow == 0) {
+            if (c->text_len == 0 && c->text_overflow == nullptr) {
                 c->text[0] = ' ';
                 c->text_len = 1;
                 c->deco_color = TERMPAINT_DEFAULT_COLOR;
