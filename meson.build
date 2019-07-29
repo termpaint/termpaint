@@ -13,6 +13,10 @@ add_project_arguments('-std=gnu++14', language : 'cpp')
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'cpp')
 
+if get_option('valgrind-compat')
+    add_project_arguments('-DTERMPAINTP_VALGRIND', language : 'c')
+endif
+
 main_lib_cargs = []
 
 if get_option('errorlog')

@@ -1,2 +1,3 @@
 option('ssh', type : 'boolean', value : false)
 option('errorlog', type : 'boolean', value : false)
+option('valgrind-compat', type : 'boolean', value : true)

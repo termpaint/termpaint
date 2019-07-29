@@ -10,7 +10,19 @@
 #include <sys/prctl.h>
 #endif
 
+#ifdef TERMPAINTP_VALGRIND
+#include <third-party/valgrind/memcheck.h>
+#endif
+
 int termpaintp_rescue_embedded(void);
+
+#ifdef TERMPAINTP_VALGRIND
+static void exit_wrapper(long tid, void (*fn)(int)) {
+    (void)tid;
+    // lazy resolving _exit by ld.so here crashes, so take it as preresolved pointer
+    fn(1);
+}
+#endif
 
 int termpaint_ttyrescue_start(const char *restore_seq) {
     int pipe[2];
@@ -106,11 +118,26 @@ int termpaint_ttyrescue_start(const char *restore_seq) {
             }
             close(fd);
             if (argc_base != -1) {
+#ifdef TERMPAINTP_VALGRIND
+                // Valgrind does not grok that this is supposed to work, use a cluebat
+                VALGRIND_MAKE_MEM_DEFINED(argc_base, 22);
+#endif
                 memcpy((void*)argc_base, "ttyrescue (embedded)", 22);
             }
         }
 #endif
+#ifdef TERMPAINTP_VALGRIND
+        VALGRIND_PRINTF("termpaint embedded ttyrescue running with valgrind. Maybe use --child-silent-after-fork=yes\n");
+#endif
         termpaintp_rescue_embedded();
+#ifdef TERMPAINTP_VALGRIND
+        if (RUNNING_ON_VALGRIND) {
+            // There is no way to avoid leaking the main programs allocations
+            // Valgrind's leak check would report these, so instead exit this process without valgrind noticeing.
+            VALGRIND_PRINTF("termpaint embedded ttyrescue exited (supressing valgrind reports in rescue process)\n");
+            VALGRIND_NON_SIMD_CALL1(exit_wrapper, _exit);
+        }
+#endif
         _exit(1);
     }
 }
