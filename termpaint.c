@@ -1284,7 +1284,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
 
     ret->colors.item_size = sizeof(termpaint_color_entry);
-    ret->colors.destroy_cb = termpaint_color_entry_destroy;
+    ret->colors.destroy_cb = (void (*)(termpaint_hash_item*))termpaint_color_entry_destroy;
 
     return ret;
 }

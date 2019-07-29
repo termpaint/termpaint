@@ -20,7 +20,7 @@ typedef struct termpaint_hash_ {
     termpaint_hash_item** buckets;
     int item_size;
     void (*gc_mark_cb)(struct termpaint_hash_*);
-    void (*destroy_cb)(struct termpaint_hash_*);
+    void (*destroy_cb)(struct termpaint_hash_item_*);
 } termpaint_hash;
 
 
@@ -50,6 +50,7 @@ static void termpaintp_hash_grow(termpaint_hash* p) {
             p->buckets[bucket] = item;
         }
     }
+    free(old_buckets);
 }
 
 static int termpaintp_hash_gc(termpaint_hash* p) {
@@ -82,6 +83,10 @@ static int termpaintp_hash_gc(termpaint_hash* p) {
             item = item->next;
             if (old->unused) {
                 --p->count;
+                if (p->destroy_cb) {
+                    p->destroy_cb(old);
+                }
+                free(old->text);
                 free(old);
                 ++items_removed;
             }
@@ -141,6 +146,7 @@ static void termpaintp_hash_destroy(termpaint_hash* p) {
             if (p->destroy_cb) {
                 p->destroy_cb(old);
             }
+            free(old->text);
             free(old);
         }
     }
