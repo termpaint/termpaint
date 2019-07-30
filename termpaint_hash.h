@@ -95,7 +95,7 @@ static int termpaintp_hash_gc(termpaint_hash* p) {
     return items_removed;
 }
 
-__attribute__ ((noinline)) static void* termpaintp_hash_ensure(termpaint_hash* p, const unsigned char* text) {
+static void* termpaintp_hash_ensure(termpaint_hash* p, const unsigned char* text) {
     if (!p->allocated) {
         p->allocated = 32;
         p->buckets = (termpaint_hash_item**)calloc(p->allocated, sizeof(termpaint_hash_item*));
