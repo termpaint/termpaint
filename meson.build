@@ -17,6 +17,10 @@ if get_option('valgrind-compat')
     add_project_arguments('-DTERMPAINTP_VALGRIND', language : 'c')
 endif
 
+silence_warnings = [
+    '-Wno-padded'
+]
+
 main_lib_cargs = []
 
 if get_option('errorlog')
@@ -136,9 +140,10 @@ testlib = static_library('testlib', 'tests/catch_main.cpp')
 
 #ide:editable-filelist
 test_files = [
+  'tests/hashtest.cpp',
   'tests/input_tests.cpp',
   'tests/measurement_tests.cpp',
   'tests/utf8_tests.cpp',
 ]
 
-test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline']))
+test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings]))
