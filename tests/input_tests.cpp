@@ -883,6 +883,7 @@ TEST_CASE("input: legacy mouse disable") {
     termpaint_input_add_data(input_ctx, sequence.data(), sequence.size());
     REQUIRE(state == GOT_BANG3);
     REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
 }
 
 TEST_CASE("input: mode report") {
@@ -1116,4 +1117,5 @@ TEST_CASE("input: peek buffer") {
     }
     REQUIRE(state == GOT_KEY);
     REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
 }
