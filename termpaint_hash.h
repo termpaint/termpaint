@@ -112,8 +112,11 @@ __attribute__ ((noinline)) static void* termpaintp_hash_ensure(termpaint_hash* p
             }
             item = item->next;
         }
-        if (p->allocated / 2 <= p->count && termpaintp_hash_gc(p) == 0) {
-            termpaintp_hash_grow(p);
+        if (p->allocated / 2 <= p->count) {
+            if (termpaintp_hash_gc(p) == 0) {
+                termpaintp_hash_grow(p);
+            }
+            // either termpaintp_hash_gc or termpaintp_hash_grow have invalidated `prev` but now capacity is free
             return termpaintp_hash_ensure(p, text);
         } else {
             p->count++;
