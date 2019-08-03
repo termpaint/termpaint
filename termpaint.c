@@ -268,6 +268,18 @@ struct termpaint_text_measurement_ {
     uint8_t utf8_units[6];
 };
 
+static int replace_unusable_codepoints(int codepoint) {
+    if (codepoint < 32
+       || (codepoint >= 0x7f && codepoint < 0xa0)) {
+        return ' ';
+    } else if (codepoint == 0xad) { // soft hyphen
+        // Some implementations see this as spacing others as non spacing, make sure we get something spacing.
+        return '-';
+    } else {
+        return codepoint;
+    }
+}
+
 static void termpaintp_append_str(char **s, const char* src) {
     int s_len = 0;
     if (*s) {
@@ -426,18 +438,6 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
 
     // can't fit anymore, just ignore it.
     return 0;
-}
-
-static int replace_unusable_codepoints(int codepoint) {
-    if (codepoint < 32
-       || (codepoint >= 0x7f && codepoint < 0xa0)) {
-        return ' ';
-    } else if (codepoint == 0xad) { // soft hyphen
-        // Some implementations see this as spacing others as non spacing, make sure we get something spacing.
-        return '-';
-    } else {
-        return codepoint;
-    }
 }
 
 void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg) {
