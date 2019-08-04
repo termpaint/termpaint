@@ -97,6 +97,9 @@ _tERMPAINT_PUBLIC enum termpaint_auto_detect_state_enum termpaint_terminal_auto_
 _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length);
 _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
+_tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
+_tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
+
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(unsigned fg, unsigned bg);
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone(const termpaint_attr* attr);
 _tERMPAINT_PUBLIC void termpaint_attr_free(termpaint_attr* attr);
