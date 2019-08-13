@@ -1403,6 +1403,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->unpause_snippets.item_size = sizeof (termpaint_unpause_snippet);
     ret->unpause_snippets.destroy_cb = (void (*)(termpaint_hash_item*))termpaint_unpause_snippet_destroy;
 
+    termpaintp_prepend_str(&ret->restore_seq, "\033[?25h\033[m");
     return ret;
 }
 
@@ -1424,8 +1425,6 @@ void termpaint_terminal_free(termpaint_terminal *term) {
 
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
-
-    termpaintp_terminal_show_cursor(term);
 
     if (term->restore_seq) {
         int_puts(integration, term->restore_seq);
@@ -2511,8 +2510,6 @@ const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) 
 
 void termpaint_terminal_pause(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
-
-    termpaintp_terminal_show_cursor(term);
 
     if (term->restore_seq) {
         int_puts(integration, term->restore_seq);
