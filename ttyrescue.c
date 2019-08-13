@@ -30,19 +30,19 @@ int termpaintp_rescue_embedded(void) {
     int res;
     res = isatty(0);
     if (res || (errno != EINVAL && errno != ENOTTY)) {
-        output("Invalid invokation\n");
+        output("Invalid invocation\n");
         return 1;
     }
 
     res = fcntl(0, F_GETFL);
     if (res == -1 || !(res & O_NONBLOCK)) {
-        output("Invalid invokation\n");
+        output("Invalid invocation\n");
         return 1;
     }
 
     res = isatty(1);
     if (res || errno != EBADF) {
-        output("Invalid invokation\n");
+        output("Invalid invocation\n");
         return 1;
     }
 
