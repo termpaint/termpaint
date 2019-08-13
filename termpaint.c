@@ -295,16 +295,6 @@ static int replace_unusable_codepoints(int codepoint) {
     }
 }
 
-static void termpaintp_append_str(char **s, const char* src) {
-    int s_len = 0;
-    if (*s) {
-        s_len = strlen(*s);
-    }
-    int src_len = strlen(src);
-    *s = realloc(*s, s_len + src_len + 1);
-    memcpy(*s + s_len, src, src_len + 1);
-}
-
 static void termpaintp_prepend_str(char **s, const char* src) {
     size_t s_len = 0;
     if (*s) {
