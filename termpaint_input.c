@@ -17,7 +17,9 @@
  */
 
 
+#ifndef nullptr
 #define nullptr ((void*)0)
+#endif
 
 #define DEF_ATOM(name, value) \
 static const char ATOM_ ## name[] = value; \

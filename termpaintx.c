@@ -28,7 +28,9 @@
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
+#ifndef nullptr
 #define nullptr ((void*)0)
+#endif
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
 

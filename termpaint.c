@@ -18,7 +18,9 @@
  *
  */
 
+#ifndef nullptr
 #define nullptr ((void*)0)
+#endif
 
 // First cast to void* in order to silence alignment warnings because the containing structure,
 // ensures that the offsets work out in a way that alignment is correct.
