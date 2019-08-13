@@ -37,6 +37,7 @@ typedef struct termpaint_integration_ {
     _Bool (*is_bad)(struct termpaint_integration_ *integration);
     void (*request_callback)(struct termpaint_integration_ *integration);
     void (*awaiting_response)(struct termpaint_integration_ *integration);
+    void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration;
 
 _tERMPAINT_PUBLIC termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration);

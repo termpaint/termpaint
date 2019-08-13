@@ -1286,6 +1286,13 @@ static void int_awaiting_response(termpaint_integration *integration) {
     }
 }
 
+static void int_restore_sequence_updated(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
+    if (integration->restore_sequence_updated) {
+        integration->restore_sequence_updated(integration, term->restore_seq, (int)strlen(term->restore_seq));
+    }
+}
+
 static void int_flush(termpaint_integration *integration) {
     integration->flush(integration);
 }
@@ -1351,6 +1358,7 @@ static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
         if (term->cursor_prev_data == -1) {
             // add style reset. We don't know the original style, so just reset to terminal default.
             termpaintp_prepend_str(&term->restore_seq, resetSequence);
+            int_restore_sequence_updated(term);
         }
         term->cursor_prev_data = cmd;
     }
@@ -1404,6 +1412,8 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->unpause_snippets.destroy_cb = (void (*)(termpaint_hash_item*))termpaint_unpause_snippet_destroy;
 
     termpaintp_prepend_str(&ret->restore_seq, "\033[?25h\033[m");
+    int_restore_sequence_updated(ret);
+
     return ret;
 }
 
@@ -1769,6 +1779,7 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
         // TODO: needs a sensible value for saved.
         entry->saved = strdup("");
         termpaintp_prepend_str(&term->restore_seq, "\033]112\033\\");
+        int_restore_sequence_updated(term);
     }
 
     if (!entry->save_initiated && !entry->saved) {
@@ -1839,6 +1850,7 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
                 termpaintp_prepend_str(&term->restore_seq, ";");
                 termpaintp_prepend_str(&term->restore_seq, entry->base.text);
                 termpaintp_prepend_str(&term->restore_seq, "\033]");
+                int_restore_sequence_updated(term);
                 if (entry->requested && !entry->dirty) {
                     entry->dirty = true;
                     entry->next_dirty = term->colors_dirty;
@@ -2500,6 +2512,7 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
     }
     int_put_tps(integration, init_sequence);
     int_flush(integration);
+    int_restore_sequence_updated(terminal);
 
     termpaint_surface_resize(&terminal->primary, width, height);
 }
@@ -3009,6 +3022,7 @@ void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, i
 
     if (!term->did_terminal_push_title) {
         termpaintp_prepend_str(&term->restore_seq, "\033[23t");
+        int_restore_sequence_updated(term);
         int_puts(integration, "\033[22t");
         term->did_terminal_push_title = true;
     }
@@ -3031,6 +3045,7 @@ void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *tit
 
     if (!term->did_terminal_push_title) {
         termpaintp_prepend_str(&term->restore_seq, "\033[23t");
+        int_restore_sequence_updated(term);
         int_puts(integration, "\033[22t");
         term->did_terminal_push_title = true;
     }
@@ -3057,6 +3072,7 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
         if (!term->did_terminal_add_mouse_to_restore) {
             termpaint_terminal_expect_legacy_mouse_reports(term, TERMPAINT_INPUT_EXPECT_LEGACY_MOUSE);
             termpaintp_prepend_str(&term->restore_seq, DISABLE_MOUSE_SEQUENCE);
+            int_restore_sequence_updated(term);
             term->did_terminal_add_mouse_to_restore = true;
         }
     } else {
@@ -3092,6 +3108,7 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
     if (enabled && !term->did_terminal_add_focusreporting_to_restore) {
         term->did_terminal_add_focusreporting_to_restore = true;
          termpaintp_prepend_str(&term->restore_seq, "\033[?1004l");
+         int_restore_sequence_updated(term);
     }
 
     termpaint_integration *integration = term->integration;
