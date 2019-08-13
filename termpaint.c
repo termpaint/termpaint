@@ -20,8 +20,9 @@
 
 #define nullptr ((void*)0)
 
-
-#define container_of(ptr, type, member) ((type *)(((char*)(ptr)) - offsetof(type, member)))
+// First cast to void* in order to silence alignment warnings because the containing structure,
+// ensures that the offsets work out in a way that alignment is correct.
+#define container_of(ptr, type, member) ((type *)(void*)(((char*)(ptr)) - offsetof(type, member)))
 
 /* Data model
  *
