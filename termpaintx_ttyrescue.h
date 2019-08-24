@@ -17,8 +17,11 @@ extern "C" {
 #define _tERMPAINT_PUBLIC
 #endif
 
-_tERMPAINT_PUBLIC void termpaint_ttyrescue_stop(int fd);
-_tERMPAINT_PUBLIC int termpaint_ttyrescue_start(const char *restore_seq);
+struct termpaint_ttyrescue_;
+typedef struct termpaint_ttyrescue_ termpaintx_ttyrescue;
+
+_tERMPAINT_PUBLIC void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr);
+_tERMPAINT_PUBLIC termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq);
 
 
 #ifdef __cplusplus

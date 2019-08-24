@@ -10,6 +10,10 @@
 #include <sys/prctl.h>
 #endif
 
+#ifndef nullptr
+#define nullptr ((void*)0)
+#endif
+
 #ifdef TERMPAINTP_VALGRIND
 #include <third-party/valgrind/memcheck.h>
 #endif
@@ -24,15 +28,22 @@ static void exit_wrapper(long tid, void (*fn)(int)) {
 }
 #endif
 
-int termpaint_ttyrescue_start(const char *restore_seq) {
+struct termpaint_ttyrescue_ {
+    int fd;
+};
+
+termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
+    termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
     int pipe[2];
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, pipe) < 0) {
-        return -1;
+        free(ret);
+        return nullptr;
     }
 
     char *envvar = (char*)malloc(strlen(restore_seq) + 26);
     if (!envvar) {
-        return -1;
+        free(ret);
+        return nullptr;
     }
     strcpy(envvar, "TERMPAINT_RESCUE_RESTORE=");
     strcat(envvar, restore_seq);
@@ -41,11 +52,13 @@ int termpaint_ttyrescue_start(const char *restore_seq) {
     pid_t pid = fork();
     if (pid < 0) {
         free(envvar);
-        return -1;
+        free(ret);
+        return nullptr;
     } else if (pid) {
         free(envvar);
         close(pipe[0]);
-        return pipe[1];
+        ret->fd = pipe[1];
+        return ret;
     } else {
         close(pipe[1]);
         fcntl(pipe[0], F_SETFD, 0);
@@ -142,8 +155,12 @@ int termpaint_ttyrescue_start(const char *restore_seq) {
     }
 }
 
-void termpaint_ttyrescue_stop(int fd) {
-    if (fd >= 0) {
-        send(fd, "~", 1, MSG_NOSIGNAL);
+void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
+    if (!tpr) {
+        return;
     }
+    if (tpr->fd >= 0) {
+        send(tpr->fd, "~", 1, MSG_NOSIGNAL);
+    }
+    free(tpr);
 }

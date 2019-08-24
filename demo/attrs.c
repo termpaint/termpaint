@@ -11,7 +11,7 @@
 termpaint_terminal *terminal;
 termpaint_surface *surface;
 termpaint_integration *integration;
-int rescue_fd;
+termpaintx_ttyrescue *rescue;
 
 bool quit;
 
@@ -71,14 +71,14 @@ bool init(void) {
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-    rescue_fd = termpaint_ttyrescue_start(termpaint_terminal_restore_sequence(terminal));
+    rescue = termpaint_ttyrescue_start(termpaint_terminal_restore_sequence(terminal));
 
     return 1;
 }
 
 void cleanup(void) {
     termpaint_terminal_free_with_restore(terminal);
-    termpaint_ttyrescue_stop(rescue_fd);
+    termpaint_ttyrescue_stop(rescue);
 
     while (event_current) {
         free(event_current->string);
