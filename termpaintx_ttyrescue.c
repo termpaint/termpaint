@@ -40,14 +40,14 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         return nullptr;
     }
 
-    char *envvar = (char*)malloc(strlen(restore_seq) + 26);
+    char *envvar = (char*)malloc(strlen(restore_seq) + 18 + 1);
     if (!envvar) {
         close(pipe[0]);
         close(pipe[1]);
         free(ret);
         return nullptr;
     }
-    strcpy(envvar, "TERMPAINT_RESCUE_RESTORE=");
+    strcpy(envvar, "TTYRESCUE_RESTORE=");
     strcat(envvar, restore_seq);
     char *envp[] = {envvar, NULL};
 

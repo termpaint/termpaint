@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 #else
 int termpaintp_rescue_embedded(void) {
 #endif
-    restore = getenv("TERMPAINT_RESCUE_RESTORE");
+    restore = getenv("TTYRESCUE_RESTORE");
 
     if (!restore || *restore==0) {
         output("This is an internal helper to ensure that the terminal is properly restored.\n");
