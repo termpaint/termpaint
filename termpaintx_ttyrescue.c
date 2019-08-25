@@ -229,10 +229,15 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
             dup2(shmfd, 3);
         }
         close(1);
+        int from = ((shmfd != -1) ? 4 : 3);
+#if defined(__FreeBSD__)
+        closefrom(from);
+#else
         int max_fd = sysconf(_SC_OPEN_MAX);
-        for (int i = ((shmfd != -1) ? 4 : 3); i < max_fd; i++) {
+        for (int i = from; i < max_fd; i++) {
             close(i);
         }
+#endif
         char *argv[] = {"ttyrescue", NULL};
         const char* path = TERMPAINT_RESCUE_PATH;
         char tmp[sizeof(TERMPAINT_RESCUE_PATH) + sizeof("ttyrescue") + 1];
