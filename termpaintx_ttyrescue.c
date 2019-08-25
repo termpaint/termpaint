@@ -2,10 +2,18 @@
 
 #define _GNU_SOURCE
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/socket.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif
@@ -14,11 +22,13 @@
 #define nullptr ((void*)0)
 #endif
 
+_Static_assert(ATOMIC_INT_LOCK_FREE == 2, "lock free atomic_int needed");
+
 #ifdef TERMPAINTP_VALGRIND
 #include <third-party/valgrind/memcheck.h>
 #endif
 
-int termpaintp_rescue_embedded(void);
+int termpaintp_rescue_embedded(void* ctlseg);
 
 #ifdef TERMPAINTP_VALGRIND
 static void exit_wrapper(long tid, void (*fn)(int)) {
@@ -28,9 +38,51 @@ static void exit_wrapper(long tid, void (*fn)(int)) {
 }
 #endif
 
+#define SEGLEN 8192
+
+struct termpaint_ipcseg {
+    atomic_int active;
+    atomic_int flags;
+    char seq1[4000];
+    char seq2[4000];
+};
+
+_Static_assert(sizeof(struct termpaint_ipcseg) < SEGLEN, "termpaint_ipcseg does not fit IPC segment size");
+
 struct termpaint_ttyrescue_ {
     int fd;
+    struct termpaint_ipcseg* seg;
 };
+
+#ifdef __GNUC__
+__attribute__((format(printf, 1, 2)))
+#endif
+static char* termpaintp_asprintf(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    int len = vsnprintf(nullptr, 0, fmt, ap);
+    va_end(ap);
+
+    if (len < 0) {
+        return nullptr;
+    }
+
+    char *ret = malloc(len + 1);
+    if (!ret) {
+        return nullptr;
+    }
+
+    va_start(ap, fmt);
+    len = vsnprintf(ret, len + 1, fmt, ap);
+    va_end(ap);
+
+    if (len < 0) {
+        free(ret);
+        return nullptr;
+    }
+
+    return ret;
+}
 
 termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
     termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
@@ -40,28 +92,70 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         return nullptr;
     }
 
-    char *envvar = (char*)malloc(strlen(restore_seq) + 18 + 1);
-    if (!envvar) {
+    int shmid = -1;
+    shmid = shmget(IPC_PRIVATE, SEGLEN, 0600 | IPC_CREAT | IPC_EXCL);
+    ret->seg = shmat(shmid, 0, 0);
+    if (ret->seg == (void*)-1) {
+        ret->seg = nullptr;
+        shmctl(shmid, IPC_RMID, nullptr);
+        shmid = -1;
+    }
+
+    char *envvar = termpaintp_asprintf("TTYRESCUE_RESTORE=%s", restore_seq);
+    char *envvar2 = nullptr;
+    bool alloc_error = envvar == nullptr;
+    char *envp[3] = {envvar, nullptr, nullptr};
+
+    if (shmid != -1) {
+        envvar2 = termpaintp_asprintf("TTYRESCUE_SYSVSHMID=%i", shmid);
+        alloc_error |= envvar2 == nullptr;
+        envp[1] = envvar2;
+    }
+    if (alloc_error) {
         close(pipe[0]);
         close(pipe[1]);
+        free(envvar);
+        free(envvar2);
+
+        if (shmid != -1) {
+            shmctl(shmid, IPC_RMID, nullptr);
+        }
         free(ret);
         return nullptr;
     }
-    strcpy(envvar, "TTYRESCUE_RESTORE=");
-    strcat(envvar, restore_seq);
-    char *envp[] = {envvar, NULL};
+
+    termpaint_ttyrescue_update(ret, restore_seq, strlen(restore_seq));
 
     pid_t pid = fork();
     if (pid < 0) {
         close(pipe[0]);
         close(pipe[1]);
         free(envvar);
+        free(envvar2);
+        if (shmid != -1) {
+            shmdt(ret->seg);
+            shmctl(shmid, IPC_RMID, nullptr);
+        }
         free(ret);
         return nullptr;
     } else if (pid) {
         free(envvar);
+        free(envvar2);
         close(pipe[0]);
         ret->fd = pipe[1];
+        if (shmid != -1) {
+            struct pollfd info;
+            info.fd = ret->fd;
+            info.events = POLLIN;
+            int err;
+            do {
+                err = poll(&info, 1, -1);
+            } while (err == EINTR);
+
+            char buff[1];
+            read(ret->fd, buff, 1);
+            shmctl(shmid, IPC_RMID, nullptr);
+        }
         return ret;
     } else {
         close(pipe[1]);
@@ -146,7 +240,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
 #ifdef TERMPAINTP_VALGRIND
         VALGRIND_PRINTF("termpaint embedded ttyrescue running with valgrind. Maybe use --child-silent-after-fork=yes\n");
 #endif
-        termpaintp_rescue_embedded();
+        termpaintp_rescue_embedded(ret->seg);
 #ifdef TERMPAINTP_VALGRIND
         if (RUNNING_ON_VALGRIND) {
             // There is no way to avoid leaking the main programs allocations
@@ -166,5 +260,27 @@ void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
     if (tpr->fd >= 0) {
         send(tpr->fd, "~", 1, MSG_NOSIGNAL);
     }
+    if (tpr->seg) {
+        shmdt(tpr->seg);
+    }
     free(tpr);
+}
+
+_Bool termpaint_ttyrescue_update(termpaintx_ttyrescue *tpr, const char *data, int len) {
+    if (tpr->seg && len < sizeof(tpr->seg->seq1)) {
+        // active is only written from this process. It's atomic to get memory_order_seq_cst and
+        // to avoid tearing
+        int offset = atomic_load(&tpr->seg->active);
+        if (offset == 0 || offset == offsetof(struct termpaint_ipcseg, seq2)) {
+            memcpy(tpr->seg->seq1, data, len);
+            tpr->seg->seq1[len] = 0;
+            atomic_store(&tpr->seg->active, offsetof(struct termpaint_ipcseg, seq1));
+        } else {
+            memcpy(tpr->seg->seq2, data, len);
+            tpr->seg->seq2[len] = 0;
+            atomic_store(&tpr->seg->active, offsetof(struct termpaint_ipcseg, seq2));
+        }
+        return 1;
+    }
+    return 0;
 }

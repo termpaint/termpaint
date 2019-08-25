@@ -1,11 +1,18 @@
 #include <errno.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/select.h>
+#include <sys/shm.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#ifndef nullptr
+#define nullptr ((void*)0)
+#endif
 
 static char *restore;
 
@@ -16,8 +23,9 @@ static void output(const char *s) {
 #ifndef TERMPAINT_RESCUE_EMBEDDED
 int main(int argc, char** argv) {
     (void) argc; (void) argv;
+    void *ctlseg = nullptr;
 #else
-int termpaintp_rescue_embedded(void) {
+int termpaintp_rescue_embedded(void *ctlseg) {
 #endif
     restore = getenv("TTYRESCUE_RESTORE");
 
@@ -46,6 +54,26 @@ int termpaintp_rescue_embedded(void) {
         return 1;
     }
 
+    if (getenv("TTYRESCUE_SYSVSHMID")) {
+#ifndef TERMPAINT_RESCUE_EMBEDDED
+        char *var = getenv("TTYRESCUE_SYSVSHMID");
+        char *end;
+        errno = 0;
+        long int val = strtol(var, &end, 10);
+        if (*end != '\0' || errno != 0) {
+            output("ttyrescue: Can't parse TTYRESCUE_SYSVSHMID. Abort.\n");
+            return 1;
+        }
+        ctlseg = shmat(val, nullptr, 0);
+        if (ctlseg == (void*)-1) {
+            output("ttyrescue: shmat failed. Abort.\n");
+            return 1;
+        }
+        atomic_fetch_or((atomic_int*)ctlseg + 1, 1);
+#endif
+        write(0, "x", 1);
+    }
+
     sigset_t fullset;
     sigfillset(&fullset);
     sigprocmask(SIG_BLOCK, &fullset, NULL);
@@ -65,7 +93,15 @@ int termpaintp_rescue_embedded(void) {
         retval = read(0, buf, 10);
         if (retval == 0) {
             // parent crashed
-            output(restore);
+            int offset = 0;
+            if (ctlseg) {
+                offset = atomic_load((atomic_int*)ctlseg);
+            }
+            if (offset) {
+                output((char*)ctlseg + offset);
+            } else {
+                output(restore);
+            }
             return 0;
         }
         if (retval < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
