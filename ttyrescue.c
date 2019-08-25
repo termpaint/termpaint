@@ -38,7 +38,7 @@ int termpaintp_rescue_embedded(void *ctlseg) {
 
     int res;
     res = isatty(0);
-    if (res || (errno != EINVAL && errno != ENOTTY)) {
+    if (res || (errno != EINVAL && errno != ENOTTY && errno != EOPNOTSUPP)) {
         output("Invalid invocation\n");
         return 1;
     }
