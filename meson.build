@@ -43,6 +43,7 @@ main_lib_files = [
 ]
 
 main_lib_cargs += '-DTERMPAINT_RESCUE_EMBEDDED'
+main_lib_cargs += '-DTERMPAINT_RESCUE_PATH="@0@"'.format(get_option('ttyrescue-path'))
 main_lib = library('termpaint', main_lib_files,
   c_args: main_lib_cargs,
   install: true)

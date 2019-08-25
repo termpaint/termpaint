@@ -1,3 +1,6 @@
-option('ssh', type : 'boolean', value : false)
-option('errorlog', type : 'boolean', value : false)
+# termpaintx
+option('ttyrescue-path', type : 'string', value : '/usr/libexec')
 option('valgrind-compat', type : 'boolean', value : true)
+option('errorlog', type : 'boolean', value : false)
+# samples etc
+option('ssh', type : 'boolean', value : false)

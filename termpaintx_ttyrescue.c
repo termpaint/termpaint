@@ -226,7 +226,29 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
             close(i);
         }
         char *argv[] = {"ttyrescue", NULL};
-        execvpe("ttyrescue", argv, envp);
+        const char* path = TERMPAINT_RESCUE_PATH;
+        char tmp[sizeof(TERMPAINT_RESCUE_PATH) + sizeof("ttyrescue") + 1];
+        for (const char *item = path; *item;) {
+            char *end = strchr(item, ':');
+            ptrdiff_t len;
+            if (end) {
+                len = end - item;
+            } else {
+                len = strlen(item);
+            }
+            if (len > 0) {
+                memcpy(tmp, item, len);
+                tmp[len] = '/';
+                tmp[len+1] = '\0';
+                strcat(tmp, "ttyrescue");
+                execve(tmp, argv, envp);
+            }
+            if (end) {
+                item = end + 1;
+            } else {
+                break;
+            }
+        }
 
         // if that does not work use internal fallback.
 
