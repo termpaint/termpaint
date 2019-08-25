@@ -116,6 +116,14 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         shmfd = -1;
     }
 #endif
+#if defined(__FreeBSD__)
+    if (shmfd == -1) {
+        shmfd = shm_open(SHM_ANON, O_RDWR | IPC_CREAT | IPC_EXCL, 0600); // FD_CLOEXEC is implied
+        if (shmfd < 0) {
+            shmfd = -1;
+        }
+    }
+#endif
     if (shmfd != -1) {
         if (ftruncate(shmfd, SEGLEN) < 0) {
             close(shmfd);
