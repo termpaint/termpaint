@@ -12,11 +12,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #ifdef __linux__
 #include <sys/prctl.h>
+
+// memfd
+#include <sys/syscall.h>
+#ifdef __NR_memfd_create
+#include <linux/memfd.h>
 #endif
+#endif
+
 
 #ifndef nullptr
 #define nullptr ((void*)0)
@@ -38,6 +46,13 @@ static void exit_wrapper(long tid, void (*fn)(int)) {
 }
 #endif
 
+#if defined(__linux__) && defined(__NR_memfd_create)
+int termpaintp_memfd_create(const char *name, unsigned int flags) {
+    return (int)syscall(__NR_memfd_create, name, flags);
+}
+#define HAVE_MEMFD 1
+#endif
+
 #define SEGLEN 8192
 
 struct termpaint_ipcseg {
@@ -52,6 +67,7 @@ _Static_assert(sizeof(struct termpaint_ipcseg) < SEGLEN, "termpaint_ipcseg does 
 struct termpaint_ttyrescue_ {
     int fd;
     struct termpaint_ipcseg* seg;
+    bool using_mmap;
 };
 
 #ifdef __GNUC__
@@ -86,19 +102,44 @@ static char* termpaintp_asprintf(const char *fmt, ...) {
 
 termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
     termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
+    ret->using_mmap = 0;
     int pipe[2];
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, pipe) < 0) {
         free(ret);
         return nullptr;
     }
 
+    int shmfd = -1;
+#if HAVE_MEMFD
+    shmfd = termpaintp_memfd_create("ttyrescue ctl", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    if (shmfd < 0) {
+        shmfd = -1;
+    }
+#endif
+    if (shmfd != -1) {
+        if (ftruncate(shmfd, SEGLEN) < 0) {
+            close(shmfd);
+            shmfd = -1;
+        } else {
+            ret->seg = mmap(0, SEGLEN, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+            if (ret->seg == MAP_FAILED) {
+                close(shmfd);
+                shmfd = -1;
+                ret->seg = nullptr;
+            } else {
+                ret->using_mmap = true;
+            }
+        }
+    }
     int shmid = -1;
-    shmid = shmget(IPC_PRIVATE, SEGLEN, 0600 | IPC_CREAT | IPC_EXCL);
-    ret->seg = shmat(shmid, 0, 0);
-    if (ret->seg == (void*)-1) {
-        ret->seg = nullptr;
-        shmctl(shmid, IPC_RMID, nullptr);
-        shmid = -1;
+    if (shmfd == -1) {
+        shmid = shmget(IPC_PRIVATE, SEGLEN, 0600 | IPC_CREAT | IPC_EXCL);
+        ret->seg = shmat(shmid, 0, 0);
+        if (ret->seg == (void*)-1) {
+            ret->seg = nullptr;
+            shmctl(shmid, IPC_RMID, nullptr);
+            shmid = -1;
+        }
     }
 
     char *envvar = termpaintp_asprintf("TTYRESCUE_RESTORE=%s", restore_seq);
@@ -111,6 +152,12 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         alloc_error |= envvar2 == nullptr;
         envp[1] = envvar2;
     }
+    if (shmfd != -1) {
+        envvar2 = strdup("TTYRESCUE_SHMFD=yes");
+        alloc_error |= envvar2 == nullptr;
+        envp[1] = envvar2;
+    }
+
     if (alloc_error) {
         close(pipe[0]);
         close(pipe[1]);
@@ -119,6 +166,9 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
 
         if (shmid != -1) {
             shmctl(shmid, IPC_RMID, nullptr);
+        }
+        if (shmfd != -1) {
+            close(shmfd);
         }
         free(ret);
         return nullptr;
@@ -135,6 +185,9 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         if (shmid != -1) {
             shmdt(ret->seg);
             shmctl(shmid, IPC_RMID, nullptr);
+        }
+        if (shmfd != -1) {
+            close(shmfd);
         }
         free(ret);
         return nullptr;
@@ -156,14 +209,20 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
             read(ret->fd, buff, 1);
             shmctl(shmid, IPC_RMID, nullptr);
         }
+        if (shmfd != -1) {
+            close(shmfd);
+        }
         return ret;
     } else {
         close(pipe[1]);
         fcntl(pipe[0], F_SETFD, 0);
         dup2(pipe[0], 0);
+        if (shmfd != -1) {
+            dup2(shmfd, 3);
+        }
         close(1);
         int max_fd = sysconf(_SC_OPEN_MAX);
-        for (int i = 3; i < max_fd; i++) {
+        for (int i = ((shmfd != -1) ? 4 : 3); i < max_fd; i++) {
             close(i);
         }
         char *argv[] = {"ttyrescue", NULL};
@@ -261,7 +320,11 @@ void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
         send(tpr->fd, "~", 1, MSG_NOSIGNAL);
     }
     if (tpr->seg) {
-        shmdt(tpr->seg);
+        if (tpr->using_mmap) {
+            munmap(tpr->seg, SEGLEN);
+        } else {
+            shmdt(tpr->seg);
+        }
     }
     free(tpr);
 }

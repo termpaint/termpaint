@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/select.h>
 #include <sys/shm.h>
 #include <sys/types.h>
@@ -53,6 +54,18 @@ int termpaintp_rescue_embedded(void *ctlseg) {
         output("Invalid invocation\n");
         return 1;
     }
+
+#ifndef TERMPAINT_RESCUE_EMBEDDED
+    if (getenv("TTYRESCUE_SHMFD")) {
+        ctlseg = mmap(0, 8048, PROT_READ | PROT_WRITE, MAP_SHARED, 3, 0);
+        close(3);
+        if (ctlseg == MAP_FAILED) {
+            output("ttyrescue: mmap failed. Abort.\n");
+            return 1;
+        }
+        atomic_fetch_or((atomic_int*)ctlseg + 1, 1);
+    }
+#endif
 
     if (getenv("TTYRESCUE_SYSVSHMID")) {
 #ifndef TERMPAINT_RESCUE_EMBEDDED
