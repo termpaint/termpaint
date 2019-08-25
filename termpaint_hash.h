@@ -1,8 +1,8 @@
 #ifndef TERMPAINT_TERMPAINT_HASH_INCLUDED
 #define TERMPAINT_TERMPAINT_HASH_INCLUDED
 
-#include <malloc.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 // internal header, not api or abi stable

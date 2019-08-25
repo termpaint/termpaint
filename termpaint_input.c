@@ -1,10 +1,11 @@
 #include "termpaint_input.h"
 
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h> // for exit
+#include <stdio.h> // for debugging prints and debugging data export
 
 #include "termpaint_compiler.h"
 

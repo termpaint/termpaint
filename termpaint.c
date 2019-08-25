@@ -1,9 +1,11 @@
 #include "termpaint.h"
 
-#include <malloc.h>
-#include <string.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "termpaint_compiler.h"
 #include "termpaint_input.h"

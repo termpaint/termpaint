@@ -17,7 +17,7 @@
 #include <signal.h>
 #include <time.h>
 #include <poll.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <stdbool.h>
 
