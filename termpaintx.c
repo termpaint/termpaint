@@ -393,6 +393,11 @@ bool termpaintx_fd_terminal_size(int fd, int *width, int *height) {
     return true;
 }
 
+const struct termios *termpaintx_full_integration_original_terminal_attributes(termpaint_integration *integration) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    return &t->original_terminal_attributes;
+}
+
 static void termpaintx_dummy_log(struct termpaint_integration_ *integration, char *data, int length) {
     (void)integration;
     (void)data;
