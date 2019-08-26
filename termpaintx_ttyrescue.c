@@ -1,6 +1,6 @@
+#define _GNU_SOURCE
 #include "termpaintx_ttyrescue.h"
 
-#define _GNU_SOURCE
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -36,8 +36,6 @@ _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "lock free atomic_int needed");
 #include <third-party/valgrind/memcheck.h>
 #endif
 
-int termpaintp_rescue_embedded(void* ctlseg);
-
 #ifdef TERMPAINTP_VALGRIND
 static void exit_wrapper(long tid, void (*fn)(int)) {
     (void)tid;
@@ -55,14 +53,29 @@ int termpaintp_memfd_create(const char *name, unsigned int flags) {
 
 #define SEGLEN 8192
 
+#define TTYRESCUE_FLAG_ATTACHED    (1 << 0)
+#define TTYRESCUE_FLAG_TERMIOS_SET (1 << 1)
+
 struct termpaint_ipcseg {
     atomic_int active;
     atomic_int flags;
+    long termios_iflag;
+    long termios_oflag;
+    long termios_lflag;
+    long termios_vintr;
+    long termios_vmin;
+    long termios_vquit;
+    long termios_vstart;
+    long termios_vstop;
+    long termios_vsusp;
+    long termios_vtime;
     char seq1[4000];
     char seq2[4000];
 };
 
 _Static_assert(sizeof(struct termpaint_ipcseg) < SEGLEN, "termpaint_ipcseg does not fit IPC segment size");
+
+int termpaintp_rescue_embedded(struct termpaint_ipcseg* ctlseg);
 
 struct termpaint_ttyrescue_ {
     int fd;
@@ -379,6 +392,23 @@ _Bool termpaint_ttyrescue_update(termpaintx_ttyrescue *tpr, const char *data, in
             atomic_store(&tpr->seg->active, offsetof(struct termpaint_ipcseg, seq2));
         }
         return 1;
+    }
+    return 0;
+}
+
+bool termpaint_ttyrescue_set_restore_termios(termpaintx_ttyrescue *tpr, const struct termios *original_terminal_attributes) {
+    if (tpr->seg) {
+        tpr->seg->termios_iflag = original_terminal_attributes->c_iflag;
+        tpr->seg->termios_oflag = original_terminal_attributes->c_oflag;
+        tpr->seg->termios_lflag = original_terminal_attributes->c_lflag;
+        tpr->seg->termios_vintr = original_terminal_attributes->c_cc[VINTR];
+        tpr->seg->termios_vmin = original_terminal_attributes->c_cc[VMIN];
+        tpr->seg->termios_vquit = original_terminal_attributes->c_cc[VQUIT];
+        tpr->seg->termios_vstart = original_terminal_attributes->c_cc[VSTART];
+        tpr->seg->termios_vstop = original_terminal_attributes->c_cc[VSTOP];
+        tpr->seg->termios_vsusp = original_terminal_attributes->c_cc[VSUSP];
+        tpr->seg->termios_vtime = original_terminal_attributes->c_cc[VTIME];
+        atomic_fetch_or(&tpr->seg->flags, TTYRESCUE_FLAG_TERMIOS_SET);
     }
     return 0;
 }

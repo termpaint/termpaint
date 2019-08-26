@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <termios.h>
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdio.h>
@@ -21,12 +22,30 @@ static void output(const char *s) {
     write(2, s, strlen(s));
 }
 
+#define TTYRESCUE_FLAG_ATTACHED    (1 << 0)
+#define TTYRESCUE_FLAG_TERMIOS_SET (1 << 1)
+
+struct termpaint_ipcseg {
+    atomic_int active;
+    atomic_int flags;
+    long termios_iflag;
+    long termios_oflag;
+    long termios_lflag;
+    long termios_vintr;
+    long termios_vmin;
+    long termios_vquit;
+    long termios_vstart;
+    long termios_vstop;
+    long termios_vsusp;
+    long termios_vtime;
+};
+
 #ifndef TERMPAINT_RESCUE_EMBEDDED
 int main(int argc, char** argv) {
     (void) argc; (void) argv;
-    void *ctlseg = nullptr;
+    struct termpaint_ipcseg *ctlseg = nullptr;
 #else
-int termpaintp_rescue_embedded(void *ctlseg) {
+int termpaintp_rescue_embedded(struct termpaint_ipcseg *ctlseg) {
 #endif
     restore = getenv("TTYRESCUE_RESTORE");
 
@@ -63,7 +82,7 @@ int termpaintp_rescue_embedded(void *ctlseg) {
             output("ttyrescue: mmap failed. Abort.\n");
             return 1;
         }
-        atomic_fetch_or((atomic_int*)ctlseg + 1, 1);
+        atomic_fetch_or(&ctlseg->flags, TTYRESCUE_FLAG_ATTACHED);
     }
 #endif
 
@@ -82,7 +101,7 @@ int termpaintp_rescue_embedded(void *ctlseg) {
             output("ttyrescue: shmat failed. Abort.\n");
             return 1;
         }
-        atomic_fetch_or((atomic_int*)ctlseg + 1, 1);
+        atomic_fetch_or(&ctlseg->flags, TTYRESCUE_FLAG_ATTACHED);
 #endif
         write(0, "x", 1);
     }
@@ -108,12 +127,30 @@ int termpaintp_rescue_embedded(void *ctlseg) {
             // parent crashed
             int offset = 0;
             if (ctlseg) {
-                offset = atomic_load((atomic_int*)ctlseg);
+                offset = atomic_load(&ctlseg->active);
             }
             if (offset) {
                 output((char*)ctlseg + offset);
             } else {
                 output(restore);
+            }
+            if (atomic_load(&ctlseg->flags) & TTYRESCUE_FLAG_TERMIOS_SET) {
+                if (tcgetpgrp(2) == getpgrp()) {
+                    struct termios tattr;
+                    if (tcgetattr(2, &tattr) >= 0) {
+                        tattr.c_iflag = (tcflag_t)ctlseg->termios_iflag;
+                        tattr.c_oflag = (tcflag_t)ctlseg->termios_oflag;
+                        tattr.c_lflag = (tcflag_t)ctlseg->termios_lflag;
+                        tattr.c_cc[VINTR] = (cc_t)ctlseg->termios_vintr;
+                        tattr.c_cc[VMIN] = (cc_t)ctlseg->termios_vmin;
+                        tattr.c_cc[VQUIT] = (cc_t)ctlseg->termios_vquit;
+                        tattr.c_cc[VSTART] = (cc_t)ctlseg->termios_vstart;
+                        tattr.c_cc[VSTOP] = (cc_t)ctlseg->termios_vstop;
+                        tattr.c_cc[VSUSP] = (cc_t)ctlseg->termios_vsusp;
+                        tattr.c_cc[VTIME] = (cc_t)ctlseg->termios_vtime;
+                        tcsetattr (2, TCSAFLUSH, &tattr);
+                    }
+                }
             }
             return 0;
         }
