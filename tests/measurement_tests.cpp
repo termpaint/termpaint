@@ -176,6 +176,7 @@ public:
         integration.write = [](MAYBE_UNUSED auto... params){};
         integration.is_bad = [](MAYBE_UNUSED auto... params){ return false; };
         integration.request_callback = [](MAYBE_UNUSED auto... params){};
+        integration.restore_sequence_updated = nullptr;
         terminal = termpaint_terminal_new(&integration);
         measurement = termpaint_text_measurement_new(termpaint_terminal_get_surface(terminal));
     }
