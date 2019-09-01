@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-    termpaintx_ttyrescue *rescue = termpaint_ttyrescue_start(2, termpaint_terminal_restore_sequence(terminal));
+    termpaint_full_integration_ttyrescue_start(integration);
 
     if (termpaint_terminal_auto_detect_state(terminal) == termpaint_auto_detect_done) {
         char buff[100];
@@ -244,7 +244,6 @@ int main(int argc, char **argv) {
     }
 
     termpaint_terminal_free_with_restore(terminal);
-    termpaint_ttyrescue_stop(rescue);
 
     return 0;
 }

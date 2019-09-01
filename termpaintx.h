@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+struct termpaint_ttyrescue_;
+typedef struct termpaint_ttyrescue_ termpaintx_ttyrescue;
+
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_available(void);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration(const char *options);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options);
@@ -20,6 +23,8 @@ _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_do_iteration(termpaint_integ
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration *integration, int *milliseconds);
 
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height);
+
+_tERMPAINT_PUBLIC _Bool termpaint_full_integration_ttyrescue_start(termpaint_integration *integration);
 
 _tERMPAINT_PUBLIC const struct termios *termpaintx_full_integration_original_terminal_attributes(termpaint_integration *integration);
 

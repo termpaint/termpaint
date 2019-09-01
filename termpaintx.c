@@ -22,6 +22,7 @@
 #include <stdbool.h>
 
 #include <termpaint_compiler.h>
+#include <termpaintx_ttyrescue.h>
 
 #if __GNUC__
 // Trying to avoid this warning with e.g. bit manipulations using defines from the standard headers is just too ugly
@@ -89,6 +90,7 @@ typedef struct termpaint_integration_fd_ {
     bool callback_requested;
     bool awaiting_response;
     termpaint_terminal *terminal;
+    termpaintx_ttyrescue *rescue;
 } termpaint_integration_fd;
 
 static void fd_free(termpaint_integration* integration) {
@@ -121,6 +123,11 @@ static void fd_free(termpaint_integration* integration) {
                 }
             }
         }
+    }
+
+    if (fd_data->rescue) {
+        termpaint_ttyrescue_stop(fd_data->rescue);
+        fd_data->rescue = nullptr;
     }
 
     tcsetattr (fd_data->fd, TCSAFLUSH, &fd_data->original_terminal_attributes);
@@ -397,6 +404,26 @@ const struct termios *termpaintx_full_integration_original_terminal_attributes(t
     termpaint_integration_fd *t = FDPTR(integration);
     return &t->original_terminal_attributes;
 }
+
+static void fd_restore_sequence_updated(struct termpaint_integration_ *integration, const char *data, int length) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    if (t->rescue) {
+        termpaint_ttyrescue_update(t->rescue, data, length);
+    }
+}
+
+bool termpaint_full_integration_ttyrescue_start(termpaint_integration *integration) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    if (t->rescue || !t->terminal) return false;
+    t->rescue = termpaint_ttyrescue_start(t->fd, termpaint_terminal_restore_sequence(t->terminal));
+    if (t->rescue) {
+        integration->restore_sequence_updated = fd_restore_sequence_updated;
+        termpaint_ttyrescue_set_restore_termios(t->rescue, &t->original_terminal_attributes);
+        return true;
+    }
+    return false;
+}
+
 
 static void termpaintx_dummy_log(struct termpaint_integration_ *integration, char *data, int length) {
     (void)integration;
