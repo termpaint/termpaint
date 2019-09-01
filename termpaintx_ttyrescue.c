@@ -240,7 +240,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         return ret;
     } else {
         close(pipe[1]);
-        fcntl(pipe[0], F_SETFD, 0);
+        fcntl(pipe[0], F_SETFD, 0); // Make sure O_CLOEXEC is removed even if the dup2 ends up as dup2(0, 0)
         dup2(pipe[0], 0);
         if (shmfd != -1) {
             dup2(shmfd, 3);
