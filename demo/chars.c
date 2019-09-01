@@ -71,7 +71,7 @@ bool init(void) {
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-    rescue = termpaint_ttyrescue_start(termpaint_terminal_restore_sequence(terminal));
+    rescue = termpaint_ttyrescue_start(2, termpaint_terminal_restore_sequence(terminal));
 
     return 1;
 }

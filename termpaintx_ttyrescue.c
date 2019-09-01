@@ -117,7 +117,7 @@ static char* termpaintp_asprintf(const char *fmt, ...) {
     return ret;
 }
 
-termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
+termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_seq) {
     termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
     ret->using_mmap = 0;
     int pipe[2];
@@ -240,10 +240,34 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
         return ret;
     } else {
         close(pipe[1]);
-        fcntl(pipe[0], F_SETFD, 0); // Make sure O_CLOEXEC is removed even if the dup2 ends up as dup2(0, 0)
-        dup2(pipe[0], 0);
+        // wanted file descriptors 0: control pipe(pipe[0]), 1: closed, 2: terminal(tty_fd), 3: control segment (shmfd)
+        // first move file descriptors we intend to keep out of the way
+        if (tty_fd == 0) {
+            tty_fd = dup(tty_fd);
+        }
+        if (shmfd == 0) {
+            shmfd = dup(shmfd);
+        }
+        // setup fd 0
+        if (pipe[0] == 0) {
+            fcntl(0, F_SETFD, 0); // Unset O_CLOEXEC
+        } else {
+            dup2(pipe[0], 0);
+        }
+        if (shmfd == 2) {
+            shmfd = dup(shmfd);
+        }
+        if (tty_fd == 2) {
+            fcntl(pipe[0], F_SETFD, 0); // Unset O_CLOEXEC
+        } else {
+            dup2(tty_fd, 2);
+        }
         if (shmfd != -1) {
-            dup2(shmfd, 3);
+            if (shmfd == 3) {
+                fcntl(3, F_SETFD, 0); // Unset O_CLOEXEC
+            } else {
+                dup2(shmfd, 3);
+            }
         }
         close(1);
         int from = ((shmfd != -1) ? 4 : 3);
