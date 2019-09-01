@@ -1,5 +1,6 @@
 # termpaintx
 option('ttyrescue-path', type : 'string', value : '/usr/libexec')
+option('ttyrescue-fexec-blob', type : 'boolean', value : true)
 option('valgrind-compat', type : 'boolean', value : true)
 option('errorlog', type : 'boolean', value : false)
 # samples etc

@@ -36,6 +36,10 @@ _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "lock free atomic_int needed");
 #include <third-party/valgrind/memcheck.h>
 #endif
 
+#ifdef TERMPAINT_RESCUE_FEXEC
+#include "ttyrescue_nolibc.inc"
+#endif
+
 #ifdef TERMPAINTP_VALGRIND
 static void exit_wrapper(long tid, void (*fn)(int)) {
     (void)tid;
@@ -275,6 +279,20 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
                 break;
             }
         }
+
+#ifdef TERMPAINT_RESCUE_FEXEC
+#ifdef __linux__
+        if (shmfd != -1) {
+            int exefd = termpaintp_memfd_create("ttyrescue (embedded)", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+            write(exefd, ttyrescue_blob, sizeof(ttyrescue_blob));
+            argv[0] = "ttyrescue (embedded)";
+            fexecve(exefd, argv, envp);
+            close(exefd);
+        }
+#else
+#error ttyrescue-fexec-blob option not available on this platform: not ported yet
+#endif
+#endif
 
         // if that does not work use internal fallback.
 

@@ -18,7 +18,7 @@ for ch in data:
     if ch in basic_c_source_chars:
         data_encoded[-1] += chr(ch)
     else:
-        data_encoded[-1] += "\\0{:o}".format(ch)
+        data_encoded[-1] += "\\{:o}".format(ch)
 
     if len(data_encoded[-1]) > 70:
         data_encoded.append("")

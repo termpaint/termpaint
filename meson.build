@@ -23,6 +23,36 @@ silence_warnings = [
 
 main_lib_cargs = []
 
+###### nolibc ttyrescue
+# This option should only default to true on linux (or other supported platforms). But meson
+# does not really allow doing that in a reasonable way. So just ignore it on other platforms.
+if get_option('ttyrescue-fexec-blob') and host_machine.system() == 'linux'
+  ttyrescue_nolibc_exe = executable('ttyrescue_nolibc', 'ttyrescue_nolibc.c',
+    cpp_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
+               '-fvisibility=hidden', '-std=gnu11'],
+    link_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
+                '-fvisibility=hidden', '-std=gnu11'])
+
+  ttyrescue_nolibc_stripped = custom_target('ttyrescue_nolibc_stripped',
+    input: ttyrescue_nolibc_exe,
+    output: 'ttyrescue_nolibc_stripped',
+    command: [find_program('strip'), '--strip-all', '--remove-section=.comment',
+              '--remove-section=.note', '--remove-section=.eh_frame_hdr',
+              '--remove-section=.eh_frame', '--remove-section=.note.gnu.gold-version',
+              '--remove-section=.note.gnu.build-id',
+              '@INPUT@', '-o', '@OUTPUT@'])
+
+  ttyrescue_nolibc_inc = custom_target('ttyrescue_nolibc_inc',
+    input: ttyrescue_nolibc_stripped,
+    output: ['ttyrescue_nolibc.inc'],
+    command: [find_program('./filetoinc.py'), 'ttyrescue_blob', '@INPUT@', '@OUTPUT0@'])
+
+  main_lib_cargs += '-DTERMPAINT_RESCUE_FEXEC'
+else
+  ttyrescue_nolibc_inc = []
+endif
+###### /nolibc ttyrescue
+
 if get_option('errorlog')
   debugwin_inc = custom_target('debugwin_inc', output: ['debugwin.py.inc'],
       command: [find_program('./filetoinc.py'), 'debugwin', files('debugwin.py'), '@OUTPUT0@'])
@@ -39,7 +69,8 @@ main_lib_files = [
   'termpaintx.c',
   'termpaintx_ttyrescue.c',
   'ttyrescue.c',
-  debugwin_inc
+  debugwin_inc,
+  ttyrescue_nolibc_inc
 ]
 
 main_lib_cargs += '-DTERMPAINT_RESCUE_EMBEDDED'
