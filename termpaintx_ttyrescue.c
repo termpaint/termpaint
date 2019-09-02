@@ -42,6 +42,8 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
 
     char *envvar = (char*)malloc(strlen(restore_seq) + 26);
     if (!envvar) {
+        close(pipe[0]);
+        close(pipe[1]);
         free(ret);
         return nullptr;
     }
@@ -51,6 +53,8 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(const char *restore_seq) {
 
     pid_t pid = fork();
     if (pid < 0) {
+        close(pipe[0]);
+        close(pipe[1]);
         free(envvar);
         free(ret);
         return nullptr;
