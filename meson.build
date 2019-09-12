@@ -17,6 +17,9 @@ if get_option('valgrind-compat')
     add_project_arguments('-DTERMPAINTP_VALGRIND', language : 'c')
 endif
 
+cc = meson.get_compiler('c')
+lib_rt = cc.find_library('rt', required : false) # clock_gettime
+
 silence_warnings = [
     '-Wno-padded'
 ]
@@ -76,6 +79,7 @@ main_lib_files = [
 main_lib_cargs += '-DTERMPAINT_RESCUE_EMBEDDED'
 main_lib_cargs += '-DTERMPAINT_RESCUE_PATH="@0@"'.format(get_option('ttyrescue-path'))
 main_lib = library('termpaint', main_lib_files,
+  dependencies: lib_rt,
   c_args: main_lib_cargs,
   install: true)
 

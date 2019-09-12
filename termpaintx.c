@@ -101,10 +101,10 @@ static void fd_free(termpaint_integration* integration) {
     // by just discarding input for a short amount of time.
     if (fd_data->awaiting_response) {
         struct timespec start_time;
-        timespec_get(&start_time, TIME_UTC);
+        clock_gettime(CLOCK_REALTIME, &start_time);
         while (true) {
             struct timespec now;
-            timespec_get(&now, TIME_UTC);
+            clock_gettime(CLOCK_REALTIME, &now);
             long time_waited_ms = (now.tv_sec - start_time.tv_sec) * 1000
                     + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000;
             if (time_waited_ms >= 100 || time_waited_ms < 0) {
