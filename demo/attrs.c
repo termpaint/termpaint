@@ -238,7 +238,7 @@ void indexed_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change,
 
     while (!quit) {
         termpaint_surface_clear_rect_with_attr(surface, 29, 7, 50, 16, attr_ui);
-        char buff[10];
+        char buff[11];
         sprintf(buff, "%3d", color);
         termpaint_surface_write_with_attr(surface, 29 + (color % 16) * 3, 7 + (color / 16), buff, attr_ui);
 
