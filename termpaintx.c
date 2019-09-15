@@ -35,9 +35,16 @@
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
 
+bool termpaintp_is_file_rw(int fd) {
+    int ret = fcntl(fd, F_GETFL);
+    return ret != -1 && (ret & O_ACCMODE) == O_RDWR;
+}
+
 _Bool termpaintx_full_integration_available(void) {
     _Bool from_std_fd = false;
-    from_std_fd = isatty(0) || isatty(1) || isatty(2);
+    from_std_fd = (isatty(0) && termpaintp_is_file_rw(0))
+            || (isatty(1) && termpaintp_is_file_rw(1))
+            || (isatty(2) && termpaintp_is_file_rw(2));
     if (from_std_fd) {
         return true;
     }
@@ -54,11 +61,11 @@ termpaint_integration *termpaintx_full_integration(const char *options) {
     int fd = -1;
     _Bool auto_close = false;
 
-    if (isatty(0)) {
+    if (isatty(0) && termpaintp_is_file_rw(0)) {
         fd = 0;
-    } else if (isatty(1)) {
+    } else if (isatty(1) && termpaintp_is_file_rw(1)) {
         fd = 1;
-    } else if (isatty(2)) {
+    } else if (isatty(2) && termpaintp_is_file_rw(2)) {
         fd = 2;
     } else {
         fd = open("/dev/tty", O_RDWR | O_NOCTTY | FD_CLOEXEC);
