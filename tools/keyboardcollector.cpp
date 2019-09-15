@@ -321,7 +321,9 @@ public:
                     }
                 }
             }, &inputChars);
-            poll();
+            if (!poll()) {
+                exit(5);
+            }
 
             if (inputChars.size()) {
                 data.append(inputChars);
@@ -365,7 +367,9 @@ public:
                     }
                 }
             }, &inputChars);
-            poll();
+            if (!poll()) {
+                exit(5);
+            }
 
             if (inputChars.size()) {
                 data.append(inputChars);
