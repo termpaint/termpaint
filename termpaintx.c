@@ -282,7 +282,7 @@ bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integrati
     return false;
 }
 
-bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, char* message) {
+bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, const char* message) {
     termpaint_integration_fd *t = FDPTR(integration);
     while (termpaint_terminal_auto_detect_state(t->terminal) == termpaint_auto_detect_running) {
         if (milliseconds > 0) {
