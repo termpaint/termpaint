@@ -159,7 +159,7 @@ static _Bool fd_is_bad(termpaint_integration* integration) {
     return FDPTR(integration)->fd == -1;
 }
 
-static void fd_write(termpaint_integration* integration, char *data, int length) {
+static void fd_write(termpaint_integration* integration, const char *data, int length) {
     ssize_t written = 0;
     ssize_t ret;
     errno = 0;
