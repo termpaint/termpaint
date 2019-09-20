@@ -478,7 +478,7 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
     surface->cells = calloc(1, bytes);
 }
 
-static inline cell* termpaintp_getcell(termpaint_surface *surface, int x, int y) {
+static inline cell* termpaintp_getcell(const termpaint_surface *surface, int x, int y) {
     int index = y*surface->width+x;
     // TODO undefined if overflow?
     if (x >= 0 && y >= 0 && index < surface->cells_allocated) {

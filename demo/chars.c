@@ -79,7 +79,7 @@ void cleanup(void) {
     termpaint_terminal_free_with_restore(terminal);
 
     while (event_current) {
-        free(event_current->string);
+        free((void*)event_current->string);
         event* next = event_current->next;
         free(event_current);
         event_current = next;
@@ -97,7 +97,7 @@ event* key_wait(void) {
         }
     }
 
-    free(event_current->string);
+    free((void*)event_current->string);
     event* next = event_current->next;
     free(event_current);
     event_current = next;

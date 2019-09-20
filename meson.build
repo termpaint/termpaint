@@ -7,14 +7,14 @@ endif
 
 add_project_arguments('-std=gnu11', language : 'c')
 add_project_arguments('-Wall', '-Wextra', '-Werror=strict-prototypes', '-Werror=incompatible-pointer-types',
-                      '-Werror=implicit-int',
+                      '-Werror=implicit-int', '-Werror=discarded-qualifiers',
                       language: 'c')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'c')
 
 add_project_arguments('-std=gnu++14', language : 'cpp')
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration',
-                      '-Werror=incompatible-pointer-types',
+                      '-Werror=incompatible-pointer-types', '-Werror=discarded-qualifiers',
                       '-Werror=implicit-int', language: 'cpp')
 
 if get_option('valgrind-compat')
