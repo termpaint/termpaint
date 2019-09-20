@@ -343,7 +343,7 @@ public:
         return options[choice-1].get<jobject>();
     }
 
-    std::string input_str(char *message, std::function<bool()> poll) {
+    std::string input_str(const char *message, std::function<bool()> poll) {
         outStr(message);
 
         std::string data;
