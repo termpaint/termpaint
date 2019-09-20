@@ -171,18 +171,17 @@ struct Result {
 class MeasurementWrapper {
 public:
     MeasurementWrapper() {
-        integration.free = [](MAYBE_UNUSED auto... params){};
-        integration.flush = [](MAYBE_UNUSED auto... params){};
-        integration.write = [](MAYBE_UNUSED auto... params){};
-        integration.is_bad = [](MAYBE_UNUSED auto... params){ return false; };
-        integration.request_callback = [](MAYBE_UNUSED auto... params){};
-        integration.restore_sequence_updated = nullptr;
+        auto free = [](MAYBE_UNUSED auto... params){};
+        auto flush = [](MAYBE_UNUSED auto... params){};
+        auto write = [](MAYBE_UNUSED auto... params){};
+        termpaint_integration_init(&integration, free, write, flush);
         terminal = termpaint_terminal_new(&integration);
         measurement = termpaint_text_measurement_new(termpaint_terminal_get_surface(terminal));
     }
     ~MeasurementWrapper() {
         termpaint_text_measurement_free(measurement);
         termpaint_terminal_free(terminal);
+        termpaint_integration_deinit(&integration);
     }
 
     termpaint_text_measurement* get() {

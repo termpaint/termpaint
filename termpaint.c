@@ -207,8 +207,19 @@ typedef struct termpaint_unpause_snippet_ {
     termpaint_str sequences;
 } termpaint_unpause_snippet;
 
+typedef struct termpaint_integration_private_ {
+    void (*free)(struct termpaint_integration_ *integration);
+    void (*write)(struct termpaint_integration_ *integration, const char *data, int length);
+    void (*flush)(struct termpaint_integration_ *integration);
+    _Bool (*is_bad)(struct termpaint_integration_ *integration);
+    void (*request_callback)(struct termpaint_integration_ *integration);
+    void (*awaiting_response)(struct termpaint_integration_ *integration);
+    void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
+} termpaint_integration_private;
+
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
+    termpaint_integration_private *integration_vtbl;
     termpaint_surface primary;
     termpaint_input *input;
     bool data_pending_after_input_received : 1;
@@ -405,6 +416,38 @@ static void termpaintp_str_append_printable_n(termpaint_str *tps, const char *st
         TERMPAINTP_STR_APPEND_##type3(tps_TMP_tps, tps_TMP_3, (tps_TMP_len3));         \
     } while (0)                                                                        \
     /* end */
+
+
+_tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integration,
+                                                  void (*free)(struct termpaint_integration_ *integration),
+                                                  void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
+                                                  void (*flush)(struct termpaint_integration_ *integration)) {
+    integration->p = calloc(1, sizeof(termpaint_integration_private));
+    integration->p->free = free;
+    integration->p->write = write;
+    integration->p->flush = flush;
+}
+
+_tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(struct termpaint_integration_ *integration)) {
+    integration->p->is_bad = is_bad;
+}
+
+_tERMPAINT_PUBLIC void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(struct termpaint_integration_ *integration)) {
+    integration->p->request_callback = request_callback;
+}
+
+_tERMPAINT_PUBLIC void termpaint_integration_set_awaiting_response(termpaint_integration *integration, void (*awaiting_response)(struct termpaint_integration_ *integration)) {
+    integration->p->awaiting_response = awaiting_response;
+}
+
+_tERMPAINT_PUBLIC void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length)) {
+    integration->p->restore_sequence_updated = restore_sequence_updated;
+}
+
+void termpaint_integration_deinit(termpaint_integration *integration) {
+    free(integration->p);
+    integration->p = nullptr;
+}
 
 static void termpaintp_collapse(termpaint_surface *surface) {
     surface->width = 0;
@@ -1231,11 +1274,11 @@ int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint
 }
 
 static void int_puts(termpaint_integration *integration, const char *str) {
-    integration->write(integration, str, strlen(str));
+    integration->p->write(integration, str, strlen(str));
 }
 
 static void int_write(termpaint_integration *integration, const char *str, int len) {
-    integration->write(integration, str, len);
+    integration->p->write(integration, str, len);
 }
 
 static void int_write_printable(termpaint_integration *integration, const char *str, int len) {
@@ -1268,28 +1311,28 @@ static void int_write_printable(termpaint_integration *integration, const char *
 static void int_put_num(termpaint_integration *integration, int num) {
     char buf[12];
     int len = sprintf(buf, "%d", num);
-    integration->write(integration, buf, len);
+    integration->p->write(integration, buf, len);
 }
 
 static void int_put_tps(termpaint_integration *integration, const termpaint_str *tps) {
-    integration->write(integration, (const char*)tps->data, (int)tps->len);
+    integration->p->write(integration, (const char*)tps->data, (int)tps->len);
 }
 
 static void int_awaiting_response(termpaint_integration *integration) {
-    if (integration->awaiting_response) {
-        integration->awaiting_response(integration);
+    if (integration->p->awaiting_response) {
+        integration->p->awaiting_response(integration);
     }
 }
 
 static void int_restore_sequence_updated(termpaint_terminal *term) {
-    termpaint_integration *integration = term->integration;
-    if (integration->restore_sequence_updated) {
-        integration->restore_sequence_updated(integration, term->restore_seq, (int)strlen(term->restore_seq));
+    termpaint_integration_private *vtbl = term->integration_vtbl;
+    if (vtbl->restore_sequence_updated) {
+        vtbl->restore_sequence_updated(term->integration, term->restore_seq, (int)strlen(term->restore_seq));
     }
 }
 
 static void int_flush(termpaint_integration *integration) {
-    integration->flush(integration);
+    integration->p->flush(integration);
 }
 
 void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
@@ -1378,6 +1421,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     // start collapsed
     termpaintp_collapse(&ret->primary);
     ret->integration = integration;
+    ret->integration_vtbl = integration->p;
 
     ret->cursor_visible = true;
     ret->cursor_x = -1;
@@ -1420,8 +1464,9 @@ void termpaint_terminal_free(termpaint_terminal *term) {
     term->restore_seq = nullptr;
     termpaint_input_free(term->input);
     term->input = nullptr;
-    term->integration->free(term->integration);
+    term->integration_vtbl->free(term->integration);
     term->integration = nullptr;
+    term->integration_vtbl = nullptr;
     termpaintp_str_destroy(&term->unpause_basic_setup);
     termpaintp_hash_destroy(&term->colors);
     termpaintp_hash_destroy(&term->unpause_snippets);
@@ -1955,8 +2000,8 @@ void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *dat
 
     if (not_in_autodetect && termpaint_input_peek_buffer_length(term->input)) {
         term->data_pending_after_input_received = true;
-        if (term->integration->request_callback) {
-            term->integration->request_callback(term->integration);
+        if (term->integration_vtbl->request_callback) {
+            term->integration_vtbl->request_callback(term->integration);
         } else {
             termpaint_terminal_callback(term);
         }

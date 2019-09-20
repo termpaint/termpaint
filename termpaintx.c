@@ -142,6 +142,7 @@ static void fd_free(termpaint_integration* integration) {
         close(fd_data->fd);
     }
     free(fd_data->options);
+    termpaint_integration_deinit(&fd_data->base);
     free(fd_data);
 }
 
@@ -255,12 +256,10 @@ bool termpaintx_fd_set_termios(int fd, const char *options) {
 
 termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
-    ret->base.free = fd_free;
-    ret->base.write = fd_write;
-    ret->base.flush = fd_flush;
-    ret->base.is_bad = fd_is_bad;
-    ret->base.request_callback = fd_request_callback;
-    ret->base.awaiting_response = fd_awaiting_response;
+    termpaint_integration_init(&ret->base, fd_free, fd_write, fd_flush);
+    termpaint_integration_set_is_bad(&ret->base, fd_is_bad);
+    termpaint_integration_set_request_callback(&ret->base, fd_request_callback);
+    termpaint_integration_set_awaiting_response(&ret->base, fd_awaiting_response);
     ret->options = strdup(options);
     ret->fd = fd;
     ret->auto_close = auto_close;
@@ -292,7 +291,7 @@ bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integrati
                 break;
             }
             if (milliseconds <= 0) {
-                integration->write(integration, message, strlen(message));
+                fd_write(integration, message, strlen(message));
             }
         } else {
             if (!termpaintx_full_integration_do_iteration(integration)) {
@@ -324,7 +323,7 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     if (amount < 0) {
         return false;
     }
-    integration->awaiting_response = false;
+    t->awaiting_response = false;
     termpaint_terminal_add_input_data(t->terminal, buff, amount);
 
     if (t->callback_requested) {
@@ -338,7 +337,7 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
             if (amount < 0) {
                 return false;
             }
-            integration->awaiting_response = false;
+            t->awaiting_response = false;
             termpaint_terminal_add_input_data(t->terminal, buff, amount);
         }
         termpaint_terminal_callback(t->terminal);
@@ -367,7 +366,7 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
         if (amount < 0) {
             return false;
         }
-        integration->awaiting_response = false;
+        t->awaiting_response = false;
         termpaint_terminal_add_input_data(t->terminal, buff, amount);
 
         if (t->callback_requested) {
@@ -384,7 +383,7 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
                 if (amount < 0) {
                     return false;
                 }
-                integration->awaiting_response = false;
+                t->awaiting_response = false;
                 termpaint_terminal_add_input_data(t->terminal, buff, amount);
             }
             termpaint_terminal_callback(t->terminal);
@@ -424,7 +423,7 @@ bool termpaint_full_integration_ttyrescue_start(termpaint_integration *integrati
     if (t->rescue || !t->terminal) return false;
     t->rescue = termpaint_ttyrescue_start(t->fd, termpaint_terminal_restore_sequence(t->terminal));
     if (t->rescue) {
-        integration->restore_sequence_updated = fd_restore_sequence_updated;
+        termpaint_integration_set_restore_sequence_updated(integration, fd_restore_sequence_updated);
         termpaint_ttyrescue_set_restore_termios(t->rescue, &t->original_terminal_attributes);
         return true;
     }

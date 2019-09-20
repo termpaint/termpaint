@@ -235,9 +235,9 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
 
     memset(&integration, 0, sizeof(integration));
 
-    integration.free = [] (termpaint_integration* ptr) {
+    auto free = [] (termpaint_integration* ptr) {
     };
-    integration.write = [] (termpaint_integration* ptr, const char *data, int length) {
+    auto write = [] (termpaint_integration* ptr, const char *data, int length) {
         auto t = container_of(ptr, SshServer, integration);
         t->outputBuffer += std::string(data, length);
         if (t->outputBuffer.size() > 1000) {
@@ -247,7 +247,7 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
             }
         }
     };
-    integration.flush = [] (termpaint_integration* ptr) {
+    auto flush = [] (termpaint_integration* ptr) {
         auto t = container_of(ptr, SshServer, integration);
         while (t->outputBuffer.size() > 0) {
             int written = ssh_channel_write(t->channel, t->outputBuffer.data(), t->outputBuffer.size());
@@ -258,14 +258,17 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
             }
         }
     };
-    integration.is_bad = [] (termpaint_integration* ptr) {
-        return false;
-    };
 
-    integration.request_callback = [] (termpaint_integration* ptr) {
+    termpaint_integration_init(&integration, free, write, flush);
+
+    termpaint_integration_set_is_bad(&integration, [] (termpaint_integration* ptr) {
+        return false;
+    });
+
+    termpaint_integration_set_request_callback(&integration, [] (termpaint_integration* ptr) {
         auto t = container_of(ptr, SshServer, integration);
         t->callback_requested = true;
-    };
+    });
 
     terminal = termpaint_terminal_new(&integration);
     //termpaint_auto_detect(surface);
@@ -281,7 +284,7 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
 
     main([&] () -> bool {
         newInput = false;
-        integration.flush(&integration);
+        flush(&integration);
         do {
             int timeout = -1;
             if (callback_requested) {
@@ -305,4 +308,5 @@ void SshServer::handleSession(ssh_event event, ssh_session session) {
     for (n = 0; n < 50 && (ssh_get_status(session) & (SSH_CLOSED | SSH_CLOSED_ERROR)) == 0; n++) {
         ssh_event_dopoll(event, 100);
     }
+    termpaint_integration_deinit(&integration);
 }
