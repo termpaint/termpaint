@@ -21,6 +21,8 @@
 #define MAYBE_UNUSED
 #endif
 
+// sanitizer builds report spurious failures with codecvt and libstdc++, work around using iconv
+#ifndef __GLIBCXX__
 std::u16string toUtf16(std::string data) {
     return std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(data);
 }
@@ -33,6 +35,70 @@ std::u32string toUtf32(std::u16string data) {
     return std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>{}.from_bytes(
     reinterpret_cast<const char*>(data.c_str()), reinterpret_cast<const char*>(data.c_str() + data.size()));
 }
+#else
+#include <iconv.h>
+
+class iconv_cache { // keep one context to avoid repeatedly loading/unloading in glibc
+public:
+    iconv_cache(const char *tocode, const char *fromcode) {
+        cache = iconv_open(tocode, fromcode);
+    }
+
+    ~iconv_cache() {
+        iconv_close(cache);
+    }
+private:
+    iconv_t cache;
+};
+
+std::u16string toUtf16(std::string data) {
+    static auto convx = iconv_cache("UTF-16", "UTF-8");
+    iconv_t conv = iconv_open("UTF-16", "UTF-8");
+    REQUIRE( conv != reinterpret_cast<iconv_t>(-1));
+    const char *pin = data.data();
+    std::vector<char16_t> outbuffer;
+    outbuffer.resize(2 + data.size()); // zero termination plus BOM
+    char *pout = reinterpret_cast<char*>(outbuffer.data());
+    size_t inlen = data.size() + 1;
+    size_t outlen = outbuffer.size() * sizeof (char16_t);
+    size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
+    REQUIRE(retval != static_cast<size_t>(-1));
+    iconv_close(conv);
+    return std::u16string { outbuffer.data() + 1 };
+}
+
+std::u32string toUtf32(std::string data) {
+    static auto convx = iconv_cache("UTF-32", "UTF-8"); // keep one context to avoid repeatedly loading/unloading in glibc
+    iconv_t conv = iconv_open("UTF-32", "UTF-8");
+    REQUIRE( conv != reinterpret_cast<iconv_t>(-1));
+    const char *pin = data.data();
+    std::vector<char32_t> outbuffer;
+    outbuffer.resize(2 + data.size()); // zero termination plus BOM
+    char *pout = reinterpret_cast<char*>(outbuffer.data());
+    size_t inlen = data.size() + 1;
+    size_t outlen = outbuffer.size() * sizeof (char32_t);
+    size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
+    REQUIRE(retval != static_cast<size_t>(-1));
+    iconv_close(conv);
+    return std::u32string { outbuffer.data() + 1 };
+}
+
+std::u32string toUtf32(std::u16string data) {
+    static auto convx = iconv_cache("UTF-32", "UTF-16"); // keep one context to avoid repeatedly loading/unloading in glibc
+    iconv_t conv = iconv_open("UTF-32", "UTF-16");
+    REQUIRE( conv != reinterpret_cast<iconv_t>(-1));
+    const char *pin = reinterpret_cast<const char*>(data.data());
+    std::vector<char32_t> outbuffer;
+    outbuffer.resize(2 + data.size()); // zero termination plus BOM
+    char *pout = reinterpret_cast<char*>(outbuffer.data());
+    size_t inlen = (data.size() + 1) * 2;
+    size_t outlen = outbuffer.size() * sizeof (char32_t);
+    size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
+    REQUIRE(retval != static_cast<size_t>(-1));
+    iconv_close(conv);
+    return std::u32string { outbuffer.data() + 1 };
+}
+#endif
 
 
 template <typename T>
