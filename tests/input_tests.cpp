@@ -526,117 +526,116 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
         std::string rawInputHex = caseobj["raw"].get<std::string>();
         std::string sectionName = caseobj["keyId"].get<std::string>() + "-" + rawInputHex;
 
-        SECTION( sectionName ) {
-            CAPTURE(rawInputHex);
-            std::string rawInput;
-            for (int i=0; i < rawInputHex.size(); i+=2) {
-                unsigned char ch;
-                ch = (hexToInt(rawInputHex[i]) << 4) + hexToInt(rawInputHex[i+1]);
-                rawInput.push_back(static_cast<char>(ch));
-            }
-
-            std::string expectedType = caseobj["type"].get<std::string>();
-            std::string expectedValue;
-            if (expectedType == "key") {
-                expectedValue = caseobj["key"].get<std::string>();
-            } else if (expectedType == "char") {
-                expectedValue = caseobj["chars"].get<std::string>();
-            } else {
-                FAIL("Type in fixture not right: " + expectedType);
-            }
-            std::string expectedModStr = caseobj["mod"].get<std::string>();
-            CAPTURE(expectedType);
-            CAPTURE(expectedModStr);
-            CAPTURE(expectedValue);
-
-            enum { START, GOT_EVENT, GOT_SYNC } state = START;
-            bool expectSync = false;
-
-            std::function<void(termpaint_event* event)> event_callback
-                    = [&] (termpaint_event* event) -> void {
-                if (state == GOT_EVENT && !expectSync) {
-                    FAIL("more events than expected");
-                } else if (state == START) {
-                    std::string actualType;
-                    std::string actualValue;
-                    int actualModifier = 0;
-                    if (event->type == TERMPAINT_EV_CHAR) {
-                        actualType = "char";
-                        actualValue = std::string(event->c.string, event->c.length);
-                        actualModifier = event->c.modifier;
-                    } else if (event->type == TERMPAINT_EV_KEY) {
-                        actualType = "key";
-                        actualValue = std::string(event->key.atom);
-                        actualModifier = event->key.modifier;
-                    } else {
-                        actualType = "???";
-                    }
-                    int expectedMod = 0;
-                    if (expectedModStr.find('S') != std::string::npos) {
-                        expectedMod |= TERMPAINT_MOD_SHIFT;
-                    }
-                    if (expectedModStr.find('A') != std::string::npos) {
-                        expectedMod |= TERMPAINT_MOD_ALT;
-                    }
-                    if (expectedModStr.find('C') != std::string::npos) {
-                        expectedMod |= TERMPAINT_MOD_CTRL;
-                    }
-                    CAPTURE(actualValue);
-                    REQUIRE(expectedType == actualType);
-                    if (event->type == TERMPAINT_EV_CHAR) {
-                        REQUIRE(expectedValue.size() == event->c.length);
-                    }
-                    REQUIRE(expectedValue == actualValue);
-                    REQUIRE(expectedMod == actualModifier);
-                    state = GOT_EVENT;
-                } else if (state == GOT_EVENT) {
-                    bool wasSync = event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync();
-                    REQUIRE(wasSync);
-                    state = GOT_SYNC;
-                } else {
-                    FAIL("unexpected state " << state);
-                }
-            };
-
-            if (rawInputHex == "1b" // ESC: the traditional hard case
-                    || rawInputHex == "1b1b" // alt ESC
-                    || rawInputHex == "1b50"
-                    || rawInputHex == "1b4f"
-                    // various urxvt sequences end in '$', which is not a final character for CSI
-                    || rawInputHex == "1b5b323324" // urxvt F11.S
-                    || rawInputHex == "1b1b5b323324" // urxvt F11.SA
-                    || rawInputHex == "1b5b323424" // urxvt F12.S
-                    || rawInputHex == "1b1b5b323424" // urxvt F12.SA
-                    || rawInputHex == "1b5b3224" // urxvt Insert.S
-                    || rawInputHex == "1b1b5b3224" // urxvt Insert.SA
-                    || rawInputHex == "1b5b3324" // urxvt Delete.S
-                    || rawInputHex == "1b1b5b3324" // urxvt Delete.SA
-                    || rawInputHex == "1b5b3524" // urxvt PageUp.S
-                    || rawInputHex == "1b1b5b3524" // urxvt PageUp.SA
-                    || rawInputHex == "1b5b3624" // urxvt PageDown.S
-                    || rawInputHex == "1b1b5b3624" // urxvt PageDown.SA
-                    || rawInputHex == "1b5b3724" // urxvt Home.S
-                    || rawInputHex == "1b1b5b3724" // urxvt Home.SA
-                    || rawInputHex == "1b5b3824" // urxvt End.S
-                    || rawInputHex == "1b1b5b3824" // urxvt End.SA
-                    ) {
-                expectSync = true;
-            }
-
-            termpaint_input *input_ctx = termpaint_input_new();
-            wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
-            std::string input;
-            termpaint_input_add_data(input_ctx, rawInput.data(), rawInput.size());
-            if (!expectSync) {
-                REQUIRE(state == GOT_EVENT);
-            } else {
-                REQUIRE(state == START);
-                termpaint_input_add_data(input_ctx, "\e[0n", 4);
-                REQUIRE(state == GOT_SYNC);
-            }
-            REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
-            termpaint_input_free(input_ctx);
+        CAPTURE(sectionName);
+        CAPTURE(rawInputHex);
+        std::string rawInput;
+        for (int i=0; i < rawInputHex.size(); i+=2) {
+            unsigned char ch;
+            ch = (hexToInt(rawInputHex[i]) << 4) + hexToInt(rawInputHex[i+1]);
+            rawInput.push_back(static_cast<char>(ch));
         }
+
+        std::string expectedType = caseobj["type"].get<std::string>();
+        std::string expectedValue;
+        if (expectedType == "key") {
+            expectedValue = caseobj["key"].get<std::string>();
+        } else if (expectedType == "char") {
+            expectedValue = caseobj["chars"].get<std::string>();
+        } else {
+            FAIL("Type in fixture not right: " + expectedType);
+        }
+        std::string expectedModStr = caseobj["mod"].get<std::string>();
+        CAPTURE(expectedType);
+        CAPTURE(expectedModStr);
+        CAPTURE(expectedValue);
+
+        enum { START, GOT_EVENT, GOT_SYNC } state = START;
+        bool expectSync = false;
+
+        std::function<void(termpaint_event* event)> event_callback
+                = [&] (termpaint_event* event) -> void {
+            if (state == GOT_EVENT && !expectSync) {
+                FAIL("more events than expected");
+            } else if (state == START) {
+                std::string actualType;
+                std::string actualValue;
+                int actualModifier = 0;
+                if (event->type == TERMPAINT_EV_CHAR) {
+                    actualType = "char";
+                    actualValue = std::string(event->c.string, event->c.length);
+                    actualModifier = event->c.modifier;
+                } else if (event->type == TERMPAINT_EV_KEY) {
+                    actualType = "key";
+                    actualValue = std::string(event->key.atom);
+                    actualModifier = event->key.modifier;
+                } else {
+                    actualType = "???";
+                }
+                int expectedMod = 0;
+                if (expectedModStr.find('S') != std::string::npos) {
+                    expectedMod |= TERMPAINT_MOD_SHIFT;
+                }
+                if (expectedModStr.find('A') != std::string::npos) {
+                    expectedMod |= TERMPAINT_MOD_ALT;
+                }
+                if (expectedModStr.find('C') != std::string::npos) {
+                    expectedMod |= TERMPAINT_MOD_CTRL;
+                }
+                CAPTURE(actualValue);
+                REQUIRE(expectedType == actualType);
+                if (event->type == TERMPAINT_EV_CHAR) {
+                    REQUIRE(expectedValue.size() == event->c.length);
+                }
+                REQUIRE(expectedValue == actualValue);
+                REQUIRE(expectedMod == actualModifier);
+                state = GOT_EVENT;
+            } else if (state == GOT_EVENT) {
+                bool wasSync = event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync();
+                REQUIRE(wasSync);
+                state = GOT_SYNC;
+            } else {
+                FAIL("unexpected state " << state);
+            }
+        };
+
+        if (rawInputHex == "1b" // ESC: the traditional hard case
+                || rawInputHex == "1b1b" // alt ESC
+                || rawInputHex == "1b50"
+                || rawInputHex == "1b4f"
+                // various urxvt sequences end in '$', which is not a final character for CSI
+                || rawInputHex == "1b5b323324" // urxvt F11.S
+                || rawInputHex == "1b1b5b323324" // urxvt F11.SA
+                || rawInputHex == "1b5b323424" // urxvt F12.S
+                || rawInputHex == "1b1b5b323424" // urxvt F12.SA
+                || rawInputHex == "1b5b3224" // urxvt Insert.S
+                || rawInputHex == "1b1b5b3224" // urxvt Insert.SA
+                || rawInputHex == "1b5b3324" // urxvt Delete.S
+                || rawInputHex == "1b1b5b3324" // urxvt Delete.SA
+                || rawInputHex == "1b5b3524" // urxvt PageUp.S
+                || rawInputHex == "1b1b5b3524" // urxvt PageUp.SA
+                || rawInputHex == "1b5b3624" // urxvt PageDown.S
+                || rawInputHex == "1b1b5b3624" // urxvt PageDown.SA
+                || rawInputHex == "1b5b3724" // urxvt Home.S
+                || rawInputHex == "1b1b5b3724" // urxvt Home.SA
+                || rawInputHex == "1b5b3824" // urxvt End.S
+                || rawInputHex == "1b1b5b3824" // urxvt End.SA
+                ) {
+            expectSync = true;
+        }
+
+        termpaint_input *input_ctx = termpaint_input_new();
+        wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+        std::string input;
+        termpaint_input_add_data(input_ctx, rawInput.data(), rawInput.size());
+        if (!expectSync) {
+            REQUIRE(state == GOT_EVENT);
+        } else {
+            REQUIRE(state == START);
+            termpaint_input_add_data(input_ctx, "\e[0n", 4);
+            REQUIRE(state == GOT_SYNC);
+        }
+        REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+        termpaint_input_free(input_ctx);
     }
 }
 
