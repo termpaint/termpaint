@@ -696,12 +696,18 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
 
             // check termpaintp_utf8_decode_from_utf8 precondition
             for (int i = 0; i < size; i++) {
-                if (string[i] == 0) {
+                if (string[input_bytes_used + i] == 0) {
                     // bogus, bail
                     return;
                 }
             }
-            int codepoint = termpaintp_utf8_decode_from_utf8(string + input_bytes_used, size);
+            int codepoint;
+            if (termpaintp_check_valid_sequence(string + input_bytes_used, size)) {
+                codepoint = termpaintp_utf8_decode_from_utf8(string + input_bytes_used, size);
+            } else {
+                // This is bogus usage, but just paper over it
+                codepoint = 0xFFFD;
+            }
             codepoint = replace_unusable_codepoints(codepoint);
 
             int width = termpaintp_char_width(codepoint);
