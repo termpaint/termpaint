@@ -352,7 +352,8 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
 
     char buff[1000];
 
-    time_t start_time = time(nullptr);
+    struct timespec start_time;
+    clock_gettime(CLOCK_REALTIME, &start_time);
 
     int ret;
     {
@@ -371,7 +372,12 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
 
         if (t->callback_requested) {
             t->callback_requested = false;
-            int remaining = *milliseconds - (int)(1000 * difftime(time(nullptr), start_time));
+
+            struct timespec now;
+            clock_gettime(CLOCK_REALTIME, &now);
+            long remaining = *milliseconds
+                    - ((now.tv_sec - start_time.tv_sec) * 1000
+                       + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000);
             if (remaining > 0) {
                 struct pollfd info;
                 info.fd = t->fd;
@@ -388,7 +394,11 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
             }
             termpaint_terminal_callback(t->terminal);
         }
-        *milliseconds -= (int)(1000 * difftime(time(nullptr), start_time));
+
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        *milliseconds -= (int)((now.tv_sec - start_time.tv_sec) * 1000
+                               + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000);
     } else {
         *milliseconds = 0;
     }
