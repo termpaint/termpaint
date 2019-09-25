@@ -120,6 +120,12 @@ image_lib_files = [
 image_lib = library('termpaint_image', image_lib_files, link_with: [main_lib],
                     install: true)
 
+image_lib_installed_headers = [
+  'termpaint_image.h',
+]
+
+install_headers(image_lib_installed_headers)
+
 import('pkgconfig').generate(image_lib,
   subdirs : '.',
   version : '0.0',
