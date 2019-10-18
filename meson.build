@@ -193,3 +193,15 @@ test_files = [
 ]
 
 test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings]))
+
+#ide:editable-filelist
+test_terminaloutput_files = [
+  'tests/terminaloutput.cpp',
+  'tests/terminaloutput_main.cpp',
+]
+
+test('testtermpaint_terminaloutput', executable('testtermpaint_terminaloutput',
+  test_terminaloutput_files,
+  link_with: [main_lib],
+  dependencies: dependency('threads'),
+  cpp_args: ['-fno-inline', silence_warnings]))
