@@ -140,6 +140,64 @@ TEST_CASE("double width") {
     });
 }
 
+TEST_CASE("chars that get substituted") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 3, 3, "a\004\u00ad\u0088x", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    checkEmptyPlusSome(s, {
+        {{ 3, 3 }, simpleChar("a")},
+        {{ 4, 3 }, simpleChar(" ")},
+        {{ 5, 3 }, simpleChar("-")},
+        {{ 6, 3 }, simpleChar(" ")},
+        {{ 7, 3 }, simpleChar("x")},
+    });
+}
+
+TEST_CASE("vanish chars") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 3, 3, "あえ", TERMPAINT_NAMED_COLOR + 1, TERMPAINT_NAMED_COLOR + 2);
+
+    termpaint_surface_write_with_colors(t.surface, 4, 3, "ab", TERMPAINT_NAMED_COLOR + 3, TERMPAINT_NAMED_COLOR + 4);
+
+    termpaint_terminal_flush(t.terminal, true);
+
+    CapturedState s = capture();
+
+    checkEmptyPlusSome(s, {
+        {{ 3, 3 }, simpleChar(" ").withBg("green").withFg("red")},
+        {{ 4, 3 }, simpleChar("a").withBg("blue").withFg("yellow")},
+        {{ 5, 3 }, simpleChar("b").withBg("blue").withFg("yellow")},
+        {{ 6, 3 }, simpleChar(" ").withBg("green").withFg("red")},
+    });
+}
+
+TEST_CASE("vanish chars - incremental") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 3, 3, "あえ", TERMPAINT_NAMED_COLOR + 1, TERMPAINT_NAMED_COLOR + 2);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    termpaint_surface_write_with_colors(t.surface, 4, 3, "ab", TERMPAINT_NAMED_COLOR + 3, TERMPAINT_NAMED_COLOR + 4);
+
+    termpaint_terminal_flush(t.terminal, true);
+
+    CapturedState s = capture();
+
+    checkEmptyPlusSome(s, {
+        {{ 3, 3 }, simpleChar(" ").withBg("green").withFg("red")},
+        {{ 4, 3 }, simpleChar("a").withBg("blue").withFg("yellow")},
+        {{ 5, 3 }, simpleChar("b").withBg("blue").withFg("yellow")},
+        {{ 6, 3 }, simpleChar(" ").withBg("green").withFg("red")},
+    });
+}
+
 TEST_CASE("rgb colors") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
@@ -352,6 +410,10 @@ TEST_CASE("mouse mode: clicks") {
     checkEmptyPlusSome(s, {});
 
     CHECK(s.mouseMode == "clicks");
+
+    termpaint_terminal_set_mouse_mode(t.terminal, TERMPAINT_MOUSE_MODE_OFF);
+    s = capture();
+    CHECK(s.mouseMode == "");
 }
 
 TEST_CASE("mouse mode: drag") {
@@ -512,6 +574,17 @@ TEST_CASE("title") {
     CHECK(s.title == "fancy title");
 }
 
+TEST_CASE("title with chars that get substituted") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_set_title(t.terminal, "fancy\005\u00ad\u0087title", TERMPAINT_TITLE_MODE_PREFER_RESTORE);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    CHECK(s.title == "fancy - title");
+}
+
 TEST_CASE("icon title") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
@@ -531,3 +604,42 @@ TEST_CASE("no alt screen") {
     CapturedState s = capture();
     CHECK(s.altScreen == false);
 }
+
+
+TEST_CASE("basic pause") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, {});
+
+    CHECK(s.altScreen == true);
+    CHECK(s.invScreen == false);
+
+    termpaint_terminal_pause(t.terminal);
+
+    s = capture();
+    CHECK(s.altScreen == false);
+
+    termpaint_terminal_unpause(t.terminal);
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    checkEmptyPlusSome(s, {});
+
+    CHECK(s.altScreen == true);
+}
+
+TEST_CASE("bell") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+    termpaint_terminal_bell(t.terminal);
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, {});
+
+    CHECK(*asyncQueue.pop() == "*bell");
+}
+

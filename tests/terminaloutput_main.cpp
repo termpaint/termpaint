@@ -21,7 +21,7 @@ Queue queue;
 Queue asyncQueue;
 
 void driver_quit() {
-    char msg[] = "quit";
+    char msg[] = "set:auto-quit";
     write(driverFd, msg, sizeof(msg));
 }
 

@@ -22,7 +22,9 @@ public:
     std::unique_ptr<std::string> pop() {
         std::unique_lock<std::mutex> lock(mutex);
         while (queue.empty()) {
-            cond.wait(lock);
+            if (cond.wait_for(lock, std::chrono::milliseconds(500)) == std::cv_status::timeout) {
+                return nullptr;
+            }
         }
         auto item = move(queue.front());
         queue.pop();
