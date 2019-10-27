@@ -78,6 +78,7 @@ struct termpaint_attr_ {
 
     uint16_t flags;
 
+    // If no patch is active all these are 0, otherwise both setup and cleanup contain non zero pointers.
     bool patch_optimize;
     unsigned char* patch_setup;
     unsigned char* patch_cleanup;
@@ -2710,18 +2711,16 @@ void termpaint_attr_reset_style(termpaint_attr *attr) {
 }
 
 void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *setup, const char *cleanup) {
-    attr->patch_optimize = optimize;
     free(attr->patch_setup);
-    if (setup) {
-        attr->patch_setup = strdup(setup);
-    } else {
-        attr->patch_setup = nullptr;
-    }
+    attr->patch_setup = nullptr;
     free(attr->patch_cleanup);
-    if (cleanup) {
-        attr->patch_cleanup = strdup(cleanup);
+    attr->patch_cleanup = nullptr;
+    if (!setup || !cleanup) {
+        attr->patch_optimize = false;
     } else {
-        attr->patch_cleanup = nullptr;
+        attr->patch_optimize = optimize;
+        attr->patch_setup = strdup(setup);
+        attr->patch_cleanup = strdup(cleanup);
     }
 }
 
