@@ -2661,9 +2661,11 @@ termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
 
     if (orig->patch_setup) {
         attr->patch_setup = strdup(orig->patch_setup);
+        attr->patch_optimize = orig->patch_optimize;
     }
     if (orig->patch_cleanup) {
         attr->patch_cleanup = strdup(orig->patch_cleanup);
+        attr->patch_optimize = orig->patch_optimize;
     }
     return attr;
 }
