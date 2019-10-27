@@ -295,12 +295,14 @@ int main( int argc, char* argv[] ) {
     Catch::Session session;
 
     std::string testdriver;
+    bool valgrind = false;
 
     using namespace Catch::clara;
 
     auto cli
       = session.cli()
-          | Opt(testdriver, "testdriver")["--driver"].required();
+          | Opt(testdriver, "testdriver")["--driver"].required()
+          | Opt( valgrind )["--valgrind"];
 
     session.cli( cli );
 
@@ -320,6 +322,10 @@ int main( int argc, char* argv[] ) {
         return retval;
     } else {
         auto args = std::vector<char*>{argv, argv + argc};
+        if (valgrind) {
+            args.insert(begin(args), strdup("--log-file=testtermpaint_terminaloutput.valgrind.txt"));
+            args.insert(begin(args), strdup("valgrind"));
+        }
         args.insert(begin(args), strdup("--"));
         args.insert(begin(args), strdup("--control-via-fd0"));
         args.insert(begin(args), strdup(testdriver.data()));
