@@ -990,7 +990,7 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
         height += dst_y;
         dst_y = 0;
     }
-    if (dst_x + width >= dst_surface->width) {
+    if (dst_x + width > dst_surface->width) {
         width = dst_surface->width - dst_x;
         // also switch right mode to erase
         tile_right = TERMPAINT_COPY_NO_TILE;
