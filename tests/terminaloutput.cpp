@@ -161,9 +161,9 @@ TEST_CASE("chars that get substituted") {
 TEST_CASE("vanish chars") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 3, 3, "あえ", TERMPAINT_NAMED_COLOR + 1, TERMPAINT_NAMED_COLOR + 2);
+    termpaint_surface_write_with_colors(t.surface, 3, 3, "あえ", TERMPAINT_COLOR_RED, TERMPAINT_COLOR_GREEN);
 
-    termpaint_surface_write_with_colors(t.surface, 4, 3, "ab", TERMPAINT_NAMED_COLOR + 3, TERMPAINT_NAMED_COLOR + 4);
+    termpaint_surface_write_with_colors(t.surface, 4, 3, "ab", TERMPAINT_COLOR_YELLOW, TERMPAINT_COLOR_BLUE);
 
     termpaint_terminal_flush(t.terminal, true);
 
@@ -180,11 +180,11 @@ TEST_CASE("vanish chars") {
 TEST_CASE("vanish chars - incremental") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 3, 3, "あえ", TERMPAINT_NAMED_COLOR + 1, TERMPAINT_NAMED_COLOR + 2);
+    termpaint_surface_write_with_colors(t.surface, 3, 3, "あえ", TERMPAINT_COLOR_RED, TERMPAINT_COLOR_GREEN);
 
     termpaint_terminal_flush(t.terminal, false);
 
-    termpaint_surface_write_with_colors(t.surface, 4, 3, "ab", TERMPAINT_NAMED_COLOR + 3, TERMPAINT_NAMED_COLOR + 4);
+    termpaint_surface_write_with_colors(t.surface, 4, 3, "ab", TERMPAINT_COLOR_YELLOW, TERMPAINT_COLOR_BLUE);
 
     termpaint_terminal_flush(t.terminal, true);
 
@@ -225,22 +225,22 @@ TEST_CASE("rgb colors") {
 TEST_CASE("named fg colors") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 3,  3, " ", TERMPAINT_NAMED_COLOR +  0, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 4,  3, " ", TERMPAINT_NAMED_COLOR +  1, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 5,  3, " ", TERMPAINT_NAMED_COLOR +  2, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 6,  3, " ", TERMPAINT_NAMED_COLOR +  3, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 7,  3, " ", TERMPAINT_NAMED_COLOR +  4, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 8,  3, " ", TERMPAINT_NAMED_COLOR +  5, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 9,  3, " ", TERMPAINT_NAMED_COLOR +  6, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 10, 3, " ", TERMPAINT_NAMED_COLOR +  7, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 3,  4, " ", TERMPAINT_NAMED_COLOR +  8, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 4,  4, " ", TERMPAINT_NAMED_COLOR +  9, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 5,  4, " ", TERMPAINT_NAMED_COLOR + 10, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 6,  4, " ", TERMPAINT_NAMED_COLOR + 11, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 7,  4, " ", TERMPAINT_NAMED_COLOR + 12, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 8,  4, " ", TERMPAINT_NAMED_COLOR + 13, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 9,  4, " ", TERMPAINT_NAMED_COLOR + 14, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 10, 4, " ", TERMPAINT_NAMED_COLOR + 15, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 3,  3, " ", TERMPAINT_COLOR_BLACK, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 4,  3, " ", TERMPAINT_COLOR_RED, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 5,  3, " ", TERMPAINT_COLOR_GREEN, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 6,  3, " ", TERMPAINT_COLOR_YELLOW, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 7,  3, " ", TERMPAINT_COLOR_BLUE, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 8,  3, " ", TERMPAINT_COLOR_MAGENTA, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 9,  3, " ", TERMPAINT_COLOR_CYAN, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 10, 3, " ", TERMPAINT_COLOR_LIGHT_GREY, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 3,  4, " ", TERMPAINT_COLOR_DARK_GREY, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 4,  4, " ", TERMPAINT_COLOR_BRIGHT_RED, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 5,  4, " ", TERMPAINT_COLOR_BRIGHT_GREEN, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 6,  4, " ", TERMPAINT_COLOR_BRIGHT_YELLOW, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 7,  4, " ", TERMPAINT_COLOR_BRIGHT_BLUE, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 8,  4, " ", TERMPAINT_COLOR_BRIGHT_MAGENTA, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 9,  4, " ", TERMPAINT_COLOR_BRIGHT_CYAN, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 10, 4, " ", TERMPAINT_COLOR_WHITE, TERMPAINT_DEFAULT_COLOR);
 
     termpaint_terminal_flush(t.terminal, false);
 
@@ -269,22 +269,22 @@ TEST_CASE("named fg colors") {
 TEST_CASE("named bg colors") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
-    termpaint_surface_write_with_colors(t.surface, 3,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  0);
-    termpaint_surface_write_with_colors(t.surface, 4,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  1);
-    termpaint_surface_write_with_colors(t.surface, 5,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  2);
-    termpaint_surface_write_with_colors(t.surface, 6,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  3);
-    termpaint_surface_write_with_colors(t.surface, 7,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  4);
-    termpaint_surface_write_with_colors(t.surface, 8,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  5);
-    termpaint_surface_write_with_colors(t.surface, 9,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  6);
-    termpaint_surface_write_with_colors(t.surface, 10, 3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  7);
-    termpaint_surface_write_with_colors(t.surface, 3,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  8);
-    termpaint_surface_write_with_colors(t.surface, 4,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR +  9);
-    termpaint_surface_write_with_colors(t.surface, 5,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR + 10);
-    termpaint_surface_write_with_colors(t.surface, 6,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR + 11);
-    termpaint_surface_write_with_colors(t.surface, 7,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR + 12);
-    termpaint_surface_write_with_colors(t.surface, 8,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR + 13);
-    termpaint_surface_write_with_colors(t.surface, 9,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR + 14);
-    termpaint_surface_write_with_colors(t.surface, 10, 4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_NAMED_COLOR + 15);
+    termpaint_surface_write_with_colors(t.surface, 3,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BLACK);
+    termpaint_surface_write_with_colors(t.surface, 4,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_RED);
+    termpaint_surface_write_with_colors(t.surface, 5,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_GREEN);
+    termpaint_surface_write_with_colors(t.surface, 6,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_YELLOW);
+    termpaint_surface_write_with_colors(t.surface, 7,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 8,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_MAGENTA);
+    termpaint_surface_write_with_colors(t.surface, 9,  3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_CYAN);
+    termpaint_surface_write_with_colors(t.surface, 10, 3, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_LIGHT_GREY);
+    termpaint_surface_write_with_colors(t.surface, 3,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_DARK_GREY);
+    termpaint_surface_write_with_colors(t.surface, 4,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_write_with_colors(t.surface, 5,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_GREEN);
+    termpaint_surface_write_with_colors(t.surface, 6,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_YELLOW);
+    termpaint_surface_write_with_colors(t.surface, 7,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 8,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_MAGENTA);
+    termpaint_surface_write_with_colors(t.surface, 9,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_CYAN);
+    termpaint_surface_write_with_colors(t.surface, 10, 4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_WHITE);
 
     termpaint_terminal_flush(t.terminal, false);
 
