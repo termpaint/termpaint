@@ -489,6 +489,14 @@ static inline cell* termpaintp_getcell(const termpaint_surface *surface, int x, 
     }
 }
 
+static void termpaintp_set_overflow_text(termpaint_surface *surface, cell *dst_cell, const unsigned char* data) {
+    // hash_ensure needs to be done before touching text_len, because it can cause garbage collection which would
+    // see an inconistant state if text_len is already set to zero.
+    void* overflow_ptr = termpaintp_hash_ensure(&surface->overflow_text, data);
+    dst_cell->text_len = 0;
+    dst_cell->text_overflow = overflow_ptr;
+}
+
 static void termpaintp_surface_destroy(termpaint_surface *surface) {
     free(surface->cells);
     free(surface->cells_last_flush);
@@ -771,8 +779,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
                 c->text_len = output_bytes_used;
             } else {
                 cluster_utf8[output_bytes_used] = 0;
-                c->text_len = 0;
-                c->text_overflow = termpaintp_hash_ensure(&surface->overflow_text, cluster_utf8);
+                termpaintp_set_overflow_text(surface, c, cluster_utf8);
             }
             for (int i = 1; i < cluster_width; i++) {
                 cell *c = termpaintp_getcell(surface, x + i, y);
@@ -1041,8 +1048,7 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
                             memcpy(dst_scan->text, src_scan->text, src_scan->text_len);
                             dst_scan->text_len = src_scan->text_len;
                         } else if (src_scan->text_len == 0) {
-                            dst_scan->text_len = 0;
-                            dst_scan->text_overflow = termpaintp_hash_ensure(&dst_surface->overflow_text, src_scan->text_overflow->text);
+                            termpaintp_set_overflow_text(dst_surface, dst_scan, src_scan->text_overflow->text);
                         }
                     }
                 }
@@ -1112,8 +1118,7 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
                         memcpy(dst_cell->text, src_cell->text, src_cell->text_len);
                         dst_cell->text_len = src_cell->text_len;
                     } else if (src_cell->text_len == 0) {
-                        dst_cell->text_len = 0;
-                        dst_cell->text_overflow = termpaintp_hash_ensure(&dst_surface->overflow_text, src_cell->text_overflow->text);
+                        termpaintp_set_overflow_text(dst_surface, dst_cell, src_cell->text_overflow->text);
                     }
                 } else {
                     dst_cell->text_len = 1;
