@@ -2596,7 +2596,7 @@ void termpaint_terminal_unpause(termpaint_terminal *term) {
 
     // other did_* sequences
     if (term->did_terminal_enable_mouse) {
-        int_puts(integration, "\033[1015?h\033[?1006h");
+        int_puts(integration, "\033[?1015h\033[?1006h");
     }
 
     // the rest
@@ -3115,7 +3115,7 @@ void termpaint_terminal_bell(termpaint_terminal *term) {
     int_flush(integration);
 }
 
-#define DISABLE_MOUSE_SEQUENCE "\033[?1003l\033[?1002l\033[1000?l\033[?1006l\033[?1015l"
+#define DISABLE_MOUSE_SEQUENCE "\033[?1003l\033[?1002l\033[?1000l\033[?1006l\033[?1015l"
 
 void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode) {
     termpaint_integration *integration = term->integration;
@@ -3139,7 +3139,7 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
     }
     if (!term->did_terminal_enable_mouse) {
         term->did_terminal_enable_mouse = true;
-        int_puts(integration, "\033[1015?h\033[?1006h");
+        int_puts(integration, "\033[?1015h\033[?1006h");
     }
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "mouse");
@@ -3147,9 +3147,9 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
     if (mouse_mode == TERMPAINT_MOUSE_MODE_CLICKS) {
         termpaintp_str_assign(sequences, "\033[?1002l\033[?1003l\033[?1000h");
     } else if (mouse_mode == TERMPAINT_MOUSE_MODE_DRAG) {
-        termpaintp_str_assign(sequences, "\033[?1003l\033[1000?h\033[?1002h");
+        termpaintp_str_assign(sequences, "\033[?1003l\033[?1000h\033[?1002h");
     } else if (mouse_mode == TERMPAINT_MOUSE_MODE_MOVEMENT) {
-        termpaintp_str_assign(sequences, "\033[1000?h\033[?1002h\033[?1003h");
+        termpaintp_str_assign(sequences, "\033[?1000h\033[?1002h\033[?1003h");
     }
 
     int_put_tps(integration, sequences);
