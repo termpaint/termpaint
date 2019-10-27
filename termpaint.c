@@ -954,11 +954,13 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
                                  termpaint_surface *dst_surface, int dst_x, int dst_y, int tile_left, int tile_right) {
     if (x < 0) {
         width += x;
+        dst_x -= x;
         x = 0;
         // also switch left mode to erase
         tile_left = TERMPAINT_COPY_NO_TILE;
     }
     if (y < 0) {
+        dst_y -= y;
         height += y;
         y = 0;
     }
