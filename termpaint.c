@@ -509,6 +509,7 @@ static void termpaintp_surface_destroy(termpaint_surface *surface) {
             free(surface->patches[i].cleanup);
         }
         free(surface->patches);
+        surface->patches = nullptr;
     }
     termpaintp_collapse(surface);
 }
