@@ -3,6 +3,7 @@
 
 #include "../third-party/catch.hpp"
 
+#include <atomic>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -31,11 +32,14 @@ namespace Catch {
     std::ostream& clog() { return std::clog; }
 }
 
+std::atomic<bool> stopReader;
+
 void reader() {
     std::string item;
     while (true) {
         char buff[1000];
         ssize_t ret = read(driverFd, buff, sizeof(buff));
+        if (stopReader) continue; // we are stopping, just discard input
         if (ret < 0) {
             perror("reading from socket");
             std::terminate();
@@ -310,6 +314,7 @@ int main( int argc, char* argv[] ) {
         driverFd = std::atoi(getenv("DRIVERFD"));
         std::thread thr{reader};
         int retval = session.run();
+        stopReader.store(true);
         driver_quit();
         thr.detach();
         return retval;
