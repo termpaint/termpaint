@@ -1032,6 +1032,10 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
                             skip = false;
                             break;
                         }
+                        if (i == width - 1) {
+                            // whole line in src is one cluster, dst also has a cluster there
+                            xOffset = width;
+                        }
                     }
                 } else if (tile_left >= TERMPAINT_COPY_TILE_PUT && x > 0 && dst_x > 0) {
                     cell *src_scan = termpaintp_getcell(src_surface, x - 1, y + yOffset);
