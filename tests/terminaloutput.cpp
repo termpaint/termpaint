@@ -80,13 +80,13 @@ void checkEmptyPlusSome(const CapturedState &s, const std::map<std::tuple<int,in
     }
 }
 
-CapturedCell simpleChar(std::string ch) {
+CapturedCell singleWideChar(std::string ch) {
     CapturedCell c;
     c.data = ch;
     return c;
 }
 
-CapturedCell doubleWidthChar(std::string ch) {
+CapturedCell doubleWideChar(std::string ch) {
     CapturedCell c;
     c.data = ch;
     c.width = 2;
@@ -116,12 +116,12 @@ TEST_CASE("simple text") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 10, 3 }, simpleChar("S")},
-        {{ 11, 3 }, simpleChar("a")},
-        {{ 12, 3 }, simpleChar("m")},
-        {{ 13, 3 }, simpleChar("p")},
-        {{ 14, 3 }, simpleChar("l")},
-        {{ 15, 3 }, simpleChar("e")},
+        {{ 10, 3 }, singleWideChar("S")},
+        {{ 11, 3 }, singleWideChar("a")},
+        {{ 12, 3 }, singleWideChar("m")},
+        {{ 13, 3 }, singleWideChar("p")},
+        {{ 14, 3 }, singleWideChar("l")},
+        {{ 15, 3 }, singleWideChar("e")},
     });
 }
 
@@ -135,8 +135,8 @@ TEST_CASE("double width") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, doubleWidthChar("あ")},
-        {{ 5, 3 }, doubleWidthChar("え")},
+        {{ 3, 3 }, doubleWideChar("あ")},
+        {{ 5, 3 }, doubleWideChar("え")},
     });
 }
 
@@ -150,11 +150,11 @@ TEST_CASE("chars that get substituted") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar("a")},
-        {{ 4, 3 }, simpleChar(" ")},
-        {{ 5, 3 }, simpleChar("-")},
-        {{ 6, 3 }, simpleChar(" ")},
-        {{ 7, 3 }, simpleChar("x")},
+        {{ 3, 3 }, singleWideChar("a")},
+        {{ 4, 3 }, singleWideChar(" ")},
+        {{ 5, 3 }, singleWideChar("-")},
+        {{ 6, 3 }, singleWideChar(" ")},
+        {{ 7, 3 }, singleWideChar("x")},
     });
 }
 
@@ -170,10 +170,10 @@ TEST_CASE("vanish chars") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar(" ").withBg("green").withFg("red")},
-        {{ 4, 3 }, simpleChar("a").withBg("blue").withFg("yellow")},
-        {{ 5, 3 }, simpleChar("b").withBg("blue").withFg("yellow")},
-        {{ 6, 3 }, simpleChar(" ").withBg("green").withFg("red")},
+        {{ 3, 3 }, singleWideChar(" ").withBg("green").withFg("red")},
+        {{ 4, 3 }, singleWideChar("a").withBg("blue").withFg("yellow")},
+        {{ 5, 3 }, singleWideChar("b").withBg("blue").withFg("yellow")},
+        {{ 6, 3 }, singleWideChar(" ").withBg("green").withFg("red")},
     });
 }
 
@@ -191,10 +191,10 @@ TEST_CASE("vanish chars - incremental") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar(" ").withBg("green").withFg("red")},
-        {{ 4, 3 }, simpleChar("a").withBg("blue").withFg("yellow")},
-        {{ 5, 3 }, simpleChar("b").withBg("blue").withFg("yellow")},
-        {{ 6, 3 }, simpleChar(" ").withBg("green").withFg("red")},
+        {{ 3, 3 }, singleWideChar(" ").withBg("green").withFg("red")},
+        {{ 4, 3 }, singleWideChar("a").withBg("blue").withFg("yellow")},
+        {{ 5, 3 }, singleWideChar("b").withBg("blue").withFg("yellow")},
+        {{ 6, 3 }, singleWideChar(" ").withBg("green").withFg("red")},
     });
 }
 
@@ -213,12 +213,12 @@ TEST_CASE("rgb colors") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar("r").withFg("#ff8080")},
-        {{ 4, 3 }, simpleChar("g").withFg("#80ff80")},
-        {{ 5, 3 }, simpleChar("b").withFg("#8080ff")},
-        {{ 3, 4 }, simpleChar("r").withBg("#ff8080")},
-        {{ 4, 4 }, simpleChar("g").withBg("#80ff80")},
-        {{ 5, 4 }, simpleChar("b").withBg("#8080ff")},
+        {{ 3, 3 }, singleWideChar("r").withFg("#ff8080")},
+        {{ 4, 3 }, singleWideChar("g").withFg("#80ff80")},
+        {{ 5, 3 }, singleWideChar("b").withFg("#8080ff")},
+        {{ 3, 4 }, singleWideChar("r").withBg("#ff8080")},
+        {{ 4, 4 }, singleWideChar("g").withBg("#80ff80")},
+        {{ 5, 4 }, singleWideChar("b").withBg("#8080ff")},
     });
 }
 
@@ -247,22 +247,22 @@ TEST_CASE("named fg colors") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar(" ").withFg("black")},
-        {{ 3, 4 }, simpleChar(" ").withFg("bright black")},
-        {{ 4, 3 }, simpleChar(" ").withFg("red")},
-        {{ 4, 4 }, simpleChar(" ").withFg("bright red")},
-        {{ 5, 3 }, simpleChar(" ").withFg("green")},
-        {{ 5, 4 }, simpleChar(" ").withFg("bright green")},
-        {{ 6, 3 }, simpleChar(" ").withFg("yellow")},
-        {{ 6, 4 }, simpleChar(" ").withFg("bright yellow")},
-        {{ 7, 3 }, simpleChar(" ").withFg("blue")},
-        {{ 7, 4 }, simpleChar(" ").withFg("bright blue")},
-        {{ 8, 3 }, simpleChar(" ").withFg("magenta")},
-        {{ 8, 4 }, simpleChar(" ").withFg("bright magenta")},
-        {{ 9, 3 }, simpleChar(" ").withFg("cyan")},
-        {{ 9, 4 }, simpleChar(" ").withFg("bright cyan")},
-        {{ 10, 3 }, simpleChar(" ").withFg("white")},
-        {{ 10, 4 }, simpleChar(" ").withFg("bright white")},
+        {{ 3, 3 }, singleWideChar(" ").withFg("black")},
+        {{ 3, 4 }, singleWideChar(" ").withFg("bright black")},
+        {{ 4, 3 }, singleWideChar(" ").withFg("red")},
+        {{ 4, 4 }, singleWideChar(" ").withFg("bright red")},
+        {{ 5, 3 }, singleWideChar(" ").withFg("green")},
+        {{ 5, 4 }, singleWideChar(" ").withFg("bright green")},
+        {{ 6, 3 }, singleWideChar(" ").withFg("yellow")},
+        {{ 6, 4 }, singleWideChar(" ").withFg("bright yellow")},
+        {{ 7, 3 }, singleWideChar(" ").withFg("blue")},
+        {{ 7, 4 }, singleWideChar(" ").withFg("bright blue")},
+        {{ 8, 3 }, singleWideChar(" ").withFg("magenta")},
+        {{ 8, 4 }, singleWideChar(" ").withFg("bright magenta")},
+        {{ 9, 3 }, singleWideChar(" ").withFg("cyan")},
+        {{ 9, 4 }, singleWideChar(" ").withFg("bright cyan")},
+        {{ 10, 3 }, singleWideChar(" ").withFg("white")},
+        {{ 10, 4 }, singleWideChar(" ").withFg("bright white")},
     });
 }
 
@@ -291,22 +291,22 @@ TEST_CASE("named bg colors") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar(" ").withBg("black")},
-        {{ 3, 4 }, simpleChar(" ").withBg("bright black")},
-        {{ 4, 3 }, simpleChar(" ").withBg("red")},
-        {{ 4, 4 }, simpleChar(" ").withBg("bright red")},
-        {{ 5, 3 }, simpleChar(" ").withBg("green")},
-        {{ 5, 4 }, simpleChar(" ").withBg("bright green")},
-        {{ 6, 3 }, simpleChar(" ").withBg("yellow")},
-        {{ 6, 4 }, simpleChar(" ").withBg("bright yellow")},
-        {{ 7, 3 }, simpleChar(" ").withBg("blue")},
-        {{ 7, 4 }, simpleChar(" ").withBg("bright blue")},
-        {{ 8, 3 }, simpleChar(" ").withBg("magenta")},
-        {{ 8, 4 }, simpleChar(" ").withBg("bright magenta")},
-        {{ 9, 3 }, simpleChar(" ").withBg("cyan")},
-        {{ 9, 4 }, simpleChar(" ").withBg("bright cyan")},
-        {{ 10, 3 }, simpleChar(" ").withBg("white")},
-        {{ 10, 4 }, simpleChar(" ").withBg("bright white")},
+        {{ 3, 3 }, singleWideChar(" ").withBg("black")},
+        {{ 3, 4 }, singleWideChar(" ").withBg("bright black")},
+        {{ 4, 3 }, singleWideChar(" ").withBg("red")},
+        {{ 4, 4 }, singleWideChar(" ").withBg("bright red")},
+        {{ 5, 3 }, singleWideChar(" ").withBg("green")},
+        {{ 5, 4 }, singleWideChar(" ").withBg("bright green")},
+        {{ 6, 3 }, singleWideChar(" ").withBg("yellow")},
+        {{ 6, 4 }, singleWideChar(" ").withBg("bright yellow")},
+        {{ 7, 3 }, singleWideChar(" ").withBg("blue")},
+        {{ 7, 4 }, singleWideChar(" ").withBg("bright blue")},
+        {{ 8, 3 }, singleWideChar(" ").withBg("magenta")},
+        {{ 8, 4 }, singleWideChar(" ").withBg("bright magenta")},
+        {{ 9, 3 }, singleWideChar(" ").withBg("cyan")},
+        {{ 9, 4 }, singleWideChar(" ").withBg("bright cyan")},
+        {{ 10, 3 }, singleWideChar(" ").withBg("white")},
+        {{ 10, 4 }, singleWideChar(" ").withBg("bright white")},
     });
 }
 
@@ -335,22 +335,22 @@ TEST_CASE("indexed colors") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar(" ").withBg("16")},
-        {{ 3, 4 }, simpleChar(" ").withFg("16")},
-        {{ 4, 3 }, simpleChar(" ").withBg("51")},
-        {{ 4, 4 }, simpleChar(" ").withFg("51")},
-        {{ 5, 3 }, simpleChar(" ").withBg("70")},
-        {{ 5, 4 }, simpleChar(" ").withFg("70")},
-        {{ 6, 3 }, simpleChar(" ").withBg("110")},
-        {{ 6, 4 }, simpleChar(" ").withFg("110")},
-        {{ 7, 3 }, simpleChar(" ").withBg("123")},
-        {{ 7, 4 }, simpleChar(" ").withFg("123")},
-        {{ 8, 3 }, simpleChar(" ").withBg("213")},
-        {{ 8, 4 }, simpleChar(" ").withFg("213")},
-        {{ 9, 3 }, simpleChar(" ").withBg("232")},
-        {{ 9, 4 }, simpleChar(" ").withFg("232")},
-        {{ 10, 3 }, simpleChar(" ").withBg("255")},
-        {{ 10, 4 }, simpleChar(" ").withFg("255")},
+        {{ 3, 3 }, singleWideChar(" ").withBg("16")},
+        {{ 3, 4 }, singleWideChar(" ").withFg("16")},
+        {{ 4, 3 }, singleWideChar(" ").withBg("51")},
+        {{ 4, 4 }, singleWideChar(" ").withFg("51")},
+        {{ 5, 3 }, singleWideChar(" ").withBg("70")},
+        {{ 5, 4 }, singleWideChar(" ").withFg("70")},
+        {{ 6, 3 }, singleWideChar(" ").withBg("110")},
+        {{ 6, 4 }, singleWideChar(" ").withFg("110")},
+        {{ 7, 3 }, singleWideChar(" ").withBg("123")},
+        {{ 7, 4 }, singleWideChar(" ").withFg("123")},
+        {{ 8, 3 }, singleWideChar(" ").withBg("213")},
+        {{ 8, 4 }, singleWideChar(" ").withFg("213")},
+        {{ 9, 3 }, singleWideChar(" ").withBg("232")},
+        {{ 9, 4 }, singleWideChar(" ").withFg("232")},
+        {{ 10, 3 }, singleWideChar(" ").withBg("255")},
+        {{ 10, 4 }, singleWideChar(" ").withFg("255")},
     });
 }
 
@@ -388,14 +388,14 @@ TEST_CASE("attributes") {
     CapturedState s = capture();
 
     checkEmptyPlusSome(s, {
-        {{ 3, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_BOLD)},
-        {{ 4, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_ITALIC)},
-        {{ 5, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_BLINK)},
-        {{ 6, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_INVERSE)},
-        {{ 7, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_STRIKE)},
-        {{ 8, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE)},
-        {{ 9, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE_DBL)},
-        {{ 10, 3 }, simpleChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE_CURLY)},
+        {{ 3, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 4, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_ITALIC)},
+        {{ 5, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_BLINK)},
+        {{ 6, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_INVERSE)},
+        {{ 7, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_STRIKE)},
+        {{ 8, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE)},
+        {{ 9, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE_DBL)},
+        {{ 10, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE_CURLY)},
     });
 }
 
