@@ -93,6 +93,20 @@ CapturedCell doubleWideChar(std::string ch) {
     return c;
 }
 
+
+TEST_CASE("no init") {
+    SimpleFullscreen t;
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, {});
+
+    CHECK(s.altScreen == true);
+    CHECK(s.invScreen == false);
+
+}
+
+
 TEST_CASE("empty") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
