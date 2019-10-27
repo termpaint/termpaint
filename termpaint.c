@@ -356,8 +356,9 @@ static void termpaintp_str_destroy(termpaint_str *tps) {
 
 static void termpaintp_str_append_n(termpaint_str *tps, const char *s, unsigned len) {
     termpaintp_str_realloc(tps, tps->len + len);
-    memcpy(tps->data + tps->len, s, len + 1);
+    memcpy(tps->data + tps->len, s, len);
     tps->len = tps->len + len;
+    tps->data[tps->len] = 0;
 }
 
 static void termpaintp_str_append(termpaint_str *tps, const char *s) {
