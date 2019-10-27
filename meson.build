@@ -189,6 +189,7 @@ test_files = [
   'tests/hashtest.cpp',
   'tests/input_tests.cpp',
   'tests/measurement_tests.cpp',
+  'tests/surface.cpp',
   'tests/utf8_tests.cpp',
 ]
 
