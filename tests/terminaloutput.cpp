@@ -645,6 +645,32 @@ TEST_CASE("basic pause") {
     CHECK(s.altScreen == true);
 }
 
+
+TEST_CASE("pause with mouse") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_set_mouse_mode(t.terminal, TERMPAINT_MOUSE_MODE_MOVEMENT);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, {});
+    CHECK(s.mouseMode == "movement");
+
+    termpaint_terminal_pause(t.terminal);
+
+    s = capture();
+    CHECK(s.mouseMode == "");
+
+    termpaint_terminal_unpause(t.terminal);
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    checkEmptyPlusSome(s, {});
+
+    CHECK(s.mouseMode == "movement");
+}
+
+
 TEST_CASE("bell") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
