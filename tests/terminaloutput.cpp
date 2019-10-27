@@ -120,6 +120,81 @@ TEST_CASE("empty") {
 
 }
 
+
+TEST_CASE("restore") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_terminal_flush(t.terminal, false);
+
+    t.terminal.reset();
+
+    CapturedState s = capture();
+
+    CHECK(s.altScreen == false);
+    CHECK(s.invScreen == false);
+
+    CHECK(s.sgrState.style == 0);
+    CHECK(s.sgrState.fg == std::string());
+    CHECK(s.sgrState.bg == std::string());
+    CHECK(s.sgrState.deco == std::string());
+}
+
+
+TEST_CASE("restore - no fullscreen") {
+    resetAndClear();
+
+    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+    REQUIRE(integration);
+
+    unique_cptr<termpaint_terminal, termpaint_terminal_free_with_restore> terminal;
+    terminal.reset(termpaint_terminal_new(integration));
+    REQUIRE(terminal);
+
+    termpaintx_full_integration_set_terminal(integration, terminal);
+    termpaint_surface *surface = termpaint_terminal_get_surface(terminal);
+    REQUIRE(surface);
+    termpaint_terminal_set_event_cb(terminal, [] (void *, termpaint_event*) {}, nullptr);
+    termpaint_terminal_auto_detect(terminal);
+    termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
+                                           "Terminal auto detection is taking unusually long, press space to abort.");
+
+
+    termpaint_surface_clear(surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_terminal_flush(terminal, false);
+
+    terminal.reset();
+
+    CapturedState s = capture();
+
+    CHECK(s.altScreen == false);
+    CHECK(s.invScreen == false);
+
+    CHECK(s.sgrState.style == 0);
+    CHECK(s.sgrState.fg == std::string());
+    CHECK(s.sgrState.bg == std::string());
+    CHECK(s.sgrState.deco == std::string());
+}
+
+
+TEST_CASE("reset attributes") {
+    SimpleFullscreen t;
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE));
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BOLD);
+
+    termpaint_surface_clear_with_attr(t.surface, attr);
+    termpaint_terminal_flush(t.terminal, false);
+
+    termpaint_terminal_reset_attributes(t.terminal);
+
+    CapturedState s = capture();
+
+    CHECK(s.sgrState.style == 0);
+    CHECK(s.sgrState.fg == std::string());
+    CHECK(s.sgrState.bg == std::string());
+    CHECK(s.sgrState.deco == std::string());
+}
+
 TEST_CASE("simple text") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);

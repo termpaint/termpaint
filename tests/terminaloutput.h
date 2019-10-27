@@ -96,6 +96,7 @@ public:
     bool altScreen = false;
     bool invScreen = false;
     std::string title, iconTitle;
+    CapturedCell sgrState;
 };
 
 CapturedState capture();

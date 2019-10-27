@@ -166,6 +166,40 @@ CapturedState capture() {
         std::terminate();
     }
 
+    auto read_flag = [](const picojson::object& obj, const char* name, int flag) {
+        if (has<bool>(obj, name) && get<bool>(obj, name)) {
+            return flag;
+        }
+        return 0;
+    };
+
+    if (has<picojson::object>(root, "current_sgr_attr")) {
+        picojson::object cell = get<picojson::object>(root, "current_sgr_attr");
+        int style = 0;
+        style |= read_flag(cell, "bold", TERMPAINT_STYLE_BOLD);
+        style |= read_flag(cell, "italic", TERMPAINT_STYLE_ITALIC);
+        style |= read_flag(cell, "blink", TERMPAINT_STYLE_BLINK);
+        style |= read_flag(cell, "overline", TERMPAINT_STYLE_OVERLINE);
+        style |= read_flag(cell, "inverse", TERMPAINT_STYLE_INVERSE);
+        style |= read_flag(cell, "strike", TERMPAINT_STYLE_STRIKE);
+        style |= read_flag(cell, "underline", TERMPAINT_STYLE_UNDERLINE);
+        style |= read_flag(cell, "double_underline", TERMPAINT_STYLE_UNDERLINE_DBL);
+        style |= read_flag(cell, "curly_underline", TERMPAINT_STYLE_UNDERLINE_CURLY);
+        state.sgrState.style = style;
+
+        if (has<std::string>(cell, "fg")) {
+            state.sgrState.fg = get<std::string>(cell, "fg");
+        }
+
+        if (has<std::string>(cell, "bg")) {
+            state.sgrState.bg = get<std::string>(cell, "bg");
+        }
+
+        if (has<std::string>(cell, "deco")) {
+            state.sgrState.deco = get<std::string>(cell, "deco");
+        }
+    }
+
     picojson::array cells = get<picojson::array>(root, "cells");
     for (const auto& cellValue: cells) {
         if (!cellValue.is<picojson::object>()) {
@@ -191,13 +225,6 @@ CapturedState capture() {
         if (has<std::string>(cell, "deco")) {
             ccell.deco = get<std::string>(cell, "deco");
         }
-
-        auto read_flag = [](const picojson::object& obj, const char* name, int flag) {
-            if (has<bool>(obj, name) && get<bool>(obj, name)) {
-                return flag;
-            }
-            return 0;
-        };
 
         int style = 0;
         style |= read_flag(cell, "bold", TERMPAINT_STYLE_BOLD);
