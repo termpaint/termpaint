@@ -1895,6 +1895,62 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
     }
 }
 
+static void termpaintp_auto_detect_init_terminal_version(termpaint_terminal *term) {
+    if (term->terminal_type == TT_VTE) {
+        const char* data = term->auto_detect_sec_device_attributes;
+        if (strlen(data) > 11) {
+            bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
+            bool vte_old = memcmp(data, "\033[>1;", 5) == 0;
+            if (vte_gt0_54 || vte_old) {
+                if (vte_old) {
+                    data += 5;
+                } else {
+                    data += 6;
+                }
+                int version = 0;
+                while ('0' <= *data && *data <= '9') {
+                    version = version * 10 + *data - '0';
+                    ++data;
+                }
+                if (*data == ';' && (version < 5400) == vte_old) {
+                    term->terminal_version = version;
+                }
+            }
+        }
+    } else if (term->terminal_type == TT_XTERM) {
+        const char* data = term->auto_detect_sec_device_attributes;
+        if (strlen(data) > 10) {
+            while (*data != ';' && *data != 0) {
+                ++data;
+            }
+            if (*data == ';') {
+                ++data;
+                int version = 0;
+                while ('0' <= *data && *data <= '9') {
+                    version = version * 10 + *data - '0';
+                    ++data;
+                }
+                if (*data == ';') {
+                    term->terminal_version = version;
+                }
+            }
+        }
+    } else if (term->terminal_type == TT_SCREEN) {
+        const char* data = term->auto_detect_sec_device_attributes;
+        if (strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
+            data += 6;
+            int version = 0;
+            while ('0' <= *data && *data <= '9') {
+                version = version * 10 + *data - '0';
+                ++data;
+            }
+            if (*data == ';') {
+                term->terminal_version = version;
+            }
+        }
+    }
+}
+
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event) {
     termpaint_terminal *term = user_data;
     if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
@@ -1924,59 +1980,7 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
         termpaintp_terminal_auto_detect_event(term, event);
         int_flush(term->integration);
         if (term->ad_state == AD_FINISHED) {
-            if (term->terminal_type == TT_VTE) {
-                const char* data = term->auto_detect_sec_device_attributes;
-                if (strlen(data) > 11) {
-                    bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
-                    bool vte_old = memcmp(data, "\033[>1;", 5) == 0;
-                    if (vte_gt0_54 || vte_old) {
-                        if (vte_old) {
-                            data += 5;
-                        } else {
-                            data += 6;
-                        }
-                        int version = 0;
-                        while ('0' <= *data && *data <= '9') {
-                            version = version * 10 + *data - '0';
-                            ++data;
-                        }
-                        if (*data == ';' && (version < 5400) == vte_old) {
-                            term->terminal_version = version;
-                        }
-                    }
-                }
-            } else if (term->terminal_type == TT_XTERM) {
-                const char* data = term->auto_detect_sec_device_attributes;
-                if (strlen(data) > 10) {
-                    while (*data != ';' && *data != 0) {
-                        ++data;
-                    }
-                    if (*data == ';') {
-                        ++data;
-                        int version = 0;
-                        while ('0' <= *data && *data <= '9') {
-                            version = version * 10 + *data - '0';
-                            ++data;
-                        }
-                        if (*data == ';') {
-                            term->terminal_version = version;
-                        }
-                    }
-                }
-            } else if (term->terminal_type == TT_SCREEN) {
-                const char* data = term->auto_detect_sec_device_attributes;
-                if (strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
-                    data += 6;
-                    int version = 0;
-                    while ('0' <= *data && *data <= '9') {
-                        version = version * 10 + *data - '0';
-                        ++data;
-                    }
-                    if (*data == ';') {
-                        term->terminal_version = version;
-                    }
-                }
-            }
+            termpaintp_auto_detect_init_terminal_version(term);
 
             if (term->event_cb) {
                 termpaint_event event;
