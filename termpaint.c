@@ -1425,12 +1425,12 @@ static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event);
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
-void termpaint_color_entry_destroy(termpaint_color_entry *entry) {
+static void termpaint_color_entry_destroy(termpaint_color_entry *entry) {
     free(entry->saved);
     free(entry->requested);
 }
 
-void termpaint_unpause_snippet_destroy(termpaint_unpause_snippet *entry) {
+static void termpaint_unpause_snippet_destroy(termpaint_unpause_snippet *entry) {
     termpaintp_str_destroy(&entry->sequences);
 }
 
@@ -1880,7 +1880,7 @@ void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
     }
 }
 
-static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event);
+static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event);
 
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow) {
     termpaint_terminal *term = user_data;
@@ -1921,7 +1921,7 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
         }
         term->event_cb(term->event_user_data, event);
     } else {
-        termpaint_terminal_auto_detect_event(term, event);
+        termpaintp_terminal_auto_detect_event(term, event);
         int_flush(term->integration);
         if (term->ad_state == AD_FINISHED) {
             if (term->terminal_type == TT_VTE) {
@@ -2083,7 +2083,7 @@ static void termpaintp_patch_misparsing(termpaint_terminal *terminal, termpaint_
 
 // known terminals where auto detections hangs: freebsd system console using vt module
 // TODO add a time out and display a message to press any key to abort.
-static bool termpaint_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
+static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
     termpaint_integration *integration = terminal->integration;
 
     if (event == nullptr) {
@@ -2466,7 +2466,7 @@ _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal) {
     terminal->support_parsing_csi_equals_sequences = false;
     terminal->support_parsing_csi_gt_sequences = false;
 
-    termpaint_terminal_auto_detect_event(terminal, nullptr);
+    termpaintp_terminal_auto_detect_event(terminal, nullptr);
     int_flush(terminal->integration);
     return true;
 }
@@ -3052,7 +3052,7 @@ _Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const 
     return false;
 }
 
-static bool termpaint_terminal_supports_title_push_pop(termpaint_terminal *term) {
+static bool termpaintp_terminal_supports_title_push_pop(termpaint_terminal *term) {
     if (term->terminal_type == TT_VTE) {
         // supported since 0.54
         return term->terminal_version >= 5400;
@@ -3073,7 +3073,7 @@ static bool termpaint_terminal_supports_title_push_pop(termpaint_terminal *term)
 
 void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, int mode) {
     if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
-        if (!termpaint_terminal_supports_title_push_pop(term)) {
+        if (!termpaintp_terminal_supports_title_push_pop(term)) {
             return;
         }
     }
@@ -3096,7 +3096,7 @@ void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, i
 
 void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *title, int mode) {
     if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
-        if (!termpaint_terminal_supports_title_push_pop(term)) {
+        if (!termpaintp_terminal_supports_title_push_pop(term)) {
             return;
         }
     }
