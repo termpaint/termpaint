@@ -218,6 +218,8 @@ typedef struct termpaint_integration_private_ {
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
+#define NUM_CAPABILITIES 3
+
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
     termpaint_integration_private *integration_vtbl;
@@ -225,9 +227,6 @@ typedef struct termpaint_terminal_ {
     termpaint_input *input;
     bool data_pending_after_input_received : 1;
     bool request_repaint : 1;
-    int support_qm_cursor_position_report : 1;
-    int support_parsing_csi_gt_sequences : 1;
-    int support_parsing_csi_equals_sequences : 1;
     char *auto_detect_sec_device_attributes;
 
     int terminal_type;
@@ -262,6 +261,7 @@ typedef struct termpaint_terminal_ {
 
     char *restore_seq;
     auto_detect_state ad_state;
+    bool capabilities[NUM_CAPABILITIES];
 } termpaint_terminal;
 
 typedef enum termpaint_text_measurement_state_ {
@@ -1376,7 +1376,7 @@ static void termpaintp_terminal_show_cursor(termpaint_terminal *term) {
 
 static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
     // use support_parsing_csi_gt_sequences as indication for more advanced parsing capabilities
-    bool nonharmful = term->support_parsing_csi_gt_sequences;
+    bool nonharmful = termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CSI_GREATER);
 
     if (term->terminal_type == TT_VTE && term->terminal_version < 4600) {
         nonharmful = false;
@@ -1434,6 +1434,8 @@ static void termpaint_unpause_snippet_destroy(termpaint_unpause_snippet *entry) 
     termpaintp_str_destroy(&entry->sequences);
 }
 
+static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal);
+
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
     termpaintp_surface_init(&ret->primary);
@@ -1455,9 +1457,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->ad_state = AD_NONE;
     ret->initial_cursor_x = -1;
     ret->initial_cursor_y = -1;
-    ret->support_qm_cursor_position_report = false;
-    ret->support_parsing_csi_equals_sequences = false;
-    ret->support_parsing_csi_gt_sequences = false;
+    termpaintp_terminal_reset_capabilites(ret);
     ret->terminal_type = TT_UNKNOWN;
     ret->terminal_type_confidence = 0;
     ret->input = termpaint_input_new();
@@ -1502,6 +1502,33 @@ void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     int_flush(integration);
 
     termpaint_terminal_free(term);
+}
+
+static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal) {
+    for (int i = 0; i < NUM_CAPABILITIES; i++) {
+        terminal->capabilities[i] = false;
+    }
+}
+
+inline bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability) {
+    if (capability < 0 || capability >= NUM_CAPABILITIES) {
+        return false;
+    }
+    return terminal->capabilities[capability];
+}
+
+void termpaint_terminal_promise_capability(termpaint_terminal *terminal, int capability) {
+    if (capability < 0 || capability >= NUM_CAPABILITIES) {
+        return;
+    }
+    terminal->capabilities[capability] = true;
+}
+
+void termpaint_terminal_disable_capability(termpaint_terminal *terminal, int capability) {
+    if (capability < 0 || capability >= NUM_CAPABILITIES) {
+        return;
+    }
+    terminal->capabilities[capability] = false;
 }
 
 termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
@@ -2137,28 +2164,28 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_BASIC_CURPOS_RECVED:
             if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
-                terminal->support_parsing_csi_gt_sequences = true;
+                termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                 free(terminal->auto_detect_sec_device_attributes);
                 terminal->auto_detect_sec_device_attributes = malloc(event->raw.length + 1);
                 memcpy(terminal->auto_detect_sec_device_attributes, event->raw.string, event->raw.length);
                 terminal->auto_detect_sec_device_attributes[event->raw.length] = 0;
                 if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
                     // urxvt source says: first parameter is 'U' / 85 for urxvt (except for 7.[34])
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                     terminal->terminal_type = TT_URXVT;
                     terminal->terminal_type_confidence = 2;
                 }
                 if (event->raw.length > 6 && memcmp("\033[>83;", event->raw.string, 6) == 0) {
                     // 83 = 'S'
                     // second parameter is version as major*10000 + minor * 100 + patch
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                     terminal->terminal_type = TT_SCREEN;
                     terminal->terminal_type_confidence = 2;
                 }
                 if (event->raw.length > 6 && memcmp("\033[>84;", event->raw.string, 6) == 0) {
                     // 84 = 'T'
                     // no version here
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                     terminal->terminal_type = TT_TMUX;
                     terminal->terminal_type_confidence = 2;
                 }
@@ -2183,10 +2210,11 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB:
             if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 terminal->terminal_type = TT_TOODUMB;
-                terminal->support_parsing_csi_gt_sequences =
-                        terminal->initial_cursor_x == event->cursor_position.x
-                        && terminal->initial_cursor_y == event->cursor_position.y;
-                if (!terminal->support_parsing_csi_gt_sequences) {
+                if (terminal->initial_cursor_x == event->cursor_position.x
+                        && terminal->initial_cursor_y == event->cursor_position.y) {
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
+                } else {
+                    termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                     terminal->terminal_type = TT_MISPARSING;
                     termpaintp_patch_misparsing(terminal, integration, event);
                 }
@@ -2215,7 +2243,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 if (terminal->terminal_type_confidence == 0) {
                     terminal->terminal_type = TT_BASE;
                 }
-                terminal->support_qm_cursor_position_report = false;
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 // see if "\033[=c" was misparsed
                 termpaint_input_expect_cursor_position_report(terminal->input);
                 int_puts(integration, "\033[6n");
@@ -2223,7 +2251,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP1_CLEANUP;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_3RD_DEV_ATTRIB) {
-                terminal->support_parsing_csi_equals_sequences = true;
+                termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                 if (event->raw.length == 8) {
                     // Terminal implementors: DO NOT fake other terminal IDs here!
                     // any unknown id will enable all features here. Allocate a new one!
@@ -2248,13 +2276,17 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_RECVED;
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                if (event->cursor_position.safe) {
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                } else {
+                    termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                }
                 if (terminal->initial_cursor_y != event->cursor_position.y
                      || terminal->initial_cursor_x != event->cursor_position.x) {
                     termpaintp_patch_misparsing(terminal, integration, event);
                     terminal->terminal_type = TT_BASE;
                 } else {
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                     if (event->cursor_position.safe) {
                         terminal->terminal_type = TT_XTERM;
                     } else {
@@ -2267,7 +2299,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 if (terminal->terminal_type_confidence == 0) {
                     terminal->terminal_type = TT_BASE;
                 }
-                terminal->support_qm_cursor_position_report = false;
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 terminal->ad_state = AD_FP1_CLEANUP_AFTER_SYNC;
                 return true;
             }
@@ -2278,7 +2310,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                      || terminal->initial_cursor_x != event->cursor_position.x) {
                     termpaintp_patch_misparsing(terminal, integration, event);
                 } else {
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                 }
                 terminal->ad_state = AD_FINISHED;
                 return false;
@@ -2293,7 +2325,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_FP1_CLEANUP_AFTER_SYNC:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 // see if "\033[=c" was misparsed
-                if (terminal->support_qm_cursor_position_report) {
+                if (termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT)) {
                     int_puts(integration, "\033[?6n");
                 } else {
                     termpaint_input_expect_cursor_position_report(terminal->input);
@@ -2316,7 +2348,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_FP1_REQ_TERMID_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->support_qm_cursor_position_report = false;
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 terminal->ad_state = AD_FINISHED;
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
@@ -2324,22 +2356,30 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 // keep terminal_type from terminal id
-                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                if (event->cursor_position.safe) {
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                } else {
+                    termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                }
                 terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
-                terminal->support_qm_cursor_position_report = false;
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
                 return true;
             }
             break;
         case AD_FP1_REQ_TERMID_RECVED_SEC_DEV_ATTRIB_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->support_qm_cursor_position_report = false;
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 terminal->ad_state = AD_FINISHED;
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                if (event->cursor_position.safe) {
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                } else {
+                    termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                }
                 terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
@@ -2349,7 +2389,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_FP1_SEC_DEV_ATTRIB_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->support_qm_cursor_position_report = false;
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 termpaint_input_expect_cursor_position_report(terminal->input);
                 int_puts(integration, "\033[6n"); // detect if "\033[=c" was misparsed
                 int_puts(integration, "\033[>0;1c");
@@ -2358,12 +2398,16 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP2_REQ;
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                terminal->support_qm_cursor_position_report = event->cursor_position.safe;
+                if (event->cursor_position.safe) {
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                } else {
+                    termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+                }
                 if (terminal->initial_cursor_y != event->cursor_position.y
                      || terminal->initial_cursor_x != event->cursor_position.x) {
                     termpaintp_patch_misparsing(terminal, integration, event);
                 } else {
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                 }
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED;
                 return true;
@@ -2403,7 +2447,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                      || terminal->initial_cursor_x != event->cursor_position.x) {
                     termpaintp_patch_misparsing(terminal, integration, event);
                 } else {
-                    terminal->support_parsing_csi_equals_sequences = true;
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                 }
                 terminal->ad_state = AD_FP2_CURSOR_DONE;
                 return true;
@@ -2466,9 +2510,7 @@ _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal) {
     terminal->terminal_type_confidence = 0;
     terminal->initial_cursor_x = -1;
     terminal->initial_cursor_y = -1;
-    terminal->support_qm_cursor_position_report = false;
-    terminal->support_parsing_csi_equals_sequences = false;
-    terminal->support_parsing_csi_gt_sequences = false;
+    termpaintp_terminal_reset_capabilites(terminal);
 
     termpaintp_terminal_auto_detect_event(terminal, nullptr);
     int_flush(terminal->integration);
@@ -2528,9 +2570,10 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
             term_type = "urxvt";
             break;
     };
-    snprintf(buffer, buffer_length, "Type: %s(%d) %s seq:%s%s", term_type, terminal->terminal_version, terminal->support_qm_cursor_position_report ? "safe-CPR" : "",
-             terminal->support_parsing_csi_gt_sequences ? ">" : "",
-             terminal->support_parsing_csi_equals_sequences ? "=" : "");
+    snprintf(buffer, buffer_length, "Type: %s(%d) %s seq:%s%s", term_type, terminal->terminal_version,
+             termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT) ? "safe-CPR" : "",
+             termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_GREATER) ? ">" : "",
+             termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS) ? "=" : "");
     buffer[buffer_length-1] = 0;
 }
 

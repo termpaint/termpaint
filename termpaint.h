@@ -109,6 +109,13 @@ _tERMPAINT_PUBLIC enum termpaint_auto_detect_state_enum termpaint_terminal_auto_
 _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length);
 _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
 
+#define TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT 0
+#define TERMPAINT_CAPABILITY_CSI_GREATER 1
+#define TERMPAINT_CAPABILITY_CSI_EQUALS 2
+
+_tERMPAINT_PUBLIC _Bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability);
+_tERMPAINT_PUBLIC void termpaint_terminal_promise_capability(termpaint_terminal *terminal, int capability);
+_tERMPAINT_PUBLIC void termpaint_terminal_disable_capability(termpaint_terminal *terminal, int capability);
 _tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
 
