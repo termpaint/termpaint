@@ -112,6 +112,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *t
 #define TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT 0
 #define TERMPAINT_CAPABILITY_CSI_GREATER 1
 #define TERMPAINT_CAPABILITY_CSI_EQUALS 2
+#define TERMPAINT_CAPABILITY_TITLE_RESTORE 3
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability);
 _tERMPAINT_PUBLIC void termpaint_terminal_promise_capability(termpaint_terminal *terminal, int capability);

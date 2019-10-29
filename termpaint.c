@@ -218,7 +218,7 @@ typedef struct termpaint_integration_private_ {
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 3
+#define NUM_CAPABILITIES 4
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -1922,7 +1922,7 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
     }
 }
 
-static void termpaintp_auto_detect_init_terminal_version(termpaint_terminal *term) {
+static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_terminal *term) {
     if (term->terminal_type == TT_VTE) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (strlen(data) > 11) {
@@ -1941,6 +1941,9 @@ static void termpaintp_auto_detect_init_terminal_version(termpaint_terminal *ter
                 }
                 if (*data == ';' && (version < 5400) == vte_old) {
                     term->terminal_version = version;
+                    if (term->terminal_version >= 5400) {
+                        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+                    }
                 }
             }
         }
@@ -1962,6 +1965,7 @@ static void termpaintp_auto_detect_init_terminal_version(termpaint_terminal *ter
                 }
             }
         }
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     } else if (term->terminal_type == TT_SCREEN) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
@@ -1975,6 +1979,11 @@ static void termpaintp_auto_detect_init_terminal_version(termpaint_terminal *ter
                 term->terminal_version = version;
             }
         }
+    } else if (term->terminal_type == TT_FULL) {
+        // full is promised to claim support for everything
+        // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
+        // and TERMPAINT_CAPABILITY_CSI_EQUALS are detected in main finger printing.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     }
 }
 
@@ -2007,7 +2016,7 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
         termpaintp_terminal_auto_detect_event(term, event);
         int_flush(term->integration);
         if (term->ad_state == AD_FINISHED) {
-            termpaintp_auto_detect_init_terminal_version(term);
+            termpaintp_auto_detect_init_terminal_version_and_caps(term);
 
             if (term->event_cb) {
                 termpaint_event event;
@@ -3099,28 +3108,9 @@ _Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const 
     return false;
 }
 
-static bool termpaintp_terminal_supports_title_push_pop(termpaint_terminal *term) {
-    if (term->terminal_type == TT_VTE) {
-        // supported since 0.54
-        return term->terminal_version >= 5400;
-    }
-
-    if (term->terminal_type == TT_XTERM) {
-        // supported since late 2009 (#251)
-        return true;
-    }
-
-    if (term->terminal_type == TT_FULL) {
-        // full is promised to claim support for everything
-        return true;
-    }
-
-    return false;
-}
-
 void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, int mode) {
     if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
-        if (!termpaintp_terminal_supports_title_push_pop(term)) {
+        if (!termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_TITLE_RESTORE)) {
             return;
         }
     }
@@ -3143,7 +3133,7 @@ void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, i
 
 void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *title, int mode) {
     if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
-        if (!termpaintp_terminal_supports_title_push_pop(term)) {
+        if (!termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_TITLE_RESTORE)) {
             return;
         }
     }
