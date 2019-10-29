@@ -218,7 +218,7 @@ typedef struct termpaint_integration_private_ {
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 4
+#define NUM_CAPABILITIES 7
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -1375,25 +1375,21 @@ static void termpaintp_terminal_show_cursor(termpaint_terminal *term) {
 }
 
 static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
-    // use support_parsing_csi_gt_sequences as indication for more advanced parsing capabilities
-    bool nonharmful = termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CSI_GREATER);
-
-    if (term->terminal_type == TT_VTE && term->terminal_version < 4600) {
-        nonharmful = false;
-    }
+    bool nonharmful = termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
 
     if (term->cursor_style != -1 && nonharmful) {
         const char *resetSequence = "\033[0 q";
         int cmd = term->cursor_style + (term->cursor_blink ? 0 : 1);
-        if (term->terminal_type == TT_XTERM && term->terminal_version < 282 && term->cursor_style == TERMPAINT_CURSOR_STYLE_BAR) {
-            // xterm < 282 does not support BAR style.
+        if (term->cursor_style == TERMPAINT_CURSOR_STYLE_BAR
+                && !termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR)) {
+            // e.g. xterm < 282 does not support BAR style.
             cmd = TERMPAINT_CURSOR_STYLE_BLOCK + (term->cursor_blink ? 0 : 1);
         }
         if (cmd != term->cursor_prev_data) {
             termpaint_integration *integration = term->integration;
-            if (term->terminal_type == TT_KONSOLE) {
-                // konsole starting at version 18.07.70 could do the CSI space q one too, but
-                // we don't have the konsole version.
+            if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50)) {
+                // e.g. konsole. (konsole starting at version 18.07.70 could do the CSI space q one too, but
+                // we don't have the konsole version.)
                 if (term->cursor_style == TERMPAINT_CURSOR_STYLE_BAR) {
                     int_puts(integration, "\x1b]50;CursorShape=1;BlinkingCursorEnabled=");
                 } else if (term->cursor_style == TERMPAINT_CURSOR_STYLE_UNDERLINE) {
@@ -1508,6 +1504,9 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal) 
     for (int i = 0; i < NUM_CAPABILITIES; i++) {
         terminal->capabilities[i] = false;
     }
+    // cursor bar is on by default. Some terminals don't understand any sequence, for these this does not matter.
+    // But some terminals recognize block and underline, but ignore bar. In this case it's better to remap bar to block.
+    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
 }
 
 inline bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability) {
@@ -1923,6 +1922,12 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
 }
 
 static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_terminal *term) {
+    if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CSI_GREATER)) {
+        // use TERMPAINT_CAPABILITY_CSI_GREATER as indication for more advanced parsing capabilities,
+        // as there is no dedicated detection for this.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+    }
+
     if (term->terminal_type == TT_VTE) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (strlen(data) > 11) {
@@ -1941,6 +1946,10 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 }
                 if (*data == ';' && (version < 5400) == vte_old) {
                     term->terminal_version = version;
+
+                    if (term->terminal_version < 4600) {
+                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+                    }
                     if (term->terminal_version >= 5400) {
                         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
                     }
@@ -1962,6 +1971,10 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 }
                 if (*data == ';') {
                     term->terminal_version = version;
+                    if (term->terminal_version < 282) {
+                        // xterm < 282 does not support BAR style. Enable remapping.
+                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
+                    }
                 }
             }
         }
@@ -1979,6 +1992,10 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 term->terminal_version = version;
             }
         }
+    } else if (term->terminal_type == TT_KONSOLE) {
+        // konsole starting at version 18.07.70 could do the CSI space q one too, but
+        // we don't have the konsole version.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50);
     } else if (term->terminal_type == TT_FULL) {
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
