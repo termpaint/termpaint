@@ -1930,7 +1930,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
 
     if (term->terminal_type == TT_VTE) {
         const char* data = term->auto_detect_sec_device_attributes;
-        if (strlen(data) > 11) {
+        if (data && strlen(data) > 11) {
             bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
             bool vte_old = memcmp(data, "\033[>1;", 5) == 0;
             if (vte_gt0_54 || vte_old) {
@@ -1958,7 +1958,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         }
     } else if (term->terminal_type == TT_XTERM) {
         const char* data = term->auto_detect_sec_device_attributes;
-        if (strlen(data) > 10) {
+        if (data && strlen(data) > 10) {
             while (*data != ';' && *data != 0) {
                 ++data;
             }
@@ -1981,7 +1981,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     } else if (term->terminal_type == TT_SCREEN) {
         const char* data = term->auto_detect_sec_device_attributes;
-        if (strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
+        if (data && strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
             data += 6;
             int version = 0;
             while ('0' <= *data && *data <= '9') {
