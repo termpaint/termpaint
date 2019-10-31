@@ -218,7 +218,7 @@ typedef struct termpaint_integration_private_ {
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 7
+#define NUM_CAPABILITIES 8
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -1507,6 +1507,12 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal) 
     // cursor bar is on by default. Some terminals don't understand any sequence, for these this does not matter.
     // But some terminals recognize block and underline, but ignore bar. In this case it's better to remap bar to block.
     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
+
+    // Start with assuming that terminals have in principle solid support for unicode fonts with common
+    // linedrawing / semigraphics codepoints. But leave this to opt out for implementations with very
+    // limited character repertoire.
+    // One example is the kernel internal terminal in linux that is limited to 256 or 512 different glyphs total.
+    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
 }
 
 inline bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability) {
@@ -1928,7 +1934,17 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
     }
 
-    if (term->terminal_type == TT_VTE) {
+    if (term->terminal_type == TT_MISPARSING) {
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
+    } else if (term->terminal_type == TT_TOODUMB) {
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
+    } else if (term->terminal_type == TT_BASE) {
+        if (!term->auto_detect_sec_device_attributes) {
+            // This is primarily because of linux vc, see somment in TT_LINUX for details.
+            // It's fairly easy for other terminals to work around by implementing ESC [ >c or ESC [ =c
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
+        }
+    } else if (term->terminal_type == TT_VTE) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (data && strlen(data) > 11) {
             bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
@@ -1996,6 +2012,12 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // konsole starting at version 18.07.70 could do the CSI space q one too, but
         // we don't have the konsole version.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50);
+    } else if (term->terminal_type == TT_LINUXVC) {
+        // Linux VC has to fit all character choices into 8 bit or 9 bit (depending on config)
+        // thus is has a very limited set of characters available. What is available exactly
+        // depends on the font, with most fonts optimizing for a given set of languages and
+        // only providing a small set of line drawing characters etc.
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
     } else if (term->terminal_type == TT_FULL) {
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
