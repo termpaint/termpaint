@@ -2235,17 +2235,25 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB:
             if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
-                terminal->terminal_type = TT_TOODUMB;
                 if (terminal->initial_cursor_x == event->cursor_position.x
                         && terminal->initial_cursor_y == event->cursor_position.y) {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
+
+                    int_puts(integration, "\033[=c");
+                    int_puts(integration, "\033[>1c");
+                    int_puts(integration, "\033[?6n");
+                    int_puts(integration, "\033[1x");
+                    int_puts(integration, "\033[5n");
+                    int_awaiting_response(integration);
+                    terminal->ad_state = AD_FP1_REQ;
+                    return true;
                 } else {
                     termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                     terminal->terminal_type = TT_MISPARSING;
                     termpaintp_patch_misparsing(terminal, integration, event);
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
                 }
-                terminal->ad_state = AD_FINISHED;
-                return false;
             }
             break;
         case AD_BASIC_SEC_DEV_ATTRIB_RECVED:
@@ -2313,7 +2321,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type = TT_BASE;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
-                    if (event->cursor_position.safe) {
+                    if (terminal->auto_detect_sec_device_attributes && event->cursor_position.safe) {
                         terminal->terminal_type = TT_XTERM;
                     } else {
                         terminal->terminal_type = TT_BASE;
@@ -2458,12 +2466,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 int_awaiting_response(integration);
                 terminal->ad_state = AD_FP2_CURSOR_DONE;
                 return true;
-            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0) {
-                terminal->terminal_type = TT_VTE;
-                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
-                return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
-                // ignore
+                if (terminal->auto_detect_sec_device_attributes && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0) {
+                    terminal->terminal_type = TT_VTE;
+                    terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                } else {
+                    // ignore
+                }
                 return true;
             }
             break;
@@ -2499,7 +2508,11 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FINISHED;
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
-                terminal->terminal_type = TT_KONSOLE;
+                if (terminal->auto_detect_sec_device_attributes) {
+                    terminal->terminal_type = TT_KONSOLE;
+                } else if (terminal->terminal_type_confidence == 0) {
+                    terminal->terminal_type = TT_BASE;
+                }
                 terminal->ad_state = AD_FP2_SEC_DEV_ATTRIB_RECVED2;
                 return true;
             }
