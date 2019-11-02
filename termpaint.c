@@ -325,6 +325,13 @@ static void termpaintp_prepend_str(char **s, const char* src) {
     memcpy(*s, src, src_len);
 }
 
+bool termpaintp_str_ends_with(const unsigned char* str, const unsigned char* postfix) {
+    size_t str_len = strlen(str);
+    size_t postfix_len = strlen(postfix);
+    if (str_len < postfix_len) return false;
+    return memcmp(str + str_len - postfix_len, postfix, postfix_len) == 0;
+}
+
 // make sure tps has len capacity. contents of *data is undefined after this
 static void termpaintp_str_w_e(termpaint_str *tps, unsigned len) {
     if (tps->alloc <= len) {
@@ -2343,7 +2350,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type = TT_BASE;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
-                    if (terminal->auto_detect_sec_device_attributes && event->cursor_position.safe) {
+                    if (terminal->auto_detect_sec_device_attributes && event->cursor_position.safe
+                            && termpaintp_str_ends_with(terminal->auto_detect_sec_device_attributes, ";0c")) {
                         terminal->terminal_type = TT_XTERM;
                     } else {
                         terminal->terminal_type = TT_BASE;
