@@ -131,8 +131,8 @@ _tERMPAINT_PUBLIC void termpaint_attr_set_fg(termpaint_attr* attr, unsigned fg);
 _tERMPAINT_PUBLIC void termpaint_attr_set_bg(termpaint_attr* attr, unsigned bg);
 _tERMPAINT_PUBLIC void termpaint_attr_set_deco(termpaint_attr* attr, unsigned deco_color);
 _tERMPAINT_PUBLIC void termpaint_attr_set_patch(termpaint_attr* attr, _Bool optimize, const char *setup, const char * cleanup);
-#define TERMPAINT_DEFAULT_COLOR 0x1000000
-#define TERMPAINT_NAMED_COLOR 0x1100000
+#define TERMPAINT_DEFAULT_COLOR 0x0000000
+#define TERMPAINT_NAMED_COLOR 0x2100000
 
 #define TERMPAINT_COLOR_BLACK TERMPAINT_NAMED_COLOR + 0
 #define TERMPAINT_COLOR_RED TERMPAINT_NAMED_COLOR + 1
@@ -152,8 +152,9 @@ _tERMPAINT_PUBLIC void termpaint_attr_set_patch(termpaint_attr* attr, _Bool opti
 #define TERMPAINT_COLOR_BRIGHT_CYAN TERMPAINT_NAMED_COLOR + 14
 #define TERMPAINT_COLOR_WHITE TERMPAINT_NAMED_COLOR + 15
 
-#define TERMPAINT_INDEXED_COLOR 0x1200000
-#define TERMPAINT_RGB_COLOR(r, g, b) ((TERMPAINTP_CAST(unsigned,r) << 16) | (TERMPAINTP_CAST(unsigned, g) << 8) | TERMPAINTP_CAST(unsigned, b))
+#define TERMPAINT_INDEXED_COLOR 0x2200000
+#define TERMPAINT_RGB_COLOR_OFFSET 0x1000000
+#define TERMPAINT_RGB_COLOR(r, g, b) (TERMPAINT_RGB_COLOR_OFFSET | (TERMPAINTP_CAST(unsigned,r) << 16) | (TERMPAINTP_CAST(unsigned, g) << 8) | TERMPAINTP_CAST(unsigned, b))
 
 #define TERMPAINT_STYLE_BOLD (1<<0)
 #define TERMPAINT_STYLE_ITALIC (1<<1)

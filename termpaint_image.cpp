@@ -30,8 +30,8 @@ static const char *const names[16] = {
 static void print_color(FILE* f, const char* name, unsigned color) {
     if (color != TERMPAINT_DEFAULT_COLOR) {
         fprintf(f, ", \"%s\": \"", name);
-        if ((color & 0xff000000) == 0) {
-            fprintf(f, "#%02x%02x%02x\"", color >> 16, (color >> 8) & 0xff, color & 0xff);
+        if ((color & 0xff000000) == TERMPAINT_RGB_COLOR_OFFSET) {
+            fprintf(f, "#%02x%02x%02x\"", (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
         } else if (TERMPAINT_NAMED_COLOR <= color && TERMPAINT_NAMED_COLOR + 15 >= color) {
             fprintf(f, "%s\"", names[color & 0xf]);
         } else if (TERMPAINT_INDEXED_COLOR <= color && TERMPAINT_INDEXED_COLOR + 255 >= color) {

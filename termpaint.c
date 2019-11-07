@@ -1548,7 +1548,7 @@ termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
 }
 
 static inline void write_color_sgr_values(termpaint_integration *integration, uint32_t color, char *direct, char *indexed, char *sep, unsigned named, unsigned bright_named) {
-    if ((color & 0xff000000) == 0) {
+    if ((color & 0xff000000) == TERMPAINT_RGB_COLOR_OFFSET) {
         int_puts(integration, direct);
         int_put_num(integration, (color >> 16) & 0xff);
         int_puts(integration, sep);
