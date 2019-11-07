@@ -1077,14 +1077,6 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
             cell *src_cell = termpaintp_getcell(src_surface, x + xOffset, y + yOffset);
             cell *dst_cell = termpaintp_getcell(dst_surface, dst_x + xOffset, dst_y + yOffset);
 
-            if (src_cell->text_len == 0 && src_cell->text_overflow == nullptr) {
-                src_cell->text[0] = ' ';
-                src_cell->text_len = 1;
-                src_cell->deco_color = TERMPAINT_DEFAULT_COLOR;
-                src_cell->fg_color = TERMPAINT_DEFAULT_COLOR;
-                src_cell->bg_color = TERMPAINT_DEFAULT_COLOR;
-            }
-
             if (src_cell->text_len == 0 && src_cell->text_overflow == WIDE_RIGHT_PADDING) {
                 termpaintp_surface_vanish_char(dst_surface, dst_x + xOffset, dst_y + yOffset, 1);
                 termpaintp_copy_colors_and_attibutes(src_surface, src_cell,
@@ -1133,7 +1125,12 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
                         memcpy(dst_cell->text, src_cell->text, src_cell->text_len);
                         dst_cell->text_len = src_cell->text_len;
                     } else if (src_cell->text_len == 0) {
-                        termpaintp_set_overflow_text(dst_surface, dst_cell, src_cell->text_overflow->text);
+                        if (src_cell->text_overflow != nullptr) {
+                            termpaintp_set_overflow_text(dst_surface, dst_cell, src_cell->text_overflow->text);
+                        } else {
+                            dst_cell->text_len = 0;
+                            dst_cell->text_overflow = nullptr;
+                        }
                     }
                 } else {
                     dst_cell->text_len = 1;
@@ -1146,25 +1143,16 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
 
 unsigned termpaint_surface_peek_fg_color(const termpaint_surface *surface, int x, int y) {
     cell *cell = termpaintp_getcell(surface, x, y);
-    if (cell->text_len == 0 && cell->text_overflow == nullptr) {
-        return TERMPAINT_DEFAULT_COLOR;
-    }
     return cell->fg_color;
 }
 
 unsigned termpaint_surface_peek_bg_color(const termpaint_surface *surface, int x, int y) {
     cell *cell = termpaintp_getcell(surface, x, y);
-    if (cell->text_len == 0 && cell->text_overflow == nullptr) {
-        return TERMPAINT_DEFAULT_COLOR;
-    }
     return cell->bg_color;
 }
 
 unsigned termpaint_surface_peek_deco_color(const termpaint_surface *surface, int x, int y) {
     cell *cell = termpaintp_getcell(surface, x, y);
-    if (cell->text_len == 0 && cell->text_overflow == nullptr) {
-        return TERMPAINT_DEFAULT_COLOR;
-    }
     return cell->deco_color;
 }
 
@@ -1605,13 +1593,6 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
             cell* old_c = &term->primary.cells_last_flush[y*term->primary.width+x];
-            if (c->text_len == 0 && c->text_overflow == nullptr) {
-                c->text[0] = ' ';
-                c->text_len = 1;
-                c->deco_color = TERMPAINT_DEFAULT_COLOR;
-                c->fg_color = TERMPAINT_DEFAULT_COLOR;
-                c->bg_color = TERMPAINT_DEFAULT_COLOR;
-            }
             int code_units;
             bool text_changed;
             unsigned char* text;
@@ -1620,10 +1601,16 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 text = c->text;
                 text_changed = old_c->text_len != c->text_len || memcmp(text, old_c->text, code_units) != 0;
             } else {
-                // TODO should we avoid crash here when cluster skipping failed?
-                code_units = strlen((char*)c->text_overflow->text);
-                text = c->text_overflow->text;
-                text_changed = old_c->text_len || c->text_overflow != old_c->text_overflow;
+                if (c->text_overflow == nullptr) {
+                    code_units = 1;
+                    text = " ";
+                    text_changed = old_c->text_len || c->text_overflow != old_c->text_overflow;
+                } else {
+                    // TODO should we avoid crash here when cluster skipping failed?
+                    code_units = strlen((char*)c->text_overflow->text);
+                    text = c->text_overflow->text;
+                    text_changed = old_c->text_len || c->text_overflow != old_c->text_overflow;
+                }
             }
 
             bool needs_paint = full_repaint || c->bg_color != old_c->bg_color || c->fg_color != old_c->fg_color
