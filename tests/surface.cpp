@@ -1666,7 +1666,7 @@ TEST_CASE("copy - chars that get substituted") {
     termpaint_surface_clear(s1, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
     termpaint_surface_write_with_colors(s1, 3, 3, "a\004\u00ad\u0088x", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
@@ -1697,7 +1697,7 @@ TEST_CASE("copy - rgb colors") {
     termpaint_surface_write_with_colors(s1, 4, 4, "g", TERMPAINT_DEFAULT_COLOR, TERMPAINT_RGB_COLOR(128, 255, 128));
     termpaint_surface_write_with_colors(s1, 5, 4, "b", TERMPAINT_DEFAULT_COLOR, TERMPAINT_RGB_COLOR(128, 128, 255));
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
@@ -1738,7 +1738,7 @@ TEST_CASE("copy - named fg colors") {
     termpaint_surface_write_with_colors(s1, 9,  4, " ", TERMPAINT_COLOR_BRIGHT_CYAN, TERMPAINT_DEFAULT_COLOR);
     termpaint_surface_write_with_colors(s1, 10, 4, " ", TERMPAINT_COLOR_WHITE, TERMPAINT_DEFAULT_COLOR);
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
@@ -1790,7 +1790,7 @@ TEST_CASE("copy - named bg colors") {
     termpaint_surface_write_with_colors(s1, 9,  4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_CYAN);
     termpaint_surface_write_with_colors(s1, 10, 4, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_WHITE);
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
@@ -1842,7 +1842,7 @@ TEST_CASE("copy - indexed colors") {
     termpaint_surface_write_with_colors(s1, 9,  4, " ", TERMPAINT_INDEXED_COLOR + 232, TERMPAINT_DEFAULT_COLOR);
     termpaint_surface_write_with_colors(s1, 10, 4, " ", TERMPAINT_INDEXED_COLOR + 255, TERMPAINT_DEFAULT_COLOR);
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
@@ -1906,7 +1906,7 @@ TEST_CASE("copy - attributes") {
     termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_OVERLINE);
     termpaint_surface_write_with_attr(s1, 11, 3, "X", attr.get());
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
@@ -1939,7 +1939,7 @@ TEST_CASE("copy - simple patch") {
     termpaint_surface_write_with_attr(s1, 3, 3, "ABC", attr_url);
     termpaint_attr_free(attr_url);
 
-    termpaint_surface_copy_rect(s1, 0, 0, 24, 80, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    termpaint_surface_copy_rect(s1, 0, 0, 80, 24, f.surface, 0, 0, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
 
     auto check = [] (auto& surface) {
         checkEmptyPlusSome(surface, {
