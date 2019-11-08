@@ -169,6 +169,8 @@ _tERMPAINT_PUBLIC void termpaint_attr_set_style(termpaint_attr* attr, int bits);
 _tERMPAINT_PUBLIC void termpaint_attr_unset_style(termpaint_attr* attr, int bits);
 _tERMPAINT_PUBLIC void termpaint_attr_reset_style(termpaint_attr* attr);
 
+#define TERMPAINT_ERASED "\x7f"
+
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height);
 _tERMPAINT_PUBLIC void termpaint_surface_free(termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_surface_resize(termpaint_surface *surface, int width, int height);

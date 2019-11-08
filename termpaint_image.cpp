@@ -91,8 +91,12 @@ bool termpaint_image_save(termpaint_surface *surface, const char *name) {
             if (left != x) {
                 ok = false;
             }
-            print_string(f, text, len);
-            fputs("\"", f);
+            if (len != 1 || text[0] != '\x7f') {
+                print_string(f, text, len);
+                fputs("\"", f);
+            } else {
+                fputs(" \", \"cleared\": true", f);
+            }
 
             if (right - left) {
                 fprintf(f, ", \"width\": %i", right - left + 1);

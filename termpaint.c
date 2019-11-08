@@ -1203,7 +1203,7 @@ const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x,
         text = (const char*)cell->text;
         *len = cell->text_len;
     } else if (cell->text_overflow == nullptr) {
-        text = " ";
+        text = TERMPAINT_ERASED;
         *len = 1;
     } else {
         text = (const char*)cell->text_overflow->text;

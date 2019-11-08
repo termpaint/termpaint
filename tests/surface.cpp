@@ -179,7 +179,7 @@ TEST_CASE("simple") {
     CHECK(termpaint_surface_width(f.surface) == 80);
     CHECK(termpaint_surface_height(f.surface) == 24);
 
-    checkEmptyPlusSome(f.surface, {});
+    checkEmptyPlusSome(f.surface, {}, singleWideChar(TERMPAINT_ERASED));
 }
 
 
@@ -189,14 +189,14 @@ TEST_CASE("resize") {
     CHECK(termpaint_surface_width(f.surface) == 80);
     CHECK(termpaint_surface_height(f.surface) == 24);
 
-    checkEmptyPlusSome(f.surface, {});
+    checkEmptyPlusSome(f.surface, {}, singleWideChar(TERMPAINT_ERASED));
 
     termpaint_surface_resize(f.surface, 120, 40);
 
     CHECK(termpaint_surface_width(f.surface) == 120);
     CHECK(termpaint_surface_height(f.surface) == 40);
 
-    checkEmptyPlusSome(f.surface, {});
+    checkEmptyPlusSome(f.surface, {}, singleWideChar(TERMPAINT_ERASED));
 }
 
 
@@ -1442,14 +1442,14 @@ TEST_CASE("copy - simple") {
     termpaint_surface_copy_rect(s1, 9, 3, 8, 1, f.surface, 23, 15, tileLeft, tileRight);
 
     checkEmptyPlusSome(f.surface, {
-            {{ 23, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 23, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
             {{ 24, 15 }, singleWideChar("S").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 25, 15 }, singleWideChar("a").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 26, 15 }, singleWideChar("m").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 27, 15 }, singleWideChar("p").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 28, 15 }, singleWideChar("l").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 29, 15 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
-            {{ 30, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 30, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
         singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
@@ -1531,14 +1531,14 @@ TEST_CASE("copy - src.y == -1") {
     termpaint_surface_copy_rect(s1, 9, -1, 8, 2, f.surface, 23, 15, tileLeft, tileRight);
 
     checkEmptyPlusSome(f.surface, {
-            {{ 23, 16 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 23, 16 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
             {{ 24, 16 }, singleWideChar("S").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 25, 16 }, singleWideChar("a").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 26, 16 }, singleWideChar("m").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 27, 16 }, singleWideChar("p").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 28, 16 }, singleWideChar("l").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 29, 16 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
-            {{ 30, 16 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 30, 16 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
         singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
@@ -1560,14 +1560,14 @@ TEST_CASE("copy - dst.y == -1") {
     termpaint_surface_copy_rect(s1, 9, 2, 8, 2, f.surface, 23, -1, tileLeft, tileRight);
 
     checkEmptyPlusSome(f.surface, {
-            {{ 23, 0 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 23, 0 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
             {{ 24, 0 }, singleWideChar("S").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 25, 0 }, singleWideChar("a").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 26, 0 }, singleWideChar("m").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 27, 0 }, singleWideChar("p").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 28, 0 }, singleWideChar("l").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 29, 0 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
-            {{ 30, 0 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 30, 0 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
         singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
@@ -1589,14 +1589,14 @@ TEST_CASE("copy - dst clipping bottom") {
     termpaint_surface_copy_rect(s1, 9, 2, 8, 2, f.surface, 23, 23, tileLeft, tileRight);
 
     checkEmptyPlusSome(f.surface, {
-            {{ 23, 23 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 23, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
             {{ 24, 23 }, singleWideChar("S").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 25, 23 }, singleWideChar("a").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 26, 23 }, singleWideChar("m").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 27, 23 }, singleWideChar("p").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 28, 23 }, singleWideChar("l").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 29, 23 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
-            {{ 30, 23 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 30, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
         singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
@@ -1618,14 +1618,14 @@ TEST_CASE("copy - src clipping bottom") {
     termpaint_surface_copy_rect(s1, 9, 23, 8, 2, f.surface, 23, 23, tileLeft, tileRight);
 
     checkEmptyPlusSome(f.surface, {
-            {{ 23, 23 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 23, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
             {{ 24, 23 }, singleWideChar("S").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 25, 23 }, singleWideChar("a").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 26, 23 }, singleWideChar("m").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 27, 23 }, singleWideChar("p").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 28, 23 }, singleWideChar("l").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 29, 23 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
-            {{ 30, 23 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 30, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
         singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
@@ -1645,14 +1645,14 @@ TEST_CASE("copy - uninit cell") {
     termpaint_surface_copy_rect(s1, 9, 3, 8, 1, f.surface, 23, 15, tileLeft, tileRight);
 
     checkEmptyPlusSome(f.surface, {
-            {{ 23, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 24, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 25, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 26, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 27, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 28, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 29, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
-            {{ 30, 15 }, singleWideChar(" ").withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 23, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 24, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 25, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 26, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 27, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 28, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 29, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
+            {{ 30, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
         singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
