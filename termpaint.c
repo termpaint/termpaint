@@ -808,11 +808,21 @@ void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpai
     termpaint_surface_clear_rect_with_attr(surface, 0, 0, surface->width, surface->height, attr);
 }
 
+void termpaint_surface_clear_with_attr_char(termpaint_surface *surface, const termpaint_attr *attr, int codepoint) {
+    termpaint_surface_clear_rect_with_attr_char(surface, 0, 0, surface->width, surface->height, attr, codepoint);
+}
+
 void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg) {
     termpaint_surface_clear_rect(surface, 0, 0, surface->width, surface->height, fg, bg);
 }
 
-void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr) {
+void termpaint_surface_clear_with_char(termpaint_surface *surface, int fg, int bg, int codepoint) {
+    termpaint_surface_clear_rect_with_char(surface, 0, 0, surface->width, surface->height, fg, bg, codepoint);
+}
+
+static void termpaintp_surface_clear_rect_with_attr_and_string(termpaint_surface *surface, int x, int y,
+                                                               int width, int height, const termpaint_attr *attr,
+                                                               const unsigned char* str, unsigned len) {
     if (x < 0) {
         width += x;
         x = 0;
@@ -832,14 +842,36 @@ void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, i
         for (int x1 = x; x1 < x + width; x1++) {
             cell* c = termpaintp_getcell(surface, x1, y1);
             c->cluster_expansion = 0;
-            c->text_len = 1;
-            c->text[0] = ' ';
+            if (str) {
+                c->text_len = len;
+                memcpy(c->text, str, len);
+            } else {
+                c->text_len = 0;
+                c->text_overflow = nullptr;
+            }
             c->bg_color = attr->bg_color;
             c->fg_color = attr->fg_color;
             c->deco_color = TERMPAINT_DEFAULT_COLOR;
             c->flags = attr->flags;
             c->attr_patch_idx = 0;
         }
+    }
+}
+
+void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y,
+                                                               int width, int height, const termpaint_attr *attr) {
+    termpaintp_surface_clear_rect_with_attr_and_string(surface, x, y, width, height, attr, nullptr, 0);
+}
+
+void termpaint_surface_clear_rect_with_attr_char(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr, int codepoint) {
+    int codepointSanitized = replace_unusable_codepoints(codepoint);
+    int codepointWidth = termpaintp_char_width(codepoint);
+    if (codepoint == '\x7f' || codepointWidth != 1) {
+        termpaint_surface_clear_rect_with_attr(surface, x, y, width, height, attr);
+    } else {
+        unsigned char buf[6];
+        int len = termpaintp_encode_to_utf8(codepointSanitized, buf);
+        termpaintp_surface_clear_rect_with_attr_and_string(surface, x, y, width, height, attr, buf, len);
     }
 }
 
@@ -852,6 +884,23 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
     attr.patch_setup = nullptr;
     attr.patch_cleanup = nullptr;
     termpaint_surface_clear_rect_with_attr(surface, x, y, width, height, &attr);
+}
+
+void termpaint_surface_clear_rect_with_char(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg, int codepoint) {
+    int codepointSanitized = replace_unusable_codepoints(codepoint);
+    int codepointWidth = termpaintp_char_width(codepoint);
+    if (codepoint == '\x7f' || codepointWidth != 1) {
+        termpaint_surface_clear_rect(surface, x, y, width, height, fg, bg);
+    } else {
+        termpaint_attr attr;
+        attr.fg_color = fg;
+        attr.bg_color = bg;
+        attr.deco_color = TERMPAINT_DEFAULT_COLOR;
+        attr.flags = 0;
+        attr.patch_setup = nullptr;
+        attr.patch_cleanup = nullptr;
+        termpaint_surface_clear_rect_with_attr_char(surface, x, y, width, height, &attr, codepointSanitized);
+    }
 }
 
 void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {

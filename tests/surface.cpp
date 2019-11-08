@@ -142,7 +142,7 @@ Cell readCell(termpaint_surface *surface, int x, int y) {
 }
 
 static void checkEmptyPlusSome(termpaint_surface *surface, const std::map<std::tuple<int,int>, Cell> &some,
-                               Cell empty = singleWideChar(" ")) {
+                               Cell empty = singleWideChar(TERMPAINT_ERASED)) {
     const int width = termpaint_surface_width(surface);
     const int height = termpaint_surface_height(surface);
     for (int y = 0; y < height; y++) {
@@ -179,7 +179,7 @@ TEST_CASE("simple") {
     CHECK(termpaint_surface_width(f.surface) == 80);
     CHECK(termpaint_surface_height(f.surface) == 24);
 
-    checkEmptyPlusSome(f.surface, {}, singleWideChar(TERMPAINT_ERASED));
+    checkEmptyPlusSome(f.surface, {});
 }
 
 
@@ -189,14 +189,14 @@ TEST_CASE("resize") {
     CHECK(termpaint_surface_width(f.surface) == 80);
     CHECK(termpaint_surface_height(f.surface) == 24);
 
-    checkEmptyPlusSome(f.surface, {}, singleWideChar(TERMPAINT_ERASED));
+    checkEmptyPlusSome(f.surface, {});
 
     termpaint_surface_resize(f.surface, 120, 40);
 
     CHECK(termpaint_surface_width(f.surface) == 120);
     CHECK(termpaint_surface_height(f.surface) == 40);
 
-    checkEmptyPlusSome(f.surface, {}, singleWideChar(TERMPAINT_ERASED));
+    checkEmptyPlusSome(f.surface, {});
 }
 
 
@@ -788,14 +788,37 @@ TEST_CASE("gc of cluster with more than 8 bytes (with one to keep)") {
 }
 
 
-TEST_CASE("termpaint_surface_clear_with_attr") {
+// clear is implicitly tested all over the place
+
+
+TEST_CASE("clear_with_char") {
     Fixture f{80, 24};
-    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    struct TestCase { int ch; std::string s; };
+    auto testCase = GENERATE(
+                TestCase{' ', " "},
+                TestCase{'a', "a"},
+                TestCase{'\x7f', TERMPAINT_ERASED},
+                TestCase{u'ä', "ä"},
+                TestCase{u'あ', TERMPAINT_ERASED},
+                TestCase{u'\u0308', TERMPAINT_ERASED});
+    CAPTURE(testCase.ch);
+
+    termpaint_surface_clear_with_char(f.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE, testCase.ch);
+
+    checkEmptyPlusSome(f.surface, {
+        },
+        singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE));
+}
+
+
+TEST_CASE("clear_with_attr") {
+    Fixture f{80, 24};
 
     auto test_style = GENERATE(0, TERMPAINT_STYLE_BOLD, TERMPAINT_STYLE_ITALIC, TERMPAINT_STYLE_BLINK,
                                TERMPAINT_STYLE_INVERSE, TERMPAINT_STYLE_STRIKE, TERMPAINT_STYLE_UNDERLINE,
                                TERMPAINT_STYLE_UNDERLINE_DBL, TERMPAINT_STYLE_UNDERLINE_CURLY, TERMPAINT_STYLE_OVERLINE);
-
+    CAPTURE(test_style);
 
     uattr_ptr attr;
     attr.reset(termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE));
@@ -805,8 +828,161 @@ TEST_CASE("termpaint_surface_clear_with_attr") {
 
     checkEmptyPlusSome(f.surface, {
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
                        .withStyle(test_style));
+}
+
+
+TEST_CASE("clear_with_attr_char") {
+    Fixture f{80, 24};
+
+    auto test_style = GENERATE(0, TERMPAINT_STYLE_BOLD, TERMPAINT_STYLE_ITALIC, TERMPAINT_STYLE_BLINK,
+                               TERMPAINT_STYLE_INVERSE, TERMPAINT_STYLE_STRIKE, TERMPAINT_STYLE_UNDERLINE,
+                               TERMPAINT_STYLE_UNDERLINE_DBL, TERMPAINT_STYLE_UNDERLINE_CURLY, TERMPAINT_STYLE_OVERLINE);
+    CAPTURE(test_style);
+
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE));
+    termpaint_attr_set_style(attr.get(), test_style);
+
+    struct TestCase { int ch; std::string s; };
+    auto testCase = GENERATE(
+                TestCase{' ', " "},
+                TestCase{'a', "a"},
+                TestCase{'\x7f', TERMPAINT_ERASED},
+                TestCase{u'ä', "ä"},
+                TestCase{u'あ', TERMPAINT_ERASED},
+                TestCase{u'\u0308', TERMPAINT_ERASED});
+    CAPTURE(testCase.ch);
+
+    termpaint_surface_clear_with_attr_char(f.surface, attr, testCase.ch);
+
+    checkEmptyPlusSome(f.surface, {
+        },
+        singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                       .withStyle(test_style));
+}
+
+
+TEST_CASE("clear_rect") {
+    Fixture f{80, 24};
+    termpaint_surface_clear_with_char(f.surface, TERMPAINT_COLOR_CYAN, TERMPAINT_COLOR_GREEN, '/');
+
+    termpaint_surface_clear_rect(f.surface, 20, 12, 2, 3, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+
+    checkEmptyPlusSome(f.surface, {
+            {{20, 12}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{21, 12}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{20, 13}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{21, 13}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{20, 14}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{21, 14}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        },
+        singleWideChar("/").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+}
+
+
+TEST_CASE("clear_rect_with_char") {
+    Fixture f{80, 24};
+    termpaint_surface_clear_with_char(f.surface, TERMPAINT_COLOR_CYAN, TERMPAINT_COLOR_GREEN, '/');
+
+    struct TestCase { int ch; std::string s; };
+    auto testCase = GENERATE(
+                TestCase{' ', " "},
+                TestCase{'a', "a"},
+                TestCase{'\x7f', TERMPAINT_ERASED},
+                TestCase{u'ä', "ä"},
+                TestCase{u'あ', TERMPAINT_ERASED},
+                TestCase{u'\u0308', TERMPAINT_ERASED});
+    CAPTURE(testCase.ch);
+
+    termpaint_surface_clear_rect_with_char(f.surface, 20, 12, 2, 3, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE, testCase.ch);
+
+    checkEmptyPlusSome(f.surface, {
+            {{20, 12}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{21, 12}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{20, 13}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{21, 13}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{20, 14}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+            {{21, 14}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        },
+        singleWideChar("/").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+}
+
+
+TEST_CASE("clear_rect_with_attr") {
+    Fixture f{80, 24};
+    termpaint_surface_clear_with_char(f.surface, TERMPAINT_COLOR_CYAN, TERMPAINT_COLOR_GREEN, '/');
+
+    auto test_style = GENERATE(0, TERMPAINT_STYLE_BOLD, TERMPAINT_STYLE_ITALIC, TERMPAINT_STYLE_BLINK,
+                               TERMPAINT_STYLE_INVERSE, TERMPAINT_STYLE_STRIKE, TERMPAINT_STYLE_UNDERLINE,
+                               TERMPAINT_STYLE_UNDERLINE_DBL, TERMPAINT_STYLE_UNDERLINE_CURLY, TERMPAINT_STYLE_OVERLINE);
+    CAPTURE(test_style);
+
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE));
+    termpaint_attr_set_style(attr.get(), test_style);
+
+    termpaint_surface_clear_rect_with_attr(f.surface, 20, 12, 2, 3, attr);
+
+    checkEmptyPlusSome(f.surface, {
+            {{20, 12}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{21, 12}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{20, 13}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{21, 13}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{20, 14}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{21, 14}, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+        },
+        singleWideChar("/").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+}
+
+
+TEST_CASE("clear_rect_with_attr_char") {
+    Fixture f{80, 24};
+    termpaint_surface_clear_with_char(f.surface, TERMPAINT_COLOR_CYAN, TERMPAINT_COLOR_GREEN, '/');
+
+    auto test_style = GENERATE(0, TERMPAINT_STYLE_BOLD, TERMPAINT_STYLE_ITALIC, TERMPAINT_STYLE_BLINK,
+                               TERMPAINT_STYLE_INVERSE, TERMPAINT_STYLE_STRIKE, TERMPAINT_STYLE_UNDERLINE,
+                               TERMPAINT_STYLE_UNDERLINE_DBL, TERMPAINT_STYLE_UNDERLINE_CURLY, TERMPAINT_STYLE_OVERLINE);
+    CAPTURE(test_style);
+
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE));
+    termpaint_attr_set_style(attr.get(), test_style);
+
+    struct TestCase { int ch; std::string s; };
+    auto testCase = GENERATE(
+                TestCase{' ', " "},
+                TestCase{'a', "a"},
+                TestCase{'\x7f', TERMPAINT_ERASED},
+                TestCase{u'ä', "ä"},
+                TestCase{u'あ', TERMPAINT_ERASED},
+                TestCase{u'\u0308', TERMPAINT_ERASED});
+    CAPTURE(testCase.ch);
+
+    termpaint_surface_clear_rect_with_attr_char(f.surface, 20, 12, 2, 3, attr, testCase.ch);
+
+    checkEmptyPlusSome(f.surface, {
+            {{20, 12}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{21, 12}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{20, 13}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{21, 13}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{20, 14}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+            {{21, 14}, singleWideChar(testCase.s).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)
+                                .withStyle(test_style)},
+        },
+        singleWideChar("/").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -828,8 +1004,8 @@ TEST_CASE("clear rect left partially clipped") {
     termpaint_surface_clear_rect(f.surface, -1, 3, 2, 2, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
 
     checkEmptyPlusSome(f.surface, {
-        {{ 0, 3 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
-        {{ 0, 4 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 0, 3 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 0, 4 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
     });
 }
 
@@ -852,8 +1028,8 @@ TEST_CASE("clear rect top partially clipped") {
     termpaint_surface_clear_rect(f.surface, 5, -1, 2, 2, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
 
     checkEmptyPlusSome(f.surface, {
-        {{ 5, 0 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
-        {{ 6, 0 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 5, 0 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 6, 0 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
     });
 }
 
@@ -876,8 +1052,8 @@ TEST_CASE("clear rect right partially clipped") {
     termpaint_surface_clear_rect(f.surface, 79, 3, 2, 2, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
 
     checkEmptyPlusSome(f.surface, {
-        {{ 79, 3 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
-        {{ 79, 4 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 79, 3 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 79, 4 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
     });
 }
 
@@ -900,8 +1076,8 @@ TEST_CASE("clear rect bottom partially clipped") {
     termpaint_surface_clear_rect(f.surface, 5, 23, 2, 2, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
 
     checkEmptyPlusSome(f.surface, {
-        {{ 5, 23 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
-        {{ 6, 23 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 5, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
+        {{ 6, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLUE)},
     });
 }
 
@@ -953,7 +1129,7 @@ TEST_CASE("tint") {
         {{ 6, 4 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_MAGENTA).withBg(TERMPAINT_COLOR_GREEN)
                                       .withDeco(TERMPAINT_COLOR_DARK_GREY)},
     },
-       singleWideChar(" ").withFg(TERMPAINT_COLOR_YELLOW)
+       singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_YELLOW)
                           .withBg(TERMPAINT_COLOR_CYAN)
                           .withDeco(TERMPAINT_COLOR_BRIGHT_YELLOW));
 }
@@ -1451,7 +1627,7 @@ TEST_CASE("copy - simple") {
             {{ 29, 15 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 30, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1471,7 +1647,7 @@ TEST_CASE("copy - width == 0") {
 
     checkEmptyPlusSome(f.surface, {
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1491,7 +1667,7 @@ TEST_CASE("copy - src.x bigger than source size") {
 
     checkEmptyPlusSome(f.surface, {
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1511,7 +1687,7 @@ TEST_CASE("copy - src.y bigger than source size") {
 
     checkEmptyPlusSome(f.surface, {
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1540,7 +1716,7 @@ TEST_CASE("copy - src.y == -1") {
             {{ 29, 16 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 30, 16 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1569,7 +1745,7 @@ TEST_CASE("copy - dst.y == -1") {
             {{ 29, 0 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 30, 0 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1598,7 +1774,7 @@ TEST_CASE("copy - dst clipping bottom") {
             {{ 29, 23 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 30, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1627,7 +1803,7 @@ TEST_CASE("copy - src clipping bottom") {
             {{ 29, 23 }, singleWideChar("e").withFg(TERMPAINT_COLOR_BLUE).withBg(TERMPAINT_COLOR_YELLOW)},
             {{ 30, 23 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -1654,7 +1830,7 @@ TEST_CASE("copy - uninit cell") {
             {{ 29, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
             {{ 30, 15 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_DEFAULT_COLOR).withBg(TERMPAINT_DEFAULT_COLOR)},
         },
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2001,7 +2177,7 @@ TEST_CASE("copy - double wide on src and dest (single line)") {
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2052,26 +2228,26 @@ TEST_CASE("copy - double wide on src and dest (five lines)") {
 
         {{ 20, 17 }, doubleWideChar("Ａ").withFg(TERMPAINT_COLOR_BRIGHT_CYAN).withBg(TERMPAINT_COLOR_BRIGHT_GREEN)},
         {{ 22, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_BRIGHT_CYAN).withBg(TERMPAINT_COLOR_BRIGHT_GREEN)},
-        {{ 23, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 24, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 25, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 26, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 27, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 28, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 29, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 30, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 23, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 24, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 25, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 26, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 27, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 28, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 29, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 30, 17 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
         {{ 31, 17 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_BRIGHT_CYAN).withBg(TERMPAINT_COLOR_BRIGHT_GREEN)},
         {{ 32, 17 }, doubleWideChar("Ｇ").withFg(TERMPAINT_COLOR_BRIGHT_CYAN).withBg(TERMPAINT_COLOR_BRIGHT_GREEN)},
 
 
-        {{ 23, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 24, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 25, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 26, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 27, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 28, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 29, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
-        {{ 30, 18 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 23, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 24, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 25, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 26, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 27, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 28, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 29, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 30, 18 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_WHITE).withBg(TERMPAINT_COLOR_BLACK)},
 
         {{ 19, 19 }, doubleWideChar("Ａ").withFg(TERMPAINT_COLOR_BRIGHT_CYAN).withBg(TERMPAINT_COLOR_BRIGHT_GREEN)},
         {{ 23, 19 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_YELLOW).withBg(TERMPAINT_COLOR_MAGENTA)},
@@ -2111,7 +2287,7 @@ TEST_CASE("copy - double wide on src and dest (five lines)") {
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2150,7 +2326,7 @@ TEST_CASE("copy - double wide on src and dst with rect width == 1") {
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2188,7 +2364,7 @@ TEST_CASE("copy - double wide on src and dst with rect width == 1 and misaligned
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2230,7 +2406,7 @@ TEST_CASE("copy - double wide on src and dst and dst.x == 0") {
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2272,7 +2448,7 @@ TEST_CASE("copy - double wide on src and dst and dst.x == -1") {
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2315,7 +2491,7 @@ TEST_CASE("copy - double wide on src and src.x == -1") {
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2357,7 +2533,7 @@ TEST_CASE("copy - double wide on src and dst and covering right most column of d
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2399,7 +2575,7 @@ TEST_CASE("copy - double wide on src and dst and extending beyond the right most
     }
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
@@ -2444,6 +2620,6 @@ TEST_CASE("copy - double wide on src and dst and extending beyond the right most
 
 
     checkEmptyPlusSome(f.surface, expectedCells,
-        singleWideChar(" ").withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 

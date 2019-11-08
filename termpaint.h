@@ -182,9 +182,13 @@ _tERMPAINT_PUBLIC void termpaint_surface_write_with_colors_clipped(termpaint_sur
 _tERMPAINT_PUBLIC void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr);
 _tERMPAINT_PUBLIC void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr, int clip_x0, int clip_x1);
 _tERMPAINT_PUBLIC void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg);
+_tERMPAINT_PUBLIC void termpaint_surface_clear_with_char(termpaint_surface *surface, int fg, int bg, int codepoint);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr);
+_tERMPAINT_PUBLIC void termpaint_surface_clear_with_attr_char(termpaint_surface *surface, const termpaint_attr *attr, int codepoint);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg);
+_tERMPAINT_PUBLIC void termpaint_surface_clear_rect_with_char(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg, int codepoint);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr);
+_tERMPAINT_PUBLIC void termpaint_surface_clear_rect_with_attr_char(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr, int codepoint);
 #define TERMPAINT_COPY_NO_TILE 0
 #define TERMPAINT_COPY_TILE_PRESERVE -1
 #define TERMPAINT_COPY_TILE_PUT 1
