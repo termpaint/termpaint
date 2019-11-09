@@ -55,6 +55,7 @@ public:
     std::string fg, bg, deco; // empty is default (name for named colors, number for palette colors or #rrggbb
     int style = 0;
     int width = 1;
+    bool erased = false;
 
 public:
     CapturedCell withFg(std::string val) {
@@ -75,6 +76,11 @@ public:
     CapturedCell withStyle(int val) {
         auto r = *this;
         r.style = val;
+        return r;
+    }
+    CapturedCell setErased() {
+        auto r = *this;
+        r.erased = true;
         return r;
     }
 };

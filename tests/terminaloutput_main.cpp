@@ -251,6 +251,13 @@ CapturedState capture() {
         ccell.width = width;
         std::string text = get<std::string>(cell, "t");
 
+        ccell.erased = has<bool>(cell, "cleared") ? get<bool>(cell, "cleared") : false;
+
+        if (ccell.erased && text != " ") {
+            std::clog << "capture: is erased but content is not space";
+            std::terminate();
+        }
+
         ccell.x = x;
         ccell.y = y;
         ccell.data = text;

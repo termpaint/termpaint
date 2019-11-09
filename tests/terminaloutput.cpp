@@ -68,13 +68,23 @@ void checkEmptyPlusSome(const CapturedState &s, const std::map<std::tuple<int,in
                 CHECK(cell.data == expected.data);
                 CHECK(cell.style == expected.style);
                 CHECK(cell.width == expected.width);
+                CHECK(cell.erased == expected.erased);
             } else {
+                bool expectErased = true;
+                for (int i = cell.x + 1; i < s.width; i++) {
+                    // terminals only track trailing erased cells
+                    if (some.count({i, cell.y}) && !some.at({i, cell.y}).erased) {
+                        expectErased = false;
+                        break;
+                    }
+                }
                 CHECK(cell.bg == "");
                 CHECK(cell.fg == "");
                 CHECK(cell.deco == "");
                 CHECK(cell.data == " ");
                 CHECK(cell.style == 0);
                 CHECK(cell.width == 1);
+                CHECK(cell.erased == expectErased);
             }
         }
     }
@@ -487,6 +497,30 @@ TEST_CASE("attributes") {
         {{ 10, 3 }, singleWideChar("X").withStyle(TERMPAINT_STYLE_UNDERLINE_CURLY)},
     });
 }
+
+
+TEST_CASE("cleared but colored") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_clear_rect(t.surface, 5, 2, 2, 2, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_clear_rect(t.surface, 8, 2, 2, 2, TERMPAINT_COLOR_CYAN, TERMPAINT_COLOR_WHITE);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    checkEmptyPlusSome(s, {
+        {{ 5, 2 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")},
+        {{ 6, 2 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")},
+        {{ 5, 3 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")},
+        {{ 6, 3 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")},
+        {{ 8, 2 }, singleWideChar(" ").setErased().withFg("cyan").withBg("bright white")},
+        {{ 9, 2 }, singleWideChar(" ").setErased().withFg("cyan").withBg("bright white")},
+        {{ 8, 3 }, singleWideChar(" ").setErased().withFg("cyan").withBg("bright white")},
+        {{ 9, 3 }, singleWideChar(" ").setErased().withFg("cyan").withBg("bright white")},
+    });
+}
+
 
 TEST_CASE("mouse mode: clicks") {
     SimpleFullscreen t;

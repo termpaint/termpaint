@@ -1651,6 +1651,17 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         uint32_t current_deco = -1;
         uint32_t current_flags = -1;
         uint32_t current_patch_idx = 0; // patch index is special because it could do anything.
+        bool cleared = false;
+
+        int first_noncopy_space = term->primary.width;
+        for (int x = term->primary.width - 1; x >= 0; x--) {
+            cell* c = termpaintp_getcell(&term->primary, x, y);
+            if ((c->text_len == 0 && c->text_overflow == nullptr)) {
+                first_noncopy_space = x;
+            } else {
+                break;
+            }
+        }
 
         for (int x = 0; x < term->primary.width; x++) {
             cell* c = termpaintp_getcell(&term->primary, x, y);
@@ -1689,6 +1700,10 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg
                     || effective_deco_color != current_deco || c->flags != current_flags
                     || c->attr_patch_idx != current_patch_idx;
+
+            if (first_noncopy_space < x) {
+                needs_paint = needs_attribute_change || (needs_paint && !cleared);
+            }
 
             *old_c = *c;
             for (int i = 0; i < c->cluster_expansion; i++) {
@@ -1808,7 +1823,14 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
 
                 current_patch_idx = c->attr_patch_idx;
             }
-            int_write(integration, (char*)text, code_units);
+            if (first_noncopy_space <= x) {
+                int_write(integration, "\033[K", 3);
+                pending_colum_move++;
+                speculation_buffer_state = -1;
+                cleared = true;
+            } else {
+                int_write(integration, (char*)text, code_units);
+            }
             if (current_patch_idx) {
                 if (!term->primary.patches[c->attr_patch_idx-1].optimize) {
                     int_puts(integration, term->primary.patches[c->attr_patch_idx-1].cleanup);
