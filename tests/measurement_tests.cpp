@@ -338,7 +338,8 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
         TestCase{"\xcc\x88",          1, "isolated U+0308 combining diaeresis"},
         TestCase{"a\xcc\x88",         1, "'a' + U+0308 combining diaeresis"},
         TestCase{"a\xcc\x88\xcc\xa4", 1, "'a' + U+0308 combining diaeresis + U+0324 combining diaeresis below"},
-        TestCase{"a\xf3\xa0\x84\x80\xf3\xa0\x84\x81", 1, "'a' + U+E0100 variation selector-17 + U+E0101 variation selector-18 (nonsense)"}
+        TestCase{"a\xf3\xa0\x84\x80\xf3\xa0\x84\x81", 1, "'a' + U+E0100 variation selector-17 + U+E0101 variation selector-18 (nonsense)"},
+        TestCase{"\x7f",              1, "erase marker"}
     );
     std::u32string utf32 = toUtf32(testCase.str);
     SECTION("parse as utf8") {
@@ -502,7 +503,10 @@ TEST_CASE( "Measurements for strings", "[measurement]") {
                 TestCase{ {C{"\xcc\x88", 1} } , "isolated U+0308 combining diaeresis"},
                 TestCase{ {C{"A", 1}, C{"が", 2}, C{"c", 1}, C{"d", 1} }, "Latin A followed by plain hiragana and latin cde"},
                 TestCase{ {C{"A", 1}, C{"\xF0\x9B\x80\x80", 2}, C{"d", 1} }, "Latin A followed by U+1B000 katakana letter archaic e and latin cde"},
-                TestCase{ {C{"A", 1}, C{"\xF0\x9F\x8D\x92", 2}, C{"d", 1} }, "Latin A followed by U+1F352 cherries and latin cde"}
+                TestCase{ {C{"A", 1}, C{"\xF0\x9F\x8D\x92", 2}, C{"d", 1} }, "Latin A followed by U+1F352 cherries and latin cde"},
+                TestCase{ {C{"\x7f", 1}, C{"b", 1} }, "erase marker plus b"},
+                TestCase{ {C{"a", 1}, C{"\x7f", 1}, C{"b", 1} }, "a plus erase marker plus b"},
+                TestCase{ {C{"\x7f", 1}, C{"\xcc\x88", 1} } , "erase marker plus U+0308 combining diaeresis"}
     );
     INFO(testCase.desc);
     SECTION("utf8 - codeunits") {

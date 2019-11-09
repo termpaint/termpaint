@@ -372,6 +372,12 @@ termpaint_surface *termpaint_image_load(termpaint_terminal *term, const char *na
         }
         std::string text = get<std::string>(cell, "t");
 
+        bool erased = has<bool>(cell, "cleared") ? get<bool>(cell, "cleared") : false;
+
+        if (erased) {
+            text = "\x7f";
+        }
+
         termpaint_surface_write_with_attr(surface, x, y, text.data(), attr);
 
         {

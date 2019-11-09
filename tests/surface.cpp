@@ -265,6 +265,25 @@ TEST_CASE("chars that get substituted") {
 }
 
 
+TEST_CASE("write clear char") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 3, 3, "a\x7fx", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 3, 4, "\x7fx", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 3, 5, "\x7f\u0308", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 3, 3 }, singleWideChar("a")},
+        {{ 4, 3 }, singleWideChar(TERMPAINT_ERASED)},
+        {{ 5, 3 }, singleWideChar("x")},
+        {{ 3, 4 }, singleWideChar(TERMPAINT_ERASED)},
+        {{ 4, 4 }, singleWideChar("x")},
+        {{ 3, 5 }, singleWideChar(TERMPAINT_ERASED)},
+        {{ 4, 5 }, singleWideChar("\u00a0\u0308")},
+    });
+}
+
+
 TEST_CASE("vanish chars") {
     Fixture f{80, 24};
     termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);

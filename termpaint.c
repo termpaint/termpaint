@@ -726,29 +726,37 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
                 // This is bogus usage, but just paper over it
                 codepoint = 0xFFFD;
             }
-            codepoint = replace_unusable_codepoints(codepoint);
 
-            int width = termpaintp_char_width(codepoint);
+            if (codepoint != '\x7f' || output_bytes_used != 0) {
+                codepoint = replace_unusable_codepoints(codepoint);
 
-            if (!output_bytes_used) {
-                if (width == 0) {
-                    // if start is 0 width use U+00a0 as base
-                    output_bytes_used += termpaintp_encode_to_utf8(0xa0, cluster_utf8 + output_bytes_used);
-                } else {
-                    cluster_width = width;
-                }
-                output_bytes_used += termpaintp_encode_to_utf8(codepoint, cluster_utf8 + output_bytes_used);
-            } else {
-                if (width > 0) {
-                    // don't increase input_bytes_used here because this codepoint will need to be reprocessed.
-                    break;
-                }
-                if (output_bytes_used + 6 < sizeof (cluster_utf8)) {
+                int width = termpaintp_char_width(codepoint);
+
+                if (!output_bytes_used) {
+                    if (width == 0) {
+                        // if start is 0 width use U+00a0 as base
+                        output_bytes_used += termpaintp_encode_to_utf8(0xa0, cluster_utf8 + output_bytes_used);
+                    } else {
+                        cluster_width = width;
+                    }
                     output_bytes_used += termpaintp_encode_to_utf8(codepoint, cluster_utf8 + output_bytes_used);
                 } else {
-                    // just ignore further combining codepoints, likely this is way over the limit
-                    // of the terminal anyway
+                    if (width > 0) {
+                        // don't increase input_bytes_used here because this codepoint will need to be reprocessed.
+                        break;
+                    }
+                    if (output_bytes_used + 6 < sizeof (cluster_utf8)) {
+                        output_bytes_used += termpaintp_encode_to_utf8(codepoint, cluster_utf8 + output_bytes_used);
+                    } else {
+                        // just ignore further combining codepoints, likely this is way over the limit
+                        // of the terminal anyway
+                    }
                 }
+            } else {
+                output_bytes_used = 0;
+                input_bytes_used += size;
+                // do not allow any non spacing modifiers
+                break;
             }
             input_bytes_used += size;
         }
@@ -784,8 +792,13 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
 
             c->cluster_expansion = cluster_width - 1;
             if (output_bytes_used <= 8) {
-                memcpy(c->text, cluster_utf8, output_bytes_used);
-                c->text_len = output_bytes_used;
+                if (output_bytes_used) {
+                    memcpy(c->text, cluster_utf8, output_bytes_used);
+                    c->text_len = output_bytes_used;
+                } else {
+                    c->text_len = 0;
+                    c->text_overflow = nullptr;
+                }
             } else {
                 cluster_utf8[output_bytes_used] = 0;
                 termpaintp_set_overflow_text(surface, c, cluster_utf8);
@@ -3027,8 +3040,8 @@ static void termpaintp_text_measurement_undo(termpaint_text_measurement *m) {
 
 int termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust) {
     // ATTENTION keep this in sync with actual write to surface
-    ch = replace_unusable_codepoints(ch);
-    int width = termpaintp_char_width(ch);
+    int ch_sanitized = replace_unusable_codepoints(ch);
+    int width = termpaintp_char_width(ch_sanitized);
     if (width == 0) {
         if (m->state == TM_INITIAL) {
             // Assume this will be input in this way into write which will supply it with U+00a0 as base.
@@ -3063,6 +3076,11 @@ int termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int
 
             m->pending_width += width;
             m->pending_clusters += 1;
+
+            if (ch == '\x7f') {
+                // clear marker does not allow any modifiers
+                m->state = TM_INITIAL;
+            }
 
             return TERMPAINT_MEASURE_NEW_CLUSTER;
         } else { // some limit exceeded -> return with previous cluster as best match
