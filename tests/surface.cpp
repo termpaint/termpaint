@@ -2008,9 +2008,9 @@ TEST_CASE("copy - double wide on src and dest (single line)") {
 TEST_CASE("copy - double wide on src and dest (five lines)") {
     // first line has double wide on source and destionation
     // second line has double wide on source only
-    // third line has double wide on destionation only
+    // third line has double wide on destination only
     // fourth line has no double wide
-    // fifth line has double wide on source and destionation, but misaligned
+    // fifth line has double wide on source and destination, but misaligned
 
     Fixture f{80, 24};
 
