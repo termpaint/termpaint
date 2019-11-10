@@ -5,7 +5,9 @@
 
 #include "terminaloutput.h"
 
+#include <algorithm>
 #include <map>
+#include <vector>
 
 template<typename T>
 using DEL = void(T*);
@@ -52,11 +54,30 @@ struct SimpleFullscreen {
     termpaint_integration *integration;
 };
 
-void checkEmptyPlusSome(const CapturedState &s, const std::map<std::tuple<int,int>, CapturedCell> &some) {
+class Overrides {
+public:
+    Overrides withSoftWrappedLines(std::vector<int> lines) {
+        softWrappedLines = lines;
+        return *this;
+    }
+
+public:
+    std::vector<int> softWrappedLines;
+};
+
+void checkEmptyPlusSome(const CapturedState &s, const std::map<std::tuple<int,int>, CapturedCell> &some,
+                        const Overrides overrides = {}) {
     CHECK(s.width == 80);
     CHECK(s.height == 24);
     CHECK(s.altScreen == true);
     for (const CapturedRow& row: s.rows) {
+        {
+            INFO("y = " << row.cells[0].y);
+            bool expectedSoftWrapped = std::find(overrides.softWrappedLines.begin(),
+                                                 overrides.softWrappedLines.end(),
+                                                 row.cells[0].y) != overrides.softWrappedLines.end();
+            CHECK(row.softWrapped == expectedSoftWrapped);
+        }
         for (const CapturedCell& cell: row.cells) {
             CAPTURE(cell.x);
             CAPTURE(cell.y);
@@ -521,6 +542,184 @@ TEST_CASE("cleared but colored") {
     });
 }
 
+
+TEST_CASE("wrapped line") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    std::string str1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i";
+    termpaint_surface_write_with_colors(t.surface, 0,  4, str1.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    std::string str2 = "ncididunt ut labore et dolore magna";
+    termpaint_surface_write_with_colors(t.surface, 0,  5, str2.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_set_softwrap_marker(t.surface, 79, 4, true);
+    termpaint_surface_set_softwrap_marker(t.surface, 0, 5, true);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i = 0; i < str1.size(); i++) {
+        expected[{ i, 4 }] = singleWideChar(str1.substr(i, 1)).withBg("bright red");
+    }
+
+    for (size_t i = 0; i < str2.size(); i++) {
+        expected[{ i, 5 }] = singleWideChar(str2.substr(i, 1)).withBg("bright red");
+    }
+
+
+    checkEmptyPlusSome(s, expected, Overrides().withSoftWrappedLines({4}));
+}
+
+
+TEST_CASE("wrapped line - missing initial marker") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    std::string str1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i";
+    termpaint_surface_write_with_colors(t.surface, 0,  4, str1.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    std::string str2 = "ncididunt ut labore et dolore magna";
+    termpaint_surface_write_with_colors(t.surface, 0,  5, str2.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_set_softwrap_marker(t.surface, 0, 5, true);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i = 0; i < str1.size(); i++) {
+        expected[{ i, 4 }] = singleWideChar(str1.substr(i, 1)).withBg("bright red");
+    }
+
+    for (size_t i = 0; i < str2.size(); i++) {
+        expected[{ i, 5 }] = singleWideChar(str2.substr(i, 1)).withBg("bright red");
+    }
+
+
+    checkEmptyPlusSome(s, expected, Overrides().withSoftWrappedLines({}));
+}
+
+
+TEST_CASE("wrapped line - missing continuation marker") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    std::string str1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i";
+    termpaint_surface_write_with_colors(t.surface, 0,  4, str1.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    std::string str2 = "ncididunt ut labore et dolore magna";
+    termpaint_surface_write_with_colors(t.surface, 0,  5, str2.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_set_softwrap_marker(t.surface, 79, 4, true);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i = 0; i < str1.size(); i++) {
+        expected[{ i, 4 }] = singleWideChar(str1.substr(i, 1)).withBg("bright red");
+    }
+
+    for (size_t i = 0; i < str2.size(); i++) {
+        expected[{ i, 5 }] = singleWideChar(str2.substr(i, 1)).withBg("bright red");
+    }
+
+
+    checkEmptyPlusSome(s, expected, Overrides().withSoftWrappedLines({}));
+}
+
+
+TEST_CASE("wrapped line - misplaced initial marker") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    std::string str1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i";
+    termpaint_surface_write_with_colors(t.surface, 0,  4, str1.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    std::string str2 = "ncididunt ut labore et dolore magna";
+    termpaint_surface_write_with_colors(t.surface, 0,  5, str2.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_set_softwrap_marker(t.surface, 78, 4, true);
+    termpaint_surface_set_softwrap_marker(t.surface, 0, 5, true);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i = 0; i < str1.size(); i++) {
+        expected[{ i, 4 }] = singleWideChar(str1.substr(i, 1)).withBg("bright red");
+    }
+
+    for (size_t i = 0; i < str2.size(); i++) {
+        expected[{ i, 5 }] = singleWideChar(str2.substr(i, 1)).withBg("bright red");
+    }
+
+
+    checkEmptyPlusSome(s, expected, Overrides().withSoftWrappedLines({}));
+}
+
+
+TEST_CASE("wrapped line - misplaced continuation marker") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    std::string str1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i";
+    termpaint_surface_write_with_colors(t.surface, 0,  4, str1.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    std::string str2 = "ncididunt ut labore et dolore magna";
+    termpaint_surface_write_with_colors(t.surface, 0,  5, str2.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_set_softwrap_marker(t.surface, 79, 4, true);
+    termpaint_surface_set_softwrap_marker(t.surface, 1, 5, true);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i = 0; i < str1.size(); i++) {
+        expected[{ i, 4 }] = singleWideChar(str1.substr(i, 1)).withBg("bright red");
+    }
+
+    for (size_t i = 0; i < str2.size(); i++) {
+        expected[{ i, 5 }] = singleWideChar(str2.substr(i, 1)).withBg("bright red");
+    }
+
+
+    checkEmptyPlusSome(s, expected, Overrides().withSoftWrappedLines({}));
+}
+
+
+TEST_CASE("wrapped line - wide wrapping character") {
+    SimpleFullscreen t;
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    std::string str1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temporあ";
+    termpaint_surface_write_with_colors(t.surface, 0,  4, str1.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    std::string str2 = "ncididunt ut labore et dolore magna";
+    termpaint_surface_write_with_colors(t.surface, 0,  5, str2.data(), TERMPAINT_DEFAULT_COLOR, TERMPAINT_COLOR_BRIGHT_RED);
+    termpaint_surface_set_softwrap_marker(t.surface, 78, 4, true);
+    termpaint_surface_set_softwrap_marker(t.surface, 0, 5, true);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i = 0; i < str1.size() - 1; i++) {
+        expected[{ i, 4 }] = singleWideChar(str1.substr(i, 1)).withBg("bright red");
+    }
+    expected[{ 78, 4 }] = doubleWideChar("あ").withBg("bright red");
+
+    for (size_t i = 0; i < str2.size(); i++) {
+        expected[{ i, 5 }] = singleWideChar(str2.substr(i, 1)).withBg("bright red");
+    }
+
+
+    checkEmptyPlusSome(s, expected, Overrides().withSoftWrappedLines({}));
+}
 
 TEST_CASE("mouse mode: clicks") {
     SimpleFullscreen t;

@@ -189,6 +189,7 @@ _tERMPAINT_PUBLIC void termpaint_surface_clear_rect(termpaint_surface *surface, 
 _tERMPAINT_PUBLIC void termpaint_surface_clear_rect_with_char(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg, int codepoint);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_rect_with_attr_char(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr, int codepoint);
+_tERMPAINT_PUBLIC void termpaint_surface_set_softwrap_marker(termpaint_surface *surface, int x, int y, _Bool state);
 #define TERMPAINT_COPY_NO_TILE 0
 #define TERMPAINT_COPY_TILE_PRESERVE -1
 #define TERMPAINT_COPY_TILE_PUT 1

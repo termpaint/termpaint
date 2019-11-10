@@ -97,6 +97,9 @@ struct termpaint_attr_ {
 
 #define CELL_ATTR_DECO_MASK CELL_ATTR_UNDERLINE_MASK
 
+#define CELL_SOFTWRAP_MARKER (1 << 15)
+#define CELL_ATTR_MASK ((uint16_t)(~CELL_SOFTWRAP_MARKER))
+
 #define TERMPAINT_STYLE_PASSTHROUGH (TERMPAINT_STYLE_BOLD | TERMPAINT_STYLE_ITALIC | TERMPAINT_STYLE_BLINK \
     | TERMPAINT_STYLE_OVERLINE | TERMPAINT_STYLE_INVERSE | TERMPAINT_STYLE_STRIKE)
 
@@ -106,7 +109,7 @@ typedef struct cell_ {
     uint32_t fg_color;
     uint32_t bg_color;
     uint32_t deco_color;
-    uint16_t flags; // bold, italic, underline[2], blinking, overline, inverse, strikethrough.
+    uint16_t flags; // bold, italic, underline[2], blinking, overline, inverse, strikethrough. softwrap marker
     uint8_t attr_patch_idx;
 
     uint8_t cluster_expansion : 4;
@@ -250,6 +253,7 @@ typedef struct termpaint_terminal_ {
     unsigned did_terminal_add_mouse_to_restore : 1;
     unsigned did_terminal_enable_mouse : 1;
     unsigned did_terminal_add_focusreporting_to_restore : 1;
+    unsigned did_terminal_disable_wrap : 1;
 
     termpaint_str unpause_basic_setup;
     termpaint_hash unpause_snippets;
@@ -913,6 +917,25 @@ void termpaint_surface_clear_rect_with_char(termpaint_surface *surface, int x, i
         attr.patch_setup = nullptr;
         attr.patch_cleanup = nullptr;
         termpaint_surface_clear_rect_with_attr_char(surface, x, y, width, height, &attr, codepointSanitized);
+    }
+}
+
+void termpaint_surface_set_softwrap_marker(termpaint_surface *surface, int x, int y, bool state) {
+    if (x < 0) return;
+    if (y < 0) return;
+    if (x >= surface->width) return;
+    if (y >= surface->height) return;
+    cell* c = termpaintp_getcell(surface, x, y);
+
+    if (c->text_len == 0 && c->text_overflow == WIDE_RIGHT_PADDING) {
+        // only the first cell of a multi cell character can be used to set the marker
+        return;
+    }
+
+    if (state) {
+        c->flags |= CELL_SOFTWRAP_MARKER;
+    } else {
+        c->flags &= ~CELL_SOFTWRAP_MARKER;
     }
 }
 
@@ -1640,6 +1663,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     int pending_colum_move = 0;
     int pending_colum_move_digits = 1;
     int pending_colum_move_digits_step = 10;
+
+    enum { sw_no, sw_single, sw_double } softwrap_prev = sw_no, softwrap = sw_no;
+
     for (int y = 0; y < term->primary.height; y++) {
         speculation_buffer_state = 0;
         pending_colum_move = 0;
@@ -1653,13 +1679,38 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         uint32_t current_patch_idx = 0; // patch index is special because it could do anything.
         bool cleared = false;
 
+        softwrap = sw_no;
+        if (y+1 < term->primary.height && term->primary.width) {
+            cell* first_next_line = termpaintp_getcell(&term->primary, 0, y + 1);
+            if (first_next_line->flags & CELL_SOFTWRAP_MARKER
+                    && (first_next_line->text_len || first_next_line->text_overflow != nullptr)) {
+
+                cell* last_this_line = termpaintp_getcell(&term->primary, term->primary.width - 1, y);
+                if (last_this_line->flags & CELL_SOFTWRAP_MARKER
+                        && (last_this_line->text_len || last_this_line->text_overflow != nullptr)) {
+                    softwrap = sw_single;
+                } else if (last_this_line->text_len == 0
+                           && last_this_line->text_overflow == nullptr
+                           && term->primary.width >= 2) {
+                    last_this_line = termpaintp_getcell(&term->primary, term->primary.width - 2, y);
+                    if (last_this_line->flags & CELL_SOFTWRAP_MARKER
+                            && (last_this_line->text_len || last_this_line->text_overflow != nullptr)
+                            && first_next_line->cluster_expansion == 1) {
+                        softwrap = sw_double;
+                    }
+                }
+            }
+        }
+
         int first_noncopy_space = term->primary.width;
-        for (int x = term->primary.width - 1; x >= 0; x--) {
-            cell* c = termpaintp_getcell(&term->primary, x, y);
-            if ((c->text_len == 0 && c->text_overflow == nullptr)) {
-                first_noncopy_space = x;
-            } else {
-                break;
+        if (softwrap == sw_no) {
+            for (int x = term->primary.width - 1; x >= 0; x--) {
+                cell* c = termpaintp_getcell(&term->primary, x, y);
+                if ((c->text_len == 0 && c->text_overflow == nullptr)) {
+                    first_noncopy_space = x;
+                } else {
+                    break;
+                }
             }
         }
 
@@ -1698,11 +1749,34 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             }
 
             bool needs_attribute_change = c->bg_color != current_bg || c->fg_color != current_fg
-                    || effective_deco_color != current_deco || c->flags != current_flags
+                    || effective_deco_color != current_deco || (c->flags & CELL_ATTR_MASK) != current_flags
                     || c->attr_patch_idx != current_patch_idx;
 
             if (first_noncopy_space < x) {
                 needs_paint = needs_attribute_change || (needs_paint && !cleared);
+            }
+
+            if (softwrap == sw_single && x == term->primary.width - 1) {
+                needs_paint = true;
+                if (term->did_terminal_disable_wrap) {
+                    // terminals like urxvt, screen and libvterm need this before the cursor goes
+                    // into pending wrap state.
+                    int_puts(integration, "\033[?7h");
+                }
+            }
+
+            if (softwrap == sw_double && x == term->primary.width - 2) {
+                needs_paint = true;
+                x += 1; // skip last cell
+                if (term->did_terminal_disable_wrap) {
+                    // terminals like urxvt, screen and libvterm need this before the cursor goes
+                    // into pending wrap state.
+                    int_puts(integration, "\033[?7h");
+                }
+            }
+
+            if (softwrap_prev != sw_no) {
+                needs_paint = true;
             }
 
             *old_c = *c;
@@ -1810,7 +1884,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 current_bg = c->bg_color;
                 current_fg = c->fg_color;
                 current_deco = effective_deco_color;
-                current_flags = c->flags;
+                current_flags = c->flags & CELL_ATTR_MASK;
 
                 if (current_patch_idx != c->attr_patch_idx) {
                     if (current_patch_idx) {
@@ -1830,6 +1904,17 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 cleared = true;
             } else {
                 int_write(integration, (char*)text, code_units);
+                if (softwrap_prev != sw_no) {
+                    softwrap_prev = sw_no;
+                    if (term->did_terminal_disable_wrap) {
+                        int_puts(integration, "\033[?7l");
+                    }
+                }
+
+                if (softwrap == sw_double && x == term->primary.width - 1) {
+                    // clear gap cell when a double width character causes wrap
+                    int_write(integration, "\033[K", 3);
+                }
             }
             if (current_patch_idx) {
                 if (!term->primary.patches[c->attr_patch_idx-1].optimize) {
@@ -1845,13 +1930,17 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             current_patch_idx = 0;
         }
 
-        if (full_repaint) {
-            if (y+1 < term->primary.height) {
-                int_puts(integration, "\r\n");
+        if (softwrap == sw_no) {
+            if (full_repaint) {
+                if (y+1 < term->primary.height) {
+                    int_puts(integration, "\r\n");
+                }
+            } else {
+                pending_row_move += 1;
             }
-        } else {
-            pending_row_move += 1;
         }
+
+        softwrap_prev = softwrap;
     }
     if (pending_row_move > 1) {
         --pending_row_move; // don't move after paint rect
@@ -2741,6 +2830,7 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
     termpaint_str *init_sequence = &terminal->unpause_basic_setup;
 
     termpaintp_prepend_str(&terminal->restore_seq, "\033[?7h");
+    terminal->did_terminal_disable_wrap = true;
     termpaintp_str_assign(init_sequence, "\033[?7l");
 
     if (!termpaintp_has_option(options, "-altscreen")) {

@@ -88,6 +88,7 @@ public:
 class CapturedRow {
 public:
     std::vector<CapturedCell> cells;
+    bool softWrapped = false;
 };
 
 class CapturedState {

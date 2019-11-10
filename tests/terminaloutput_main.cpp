@@ -271,6 +271,31 @@ CapturedState capture() {
     if (state.rows.size() != height) {
         return CapturedState{};
     }
+
+    if (has<picojson::object>(root, "lines")) {
+        picojson::object rows = get<picojson::object>(root, "lines");
+        for (const auto& row: rows) {
+            char *endp = const_cast<char*>(row.first.data() + row.first.length());
+            int y = strtol(row.first.data(), &endp, 10);
+            if (endp != row.first.data() + row.first.length()) {
+                std::clog << "capture: can not parse line key";
+                std::terminate();
+            }
+            if (y < 0 || y >= state.height) {
+                std::clog << "capture: line number out of range";
+                std::terminate();
+            }
+            if (!row.second.is<picojson::object>()) {
+                std::clog << "capture: expected type object for line";
+                std::terminate();
+            }
+            picojson::object lineObj = row.second.get<picojson::object>();
+            if (has<bool>(lineObj, "soft_wrapped")) {
+                state.rows[y].softWrapped = get<bool>(lineObj, "soft_wrapped");
+            }
+        }
+    }
+
     int y = 0;
     for (auto& row: state.rows) {
         std::sort(row.cells.begin(), row.cells.end(), [] (const CapturedCell &c1, const CapturedCell &c2) {
