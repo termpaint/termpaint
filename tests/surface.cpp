@@ -1164,6 +1164,159 @@ TEST_CASE("soft wrap marker - removal") {
 }
 
 
+TEST_CASE("set fg color") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR));
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BOLD);
+    termpaint_surface_write_with_attr(f.surface, 3, 3, "A", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_ITALIC);
+    termpaint_surface_write_with_attr(f.surface, 4, 3, "B", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BLINK);
+    termpaint_surface_write_with_attr(f.surface, 5, 3, "C", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_INVERSE);
+    termpaint_surface_write_with_attr(f.surface, 6, 3, "D", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_STRIKE);
+    termpaint_surface_write_with_attr(f.surface, 7, 3, "E", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE);
+    termpaint_surface_write_with_attr(f.surface, 8, 3, "F", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE_DBL);
+    termpaint_surface_write_with_attr(f.surface, 9, 3, "G", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE_CURLY);
+    termpaint_surface_write_with_attr(f.surface, 10, 3, "H", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_OVERLINE);
+    termpaint_surface_write_with_attr(f.surface, 11, 3, "I", attr.get());
+
+    for (int i = 0; i < 10; i++) {
+        termpaint_surface_set_fg_color(f.surface, 3 + i, 3, TERMPAINT_COLOR_GREEN);
+    }
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 3, 3 }, singleWideChar("A").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 4, 3 }, singleWideChar("B").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_ITALIC)},
+        {{ 5, 3 }, singleWideChar("C").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_BLINK)},
+        {{ 6, 3 }, singleWideChar("D").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_INVERSE)},
+        {{ 7, 3 }, singleWideChar("E").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_STRIKE)},
+        {{ 8, 3 }, singleWideChar("F").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE)},
+        {{ 9, 3 }, singleWideChar("G").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE_DBL)},
+        {{ 10, 3 }, singleWideChar("H").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE_CURLY)},
+        {{ 11, 3 }, singleWideChar("I").withFg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_OVERLINE)},
+        {{ 12, 3 }, singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_GREEN)},
+    });
+}
+
+
+TEST_CASE("set bg color") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR));
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BOLD);
+    termpaint_surface_write_with_attr(f.surface, 3, 3, "A", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_ITALIC);
+    termpaint_surface_write_with_attr(f.surface, 4, 3, "B", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BLINK);
+    termpaint_surface_write_with_attr(f.surface, 5, 3, "C", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_INVERSE);
+    termpaint_surface_write_with_attr(f.surface, 6, 3, "D", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_STRIKE);
+    termpaint_surface_write_with_attr(f.surface, 7, 3, "E", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE);
+    termpaint_surface_write_with_attr(f.surface, 8, 3, "F", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE_DBL);
+    termpaint_surface_write_with_attr(f.surface, 9, 3, "G", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE_CURLY);
+    termpaint_surface_write_with_attr(f.surface, 10, 3, "H", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_OVERLINE);
+    termpaint_surface_write_with_attr(f.surface, 11, 3, "I", attr.get());
+
+    for (int i = 0; i < 10; i++) {
+        termpaint_surface_set_bg_color(f.surface, 3 + i, 3, TERMPAINT_COLOR_GREEN);
+    }
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 3, 3 }, singleWideChar("A").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 4, 3 }, singleWideChar("B").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_ITALIC)},
+        {{ 5, 3 }, singleWideChar("C").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_BLINK)},
+        {{ 6, 3 }, singleWideChar("D").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_INVERSE)},
+        {{ 7, 3 }, singleWideChar("E").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_STRIKE)},
+        {{ 8, 3 }, singleWideChar("F").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE)},
+        {{ 9, 3 }, singleWideChar("G").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE_DBL)},
+        {{ 10, 3 }, singleWideChar("H").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE_CURLY)},
+        {{ 11, 3 }, singleWideChar("I").withBg(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_OVERLINE)},
+        {{ 12, 3 }, singleWideChar(TERMPAINT_ERASED).withBg(TERMPAINT_COLOR_GREEN)},
+    });
+}
+
+
+TEST_CASE("set deco color") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    uattr_ptr attr;
+    attr.reset(termpaint_attr_new(TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR));
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BOLD);
+    termpaint_surface_write_with_attr(f.surface, 3, 3, "A", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_ITALIC);
+    termpaint_surface_write_with_attr(f.surface, 4, 3, "B", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BLINK);
+    termpaint_surface_write_with_attr(f.surface, 5, 3, "C", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_INVERSE);
+    termpaint_surface_write_with_attr(f.surface, 6, 3, "D", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_STRIKE);
+    termpaint_surface_write_with_attr(f.surface, 7, 3, "E", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE);
+    termpaint_surface_write_with_attr(f.surface, 8, 3, "F", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE_DBL);
+    termpaint_surface_write_with_attr(f.surface, 9, 3, "G", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_UNDERLINE_CURLY);
+    termpaint_surface_write_with_attr(f.surface, 10, 3, "H", attr.get());
+    termpaint_attr_reset_style(attr.get());
+    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_OVERLINE);
+    termpaint_surface_write_with_attr(f.surface, 11, 3, "I", attr.get());
+
+    for (int i = 0; i < 10; i++) {
+        termpaint_surface_set_deco_color(f.surface, 3 + i, 3, TERMPAINT_COLOR_GREEN);
+    }
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 3, 3 }, singleWideChar("A").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 4, 3 }, singleWideChar("B").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_ITALIC)},
+        {{ 5, 3 }, singleWideChar("C").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_BLINK)},
+        {{ 6, 3 }, singleWideChar("D").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_INVERSE)},
+        {{ 7, 3 }, singleWideChar("E").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_STRIKE)},
+        {{ 8, 3 }, singleWideChar("F").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE)},
+        {{ 9, 3 }, singleWideChar("G").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE_DBL)},
+        {{ 10, 3 }, singleWideChar("H").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_UNDERLINE_CURLY)},
+        {{ 11, 3 }, singleWideChar("I").withDeco(TERMPAINT_COLOR_GREEN).withStyle(TERMPAINT_STYLE_OVERLINE)},
+        {{ 12, 3 }, singleWideChar(TERMPAINT_ERASED).withDeco(TERMPAINT_COLOR_GREEN)},
+    });
+}
+
+
 static int some_handle;
 
 TEST_CASE("tint") {

@@ -920,6 +920,66 @@ void termpaint_surface_clear_rect_with_char(termpaint_surface *surface, int x, i
     }
 }
 
+void termpaint_surface_set_fg_color(const termpaint_surface *surface, int x, int y, unsigned fg) {
+    if (x < 0) return;
+    if (y < 0) return;
+    if (x >= surface->width) return;
+    if (y >= surface->height) return;
+    cell* c = termpaintp_getcell(surface, x, y);
+
+    if (c->text_len == 0 && c->text_overflow == WIDE_RIGHT_PADDING) {
+        // only the first cell of a multi cell character can be used to change it.
+        // This prevents duplicate changes with naive adjust each cell code.
+        return;
+    }
+
+    c->fg_color = fg;
+    for (int i = 0; i < c->cluster_expansion; i++) {
+        cell* exp_cell = termpaintp_getcell(surface, x + 1 + i, y);
+        exp_cell->fg_color = fg;
+    }
+}
+
+void termpaint_surface_set_bg_color(const termpaint_surface *surface, int x, int y, unsigned bg) {
+    if (x < 0) return;
+    if (y < 0) return;
+    if (x >= surface->width) return;
+    if (y >= surface->height) return;
+    cell* c = termpaintp_getcell(surface, x, y);
+
+    if (c->text_len == 0 && c->text_overflow == WIDE_RIGHT_PADDING) {
+        // only the first cell of a multi cell character can be used to change it.
+        // This prevents duplicate changes with naive adjust each cell code.
+        return;
+    }
+
+    c->bg_color = bg;
+    for (int i = 0; i < c->cluster_expansion; i++) {
+        cell* exp_cell = termpaintp_getcell(surface, x + 1 + i, y);
+        exp_cell->bg_color = bg;
+    }
+}
+
+void termpaint_surface_set_deco_color(const termpaint_surface *surface, int x, int y, unsigned deco_color) {
+    if (x < 0) return;
+    if (y < 0) return;
+    if (x >= surface->width) return;
+    if (y >= surface->height) return;
+    cell* c = termpaintp_getcell(surface, x, y);
+
+    if (c->text_len == 0 && c->text_overflow == WIDE_RIGHT_PADDING) {
+        // only the first cell of a multi cell character can be used to change it.
+        // This prevents duplicate changes with naive adjust each cell code.
+        return;
+    }
+
+    c->deco_color = deco_color;
+    for (int i = 0; i < c->cluster_expansion; i++) {
+        cell* exp_cell = termpaintp_getcell(surface, x + 1 + i, y);
+        exp_cell->deco_color = deco_color;
+    }
+}
+
 void termpaint_surface_set_softwrap_marker(termpaint_surface *surface, int x, int y, bool state) {
     if (x < 0) return;
     if (y < 0) return;
