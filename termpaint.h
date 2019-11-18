@@ -206,6 +206,7 @@ _tERMPAINT_PUBLIC unsigned termpaint_surface_peek_deco_color(const termpaint_sur
 _tERMPAINT_PUBLIC int termpaint_surface_peek_style(const termpaint_surface *surface, int x, int y);
 _tERMPAINT_PUBLIC void termpaint_surface_peek_patch(const termpaint_surface *surface, int x, int y, const char **setup, const char **cleanup, _Bool *optimize);
 _tERMPAINT_PUBLIC const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x, int y, int *len, int *left, int *right);
+_tERMPAINT_PUBLIC _Bool termpaint_surface_peek_softwrap_marker(const termpaint_surface *surface, int x, int y);
 _tERMPAINT_PUBLIC _Bool termpaint_surface_same_contents(const termpaint_surface *surface1, const termpaint_surface *surface2);
 
 _tERMPAINT_PUBLIC termpaint_text_measurement* termpaint_text_measurement_new(const termpaint_surface *surface);

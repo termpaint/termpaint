@@ -1301,6 +1301,11 @@ const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x,
     return text;
 }
 
+bool termpaint_surface_peek_softwrap_marker(const termpaint_surface *surface, int x, int y) {
+    cell *cell = termpaintp_getcell(surface, x, y);
+    return !!(cell->flags & CELL_SOFTWRAP_MARKER);
+}
+
 bool termpaint_surface_same_contents(const termpaint_surface *surface1, const termpaint_surface *surface2) {
     if (surface1 == surface2) {
         return true;
@@ -1327,6 +1332,10 @@ bool termpaint_surface_same_contents(const termpaint_surface *surface1, const te
             }
             if (termpaint_surface_peek_style(surface1, x, y)
                     != termpaint_surface_peek_style(surface2, x, y)) {
+                return false;
+            }
+            if (termpaint_surface_peek_softwrap_marker(surface1, x, y)
+                    != termpaint_surface_peek_softwrap_marker(surface2, x, y)) {
                 return false;
             }
             {
