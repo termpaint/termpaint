@@ -63,6 +63,8 @@ public:
     std::string cleanup;
     bool optimize = false;
 
+    bool softWrapMarker = false;
+
 public:
     Cell withFg(uint32_t val) {
         auto r = *this;
@@ -93,6 +95,12 @@ public:
         r.setup = s;
         r.cleanup = c;
         r.optimize = o;
+        return r;
+    }
+
+    Cell withSoftWrapMarker() {
+        auto r = *this;
+        r.softWrapMarker = true;
         return r;
     }
 };
@@ -128,6 +136,7 @@ Cell readCell(termpaint_surface *surface, int x, int y) {
     cell.bg = termpaint_surface_peek_bg_color(surface, x, y);
     cell.deco = termpaint_surface_peek_deco_color(surface, x, y);
     cell.style = termpaint_surface_peek_style(surface, x, y);
+    cell.softWrapMarker = termpaint_surface_peek_softwrap_marker(surface, x, y);
 
     const char* setup;
     const char* cleanup;
@@ -165,6 +174,7 @@ static void checkEmptyPlusSome(termpaint_surface *surface, const std::map<std::t
             CHECK(cell.setup == expected->setup);
             CHECK(cell.cleanup == expected->cleanup);
             CHECK(cell.optimize == expected->optimize);
+            CHECK(cell.softWrapMarker == expected->softWrapMarker);
             x += cell.width;
         }
     }
@@ -1101,6 +1111,59 @@ TEST_CASE("clear rect bottom partially clipped") {
 }
 
 
+TEST_CASE("soft wrap marker") {
+    Fixture f{80, 24};
+
+    struct TestCase { int x; int y; };
+    auto testCase = GENERATE(
+                TestCase{5, 23},
+                TestCase{0, 0},
+                TestCase{79, 0},
+                TestCase{0, 5});
+    CAPTURE(testCase.x);
+    CAPTURE(testCase.y);
+
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_set_softwrap_marker(f.surface, testCase.x, testCase.y, true);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ testCase.x, testCase.y }, singleWideChar(TERMPAINT_ERASED).withSoftWrapMarker()},
+    });
+}
+
+
+TEST_CASE("soft wrap marker - removal") {
+    Fixture f{80, 24};
+
+    struct TestCase { int x; int y; };
+    auto testCase = GENERATE(4);
+
+    CAPTURE(testCase);
+
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_set_softwrap_marker(f.surface, 5, 23, true);
+
+    auto expected = singleWideChar(TERMPAINT_ERASED);
+
+    if (testCase == 0) {
+        termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    } else if (testCase == 1) {
+        termpaint_surface_clear_rect(f.surface, 5, 23, 1, 1, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    } else if (testCase == 2) {
+        termpaint_surface_write_with_colors(f.surface, 5, 23, TERMPAINT_ERASED, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    } else if (testCase == 3) {
+        termpaint_surface_write_with_colors(f.surface, 5, 23, " ", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+        expected = singleWideChar(" ");
+    } else if (testCase == 4) {
+        termpaint_surface_set_softwrap_marker(f.surface, 5, 23, false);
+    }
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 5, 23 }, expected},
+    });
+}
+
+
 static int some_handle;
 
 TEST_CASE("tint") {
@@ -1334,6 +1397,12 @@ TEST_CASE("off screen: compare") {
 
         termpaint_attr_set_style(attr.get(), test_style);
         termpaint_surface_write_with_attr(s2, 10, 3, "sample", attr);
+
+        CHECK_FALSE(termpaint_surface_same_contents(s1, s2));
+    }
+
+    SECTION("different soft wrap marker state") {
+        termpaint_surface_set_softwrap_marker(s1, 5, 17, true);
 
         CHECK_FALSE(termpaint_surface_same_contents(s1, s2));
     }
@@ -2146,6 +2215,34 @@ TEST_CASE("copy - simple patch") {
 
     check(s1);
     check(f.surface);
+}
+
+
+TEST_CASE("copy - soft wrap marker") {
+    Fixture f{80, 24};
+
+    termpaint_surface_clear(f.surface, TERMPAINT_COLOR_CYAN, TERMPAINT_COLOR_GREEN);
+
+    termpaint_surface_set_softwrap_marker(f.surface, 25, 15, true);
+
+    usurface_ptr s1;
+    s1.reset(termpaint_terminal_new_surface(f.terminal, 80, 24));
+    //termpaint_surface_write_with_colors(s1, 10, 3, "Sample", TERMPAINT_COLOR_BLUE, TERMPAINT_COLOR_YELLOW);
+    termpaint_surface_set_softwrap_marker(s1, 10, 3, true);
+
+    termpaint_surface_copy_rect(s1, 9, 3, 8, 1, f.surface, 23, 15, TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+
+    checkEmptyPlusSome(f.surface, {
+            {{ 23, 15 }, singleWideChar(TERMPAINT_ERASED)},
+            {{ 24, 15 }, singleWideChar(TERMPAINT_ERASED).withSoftWrapMarker()},
+            {{ 25, 15 }, singleWideChar(TERMPAINT_ERASED)},
+            {{ 26, 15 }, singleWideChar(TERMPAINT_ERASED)},
+            {{ 27, 15 }, singleWideChar(TERMPAINT_ERASED)},
+            {{ 28, 15 }, singleWideChar(TERMPAINT_ERASED)},
+            {{ 29, 15 }, singleWideChar(TERMPAINT_ERASED)},
+            {{ 30, 15 }, singleWideChar(TERMPAINT_ERASED)},
+        },
+        singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
 
