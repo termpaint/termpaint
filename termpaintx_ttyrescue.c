@@ -121,10 +121,22 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
     termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
     ret->using_mmap = 0;
     int pipe[2];
+#ifdef SOCK_CLOEXEC
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, pipe) < 0) {
         free(ret);
         return nullptr;
     }
+#else
+    // This is racy, but systems that don't offer non racy apis seem to prefer it that way.
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, pipe) < 0) {
+        free(ret);
+        return nullptr;
+    }
+    fcntl(pipe[0], F_SETFD, FD_CLOEXEC);
+    fcntl(pipe[1], F_SETFD, FD_CLOEXEC);
+    fcntl(pipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(pipe[1], F_SETFL, O_NONBLOCK);
+#endif
 
     int shmfd = -1;
 #if HAVE_MEMFD
@@ -407,7 +419,11 @@ void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
         return;
     }
     if (tpr->fd >= 0) {
+#ifdef MSG_NOSIGNAL
         send(tpr->fd, "~", 1, MSG_NOSIGNAL);
+#else
+        send(tpr->fd, "~", 1, 0);
+#endif
     }
     if (tpr->seg) {
         if (tpr->using_mmap) {
