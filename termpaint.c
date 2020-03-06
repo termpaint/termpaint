@@ -164,6 +164,7 @@ typedef enum auto_detect_state_ {
     AD_FP1_SEC_DEV_ATTRIB_RECVED,
     AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED,
     AD_FP1_QMCURSOR_POS_RECVED,
+    AD_FP1_3RD_DEV_ATTRIB_ALIASED_TO_PRI,
     AD_FP1_CLEANUP_AFTER_SYNC,
     AD_FP1_CLEANUP,
     AD_EXPECT_SYNC_TO_FINISH,
@@ -188,6 +189,7 @@ typedef enum terminal_type_enum_ {
     TT_SCREEN,
     TT_TMUX,
     TT_LINUXVC,
+    TT_MACOS,
     TT_FULL,
 } terminal_type_enum;
 
@@ -2594,6 +2596,17 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 }
                 termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 terminal->ad_state = AD_FP1_CLEANUP_AFTER_SYNC;
+                return true;
+            } else if (event->type == TERMPAINT_EV_RAW_PRI_DEV_ATTRIB) {
+                // For terminals that misinterpret \033[=c as \033[c
+                terminal->ad_state = AD_FP1_3RD_DEV_ATTRIB_ALIASED_TO_PRI;
+                return true;
+            }
+            break;
+        case AD_FP1_3RD_DEV_ATTRIB_ALIASED_TO_PRI:
+            if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->terminal_type = TT_MACOS;
+                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
                 return true;
             }
             break;
