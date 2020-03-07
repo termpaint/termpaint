@@ -117,10 +117,14 @@ _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *t
 #define TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR 5
 #define TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50 6
 #define TERMPAINT_CAPABILITY_EXTENDED_CHARSET 7
+#define TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED 8
+#define TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED 9
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability);
 _tERMPAINT_PUBLIC void termpaint_terminal_promise_capability(termpaint_terminal *terminal, int capability);
 _tERMPAINT_PUBLIC void termpaint_terminal_disable_capability(termpaint_terminal *terminal, int capability);
+_tERMPAINT_PUBLIC _Bool termpaint_terminal_should_use_truecolor(termpaint_terminal *terminal);
+
 _tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
 

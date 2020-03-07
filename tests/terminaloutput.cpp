@@ -342,6 +342,201 @@ TEST_CASE("rgb colors") {
     });
 }
 
+TEST_CASE("rgb colors with quantize to 256 colors - grey, misc and grid points") {
+    SimpleFullscreen t;
+    termpaint_terminal_disable_capability(t.terminal, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    // test that colors of the from (i,i,i) are converted to the nearest color on the grey ramp
+    // or the nearest color from the 6x6x6 cube.
+    // for each (except first and last) palette color there is one entry for the lower bound,
+    // one entry for the palette color itself and one entry for the upper bound.
+    const std::initializer_list<std::tuple<std::string, int>> greyMain = {
+        {"16", 0}, {"16", 4}, {"232", 5}, {"232", 8}, {"232", 12},
+        {"233", 13}, {"233", 18}, {"233", 22}, {"234", 23}, {"234", 28}, {"234", 32},
+        {"235", 33}, {"235", 38}, {"235", 42}, {"236", 43}, {"236", 48}, {"236", 52},
+        {"237", 53}, {"237", 58}, {"237", 62}, {"238", 63}, {"238", 68}, {"238", 72},
+        {"239", 73}, {"239", 78}, {"239", 82}, {"240", 83}, {"240", 88}, {"240", 91},
+        {"59", 92}, {"59", 95}, {"59", 96}, // 16 + 36 + 6 + 1
+        {"241", 97}, {"241", 98}, {"241", 102}, {"242", 103}, {"242", 108}, {"242", 112},
+        {"243", 113}, {"243", 118}, {"243", 122}, {"244", 123}, {"244", 128}, {"244", 131},
+        {"102", 132}, {"102", 135}, {"102", 136}, // 16 + 2*36 + 2*6 + 2*1
+        {"245", 137}, {"245", 138}, {"245", 142}, {"246", 143}, {"246", 148}, {"246", 152},
+        {"247", 153}, {"247", 158}, {"247", 162}, {"248", 163}, {"248", 168}, {"248", 171},
+        {"145", 172}, {"145", 175}, {"145", 176}, // 16 + 3*36 + 3*6 + 3*1
+        {"249", 177}, {"249", 178}, {"249", 182}, {"250", 183}, {"250", 188}, {"250", 192},
+        {"251", 193}, {"251", 198}, {"251", 202}, {"252", 203}, {"252", 208}, {"252", 211},
+        {"188", 212}, {"188", 215}, {"188", 216}, // 16 + 4*36 + 4*6 + 4*1
+        {"253", 217}, {"253", 218}, {"253", 222}, {"254", 223}, {"254", 228}, {"254", 232},
+        {"255", 233}, {"255", 238}, {"255", 246},
+        {"231", 247}, {"231", 255} // 16 + 5*36 + 5*6 + 5*1
+    };
+
+    for (size_t i=0; i < greyMain.size(); i++) {
+        int val = std::get<1>(*(greyMain.begin()+i));
+        termpaint_surface_write_with_colors(t.surface, i, 0, "x", TERMPAINT_DEFAULT_COLOR, TERMPAINT_RGB_COLOR(val, val, val));
+    }
+
+    int column = 0;
+    int row = 1;
+
+
+    const std::initializer_list<std::tuple<int, std::string, int, std::string>> additionalTests = {
+        {TERMPAINT_RGB_COLOR(255, 128, 128), "210", TERMPAINT_DEFAULT_COLOR, ""}, // 255,135,135 -> 16 + 5*36 + 2*6 + 2
+        {TERMPAINT_RGB_COLOR(128, 255, 128), "120", TERMPAINT_DEFAULT_COLOR, ""}, // 135,255,135 -> 16 + 2*36 + 5*6 + 2
+        {TERMPAINT_RGB_COLOR(128, 128, 255), "105", TERMPAINT_DEFAULT_COLOR, ""}, // 135,135,255 -> 16 + 2*36 + 2*6 + 5
+        {TERMPAINT_DEFAULT_COLOR, "", TERMPAINT_RGB_COLOR(255, 128, 128), "210"}, // 255,135,135 -> 16 + 5*36 + 2*6 + 2
+        {TERMPAINT_DEFAULT_COLOR, "", TERMPAINT_RGB_COLOR(128, 255, 128), "120"}, // 135,255,135 -> 16 + 2*36 + 5*6 + 2
+        {TERMPAINT_DEFAULT_COLOR, "", TERMPAINT_RGB_COLOR(128, 128, 255), "105"}, // 135,135,255 -> 16 + 2*36 + 2*6 + 5
+    };
+
+
+    for (auto test : additionalTests) {
+        termpaint_surface_write_with_colors(t.surface, column, row, "a", std::get<0>(test), std::get<2>(test));
+        if (++column == 80) {
+            column = 0;
+            ++row;
+        }
+    }
+
+    const auto grid = { 0, 95, 135, 175, 215, 255 };
+
+    // exact palette grid values
+    for (int r : grid) for (int g : grid) for (int b : grid) {
+        termpaint_surface_write_with_colors(t.surface, column, row, "y", TERMPAINT_DEFAULT_COLOR, TERMPAINT_RGB_COLOR(r, g, b));
+        if (++column == 80) {
+            column = 0;
+            ++row;
+        }
+    }
+
+    CHECK(row < 24);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    for (size_t i=0; i < greyMain.size(); i++) {
+        std::string val = std::get<0>(*(greyMain.begin()+i));
+        expected[{i, 0}] = singleWideChar("x").withBg(val);
+    }
+
+    column = 0;
+    row = 1;
+
+
+    for (auto test : additionalTests) {
+        auto cell = singleWideChar("a");
+        if (std::get<1>(test).size()) {
+            cell = cell.withFg(std::get<1>(test));
+        }
+        if (std::get<3>(test).size()) {
+            cell = cell.withBg(std::get<3>(test));
+        }
+        expected[{column, row}] = cell;
+        if (++column == 80) {
+            column = 0;
+            ++row;
+        }
+    }
+
+    // exact palette grid values
+    for (int r_idx = 0; r_idx < grid.size(); r_idx++) for (int g_idx = 0; g_idx < grid.size(); g_idx++)
+      for (int b_idx = 0; b_idx < grid.size(); b_idx++) {
+        expected[{column, row}] = singleWideChar("y").withBg(std::to_string(16 + r_idx*36 + g_idx*6 + b_idx));
+        if (++column == 80) {
+            column = 0;
+            ++row;
+        }
+    }
+
+    checkEmptyPlusSome(s, expected);
+}
+
+TEST_CASE("rgb colors with quantize to 256 colors - grid bounds") {
+    SimpleFullscreen t;
+    termpaint_terminal_disable_capability(t.terminal, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    const auto grid = { 0, 95, 135, 175, 215, 255 };
+
+    int column = 0;
+    int row = 0;
+
+
+    // (value, index)
+    const std::initializer_list<std::tuple<int, int>>  gridBounds = {
+        {0, 0}, {47, 0},
+        {48, 1}, {114, 1},
+        {115, 2}, {154, 2},
+        {155, 3}, {194, 3},
+        {195, 4}, {234, 4},
+        {235, 5}, {255, 5}
+    };
+
+    const auto grey_ramp = {8, 18, 28, 38, 48, 58, 68, 78, 88, 98, 108, 118, 128, 138, 148, 158, 168, 178, 188, 198, 208, 218, 228, 238};
+
+    // check bounds of boxes
+    for (auto r_t : gridBounds) for (auto g_t : gridBounds) for (auto b_t : gridBounds) {
+        int r_val = std::get<0>(r_t);
+        int g_val = std::get<0>(g_t);
+        int b_val = std::get<0>(b_t);
+
+        termpaint_surface_write_with_colors(t.surface, column, row, "z", TERMPAINT_DEFAULT_COLOR, TERMPAINT_RGB_COLOR(r_val, g_val, b_val));
+        if (++column == 80) {
+            column = 0;
+            ++row;
+        }
+    }
+
+    CHECK(row < 24);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    CapturedState s = capture();
+
+    std::map<std::tuple<int,int>, CapturedCell> expected;
+
+    column = 0;
+    row = 0;
+
+    // check bounds of boxes
+    for (auto r_t : gridBounds) for (auto g_t : gridBounds) for (auto b_t : gridBounds) {
+        int r_center = *(grid.begin() + std::get<1>(r_t));
+        int r_idx = std::get<1>(r_t);
+        int r_val = std::get<0>(r_t);
+        int g_center = *(grid.begin() + std::get<1>(g_t));
+        int g_idx = std::get<1>(g_t);
+        int g_val = std::get<0>(g_t);
+        int b_center = *(grid.begin() + std::get<1>(b_t));
+        int b_idx = std::get<1>(b_t);
+        int b_val = std::get<0>(b_t);
+
+        std::string expected_color = std::to_string(16 + r_idx*36 + g_idx*6 + b_idx);
+
+        auto sq = [](int x) { return x*x; };
+        int best_metric = sq(r_center - r_val) + sq(g_center - g_val) + sq(b_center - b_val);
+        for (int grey_index = 0; grey_index < grey_ramp.size(); grey_index++) {
+            const int grey_quantized = *(grey_ramp.begin() + grey_index);
+            const int cur_metric = sq(grey_quantized - r_val) + sq(grey_quantized - g_val) + sq(grey_quantized - b_val);
+            if (cur_metric < best_metric) {
+                expected_color = std::to_string(232 + grey_index);
+                best_metric = cur_metric;
+            }
+        }
+
+        expected[{column, row}] = singleWideChar("z").withBg(expected_color);
+        if (++column == 80) {
+            column = 0;
+            ++row;
+        }
+    }
+
+    checkEmptyPlusSome(s, expected);
+}
+
 TEST_CASE("named fg colors") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);

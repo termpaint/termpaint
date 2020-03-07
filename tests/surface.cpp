@@ -2892,3 +2892,14 @@ TEST_CASE("copy - double wide on src and dst and extending beyond the right most
         singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
+
+
+// internal but exposed
+extern "C" {
+    bool termpaintp_test();
+}
+
+TEST_CASE("termpaintp_test") {
+    bool x = termpaintp_test();
+    CHECK(x);
+}
