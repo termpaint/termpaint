@@ -2338,6 +2338,11 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 }
             }
         }
+        if (term->terminal_version < 3600) {
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+        } else {
+            termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+        }
     } else if (term->terminal_type == TT_XTERM) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (data && strlen(data) > 10) {
@@ -2361,6 +2366,11 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
             }
         }
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+        if (term->terminal_version < 282) {
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+        } else {
+            termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+        }
     } else if (term->terminal_type == TT_SCREEN) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (data && strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
@@ -2374,16 +2384,24 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 term->terminal_version = version;
             }
         }
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+    } else if (term->terminal_type == TT_TMUX) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_KONSOLE) {
         // konsole starting at version 18.07.70 could do the CSI space q one too, but
         // we don't have the konsole version.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+    } else if (term->terminal_type == TT_URXVT) {
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
     } else if (term->terminal_type == TT_LINUXVC) {
         // Linux VC has to fit all character choices into 8 bit or 9 bit (depending on config)
         // thus is has a very limited set of characters available. What is available exactly
         // depends on the font, with most fonts optimizing for a given set of languages and
         // only providing a small set of line drawing characters etc.
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
+    } else if (term->terminal_type == TT_MACOS) {
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
     } else if (term->terminal_type == TT_FULL) {
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
