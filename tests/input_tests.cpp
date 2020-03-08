@@ -75,7 +75,9 @@ TEST_CASE( "Input is correctly seperated", "[sep]" ) {
     REQUIRE(parses_as_one(CSI8 "1;3A")); // xterm: alt-arrow_up with 8bit CSI
     REQUIRE(parses_as_one(DCS7 "1$r0m" ST7)); // possible reply to "\eP$qm\e\\";
     REQUIRE(parses_as_one(DCS8 "1$r0m" ST8));
+    REQUIRE(parses_as_one(DCS8 "1$r0m\007"));
     REQUIRE(parses_as_one(OSC7 "lsome title" ST7)); // possible reply to "\[21t"
+    REQUIRE(parses_as_one(OSC7 "lsome title\007"));
     REQUIRE(parses_as_one(SS3_7 "P")); // F1
     REQUIRE(parses_as_one(SS3_8 "P")); // F1
 }
@@ -428,11 +430,17 @@ TEST_CASE("input: unmapped/rejected sequences") {
         TestCase{ "\033[27;2147483648;1~", "modify other with out of range parameter" },
 
         TestCase{ "\033]\033\\",    "empty OSC sequence" },
+        TestCase{ "\033]\007",      "empty OSC sequence (BEL)" },
         TestCase{ "\033]XX\033\\",  "non numeric OSC sequence (X)" },
+        TestCase{ "\033]XX\007",    "non numeric OSC sequence (X,BEL)" },
         TestCase{ "\033]  \033\\",  "non numeric OSC sequence (space)" },
+        TestCase{ "\033]  \007",    "non numeric OSC sequence (space,BEL)" },
         TestCase{ "\033]00\033\\",  "numeric OSC sequence without additional payload" },
+        TestCase{ "\033]00\007",    "numeric OSC sequence without additional payload (BEL)" },
         TestCase{ "\033]0X\033\\",  "OSC sequence with inital digit but non digit following (X)" },
+        TestCase{ "\033]0X\007",    "OSC sequence with inital digit but non digit following (X,BEL)" },
         TestCase{ "\033]0*\033\\",  "OSC sequence with inital digit but non digit following (*)" },
+        TestCase{ "\033]0*\007",    "OSC sequence with inital digit but non digit following (*,BEL)" },
 
         TestCase{ "\x80",            "0x80" },
         TestCase{ "\033\x80",       "ESC + 0x80" },
@@ -440,15 +448,22 @@ TEST_CASE("input: unmapped/rejected sequences") {
         TestCase{ "\033]abc\\\033x", "OSC with backslash and mistermination" },
 
         TestCase{ "\033]0;\033\\", "OSC sequence with unassigned number 0" },
+        TestCase{ "\033]0;\007",   "OSC sequence with unassigned number 0 (BEL)" },
         TestCase{ "\033]700;\033\\", "OSC sequence with unassigned number" },
+        TestCase{ "\033]700;\007",   "OSC sequence with unassigned number (BEL)" },
         TestCase{ "\033]999999;\033\\", "OSC sequence with huge number (no overflowing)" },
+        TestCase{ "\033]999999;\007",   "OSC sequence with huge number (no overflowing,BEL)" },
         TestCase{ "\033]2147483648\033\\", "OSC sequence with huge number (outside int range1)" },
+        TestCase{ "\033]2147483648\007",   "OSC sequence with huge number (outside int range1,BEL)" },
         TestCase{ "\033]2147483650\033\\", "OSC sequence with huge number (outside int range2)" },
+        TestCase{ "\033]2147483650\007",   "OSC sequence with huge number (outside int range2,BEL)" },
 
         TestCase{ "\033]700;\033[  @", "unterminated OSC sequence", 2 },
 
         TestCase{ "\033P700\033\\",  "DCS with 700"},
+        TestCase{ "\033P700\007",    "DCS with 700 (BEL)"},
         TestCase{ "\033P!700\033\\", "DCS with !700" },
+        TestCase{ "\033P!700\007",   "DCS with !700 (BEL)" },
         TestCase{ "\033Pabc\\\033x", "DSC with backslash and mistermination" },
         TestCase{ "\x90   \033x",    "8 bit DCS with mistermination" },
 

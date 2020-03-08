@@ -1408,7 +1408,7 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             case tpis_cmd_str:
                 if (cur_ch == '\e') {
                     ctx->state = tpis_str_terminator_esc;
-                } else if (cur_ch == 0x9c) {
+                } else if (cur_ch == 0x9c || cur_ch == 0x07) {
                     finished = true;
                 }
                 break;
