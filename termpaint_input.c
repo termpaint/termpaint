@@ -1199,13 +1199,20 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
 #undef SEQ
         }
 
-        if (!event.type && length > 5 && data[0] == '\033' && data[1] == ']' && data[length-1] == '\\' && data[length-2] == '\033') {
+        if (!event.type && length > 5 && data[0] == '\033' && data[1] == ']' &&
+                ((data[length-1] == '\\' && data[length-2] == '\033') || (data[length-1] == '\x07') || (data[length-1] == 0x9c))) {
             // OSC sequences
+            size_t st_offset;
+            if (data[length-1] == '\\') {
+                st_offset = length - 2;
+            } else {
+                st_offset = length - 1;
+            }
             int num; // -1 -> not a numerical OSC
             size_t num_end = 0;
             if ('0' <= data[2] && data[2] <= '9') {
                 num = 0;
-                for (size_t i = 2; i < length - 2; i++) {
+                for (size_t i = 2; i < st_offset; i++) {
                     if (data[i] == ';') {
                         num_end = i;
                         // finished
@@ -1230,7 +1237,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.color_slot_report.slot = num;
                 event.color_slot_report.color = (const char*)data + num_end + 1;
                 size_t end_idx = num_end + 1;
-                while (end_idx < length && data[end_idx] != '\033' && data[end_idx] != ';') {
+                while (end_idx < st_offset && data[end_idx] != ';') {
                     end_idx++;
                 }
                 event.color_slot_report.length = end_idx - num_end - 1;

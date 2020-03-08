@@ -936,12 +936,21 @@ TEST_CASE("input: color slot report") {
     struct TestCase { const std::string sequence; const int number; const std::string content; };
     const auto testCase = GENERATE(
         TestCase{ "\033]10;rgb:0000/0000/0000\033\\",       10,  "rgb:0000/0000/0000" },
+        TestCase{ "\033]10;rgb:0000/0000/0000\007",         10,  "rgb:0000/0000/0000" },
+        TestCase{ "\033]10;rgb:0000/0000/0000\x9c",         10,  "rgb:0000/0000/0000" },
         TestCase{ "\033]14;red\033\\",                      14,  "red" },
+        TestCase{ "\033]14;red\007",                        14,  "red" },
+        TestCase{ "\033]14;red\x9c",                        14,  "red" },
         TestCase{ "\033]17;#ffffff\033\\",                  17,  "#ffffff" },
+        TestCase{ "\033]17;#ffffff\007",                    17,  "#ffffff" },
         TestCase{ "\033]19;rgba:aaaa/0000/8080/ffff\033\\", 19,  "rgba:aaaa/0000/8080/ffff" },
+        TestCase{ "\033]19;rgba:aaaa/0000/8080/ffff\007",   19,  "rgba:aaaa/0000/8080/ffff" },
         TestCase{ "\033]705;CIELab:0.45/.23/.56\033\\",     705, "CIELab:0.45/.23/.56" },
+        TestCase{ "\033]705;CIELab:0.45/.23/.56\007",       705, "CIELab:0.45/.23/.56" },
         TestCase{ "\033]708;#fff\033\\",                    708, "#fff" },
-        TestCase{ "\033]708;#aaaabbbbcccc;\033\\",          708, "#aaaabbbbcccc" }
+        TestCase{ "\033]708;#fff\007",                      708, "#fff" },
+        TestCase{ "\033]708;#aaaabbbbcccc;\033\\",          708, "#aaaabbbbcccc" },
+        TestCase{ "\033]708;#aaaabbbbcccc;\007",            708, "#aaaabbbbcccc" }
     );
     enum { START, GOT_EVENT } state = START;
     INFO( "ESC" + testCase.sequence.substr(1));
