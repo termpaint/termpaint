@@ -458,6 +458,9 @@ TEST_CASE("input: unmapped/rejected sequences") {
         TestCase{ "\033]2147483650\033\\", "OSC sequence with huge number (outside int range2)" },
         TestCase{ "\033]2147483650\007",   "OSC sequence with huge number (outside int range2,BEL)" },
 
+        TestCase{ "\033]4;2147483648;rgb:0000/0000/0000\033\\", "OSC 4 sequence with huge number (outside int range)" },
+        TestCase{ "\033]4;2147483648;rgb:0000/0000/0000\007",   "OSC 4 sequence with huge number (outside int range,BEL)" },
+
         TestCase{ "\033]700;\033[  @", "unterminated OSC sequence", 2 },
 
         TestCase{ "\033P700\033\\",  "DCS with 700"},
@@ -962,6 +965,44 @@ TEST_CASE("input: color slot report") {
             REQUIRE(event->type == TERMPAINT_EV_COLOR_SLOT_REPORT);
             CHECK(event->color_slot_report.slot == testCase.number);
             CHECK(std::string(event->color_slot_report.color, event->color_slot_report.length) == testCase.content);
+            state = GOT_EVENT;
+        } else {
+            FAIL("unexpected state " << state);
+        }
+    };
+    termpaint_input *input_ctx = termpaint_input_new();
+    wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+    termpaint_input_add_data(input_ctx, testCase.sequence.data(), testCase.sequence.size());
+    REQUIRE(state == GOT_EVENT);
+    REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
+}
+
+TEST_CASE("input: palette color report") {
+    struct TestCase { const std::string sequence; const int number; const std::string content; };
+    const auto testCase = GENERATE(
+        TestCase{ "\033]4;10;rgb:0000/0000/0000\033\\",       10,  "rgb:0000/0000/0000" },
+        TestCase{ "\033]4;10;rgb:0000/0000/0000\007",         10,  "rgb:0000/0000/0000" },
+        TestCase{ "\033]4;10;rgb:0000/0000/0000\x9c",         10,  "rgb:0000/0000/0000" },
+        TestCase{ "\033]4;14;red\033\\",                      14,  "red" },
+        TestCase{ "\033]4;17;#ffffff\033\\",                  17,  "#ffffff" },
+        TestCase{ "\033]4;19;rgba:aaaa/0000/8080/ffff\033\\", 19,  "rgba:aaaa/0000/8080/ffff" },
+        TestCase{ "\033]4;255;CIELab:0.45/.23/.56\033\\",     255, "CIELab:0.45/.23/.56" },
+        TestCase{ "\033]4;87;#fff\033\\",                     87, "#fff" },
+        TestCase{ "\033]4;0;#aaaabbbbcccc;\033\\",            0, "#aaaabbbbcccc" },
+        TestCase{ "\033]4;rgb:0000/0000/0000\033\\",         -1,  "rgb:0000/0000/0000" },
+        TestCase{ "\033]4;rgb:0000/0000/0000\007",           -1,  "rgb:0000/0000/0000" }
+    );
+    enum { START, GOT_EVENT } state = START;
+    INFO( "ESC" + testCase.sequence.substr(1));
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
+        if (state == GOT_EVENT) {
+            FAIL("more events than expected");
+        } else if (state == START) {
+            REQUIRE(event->type == TERMPAINT_EV_PALETTE_COLOR_REPORT);
+            CHECK(event->palette_color_report.color_index == testCase.number);
+            CHECK(std::string(event->palette_color_report.color_desc, event->palette_color_report.length) == testCase.content);
             state = GOT_EVENT;
         } else {
             FAIL("unexpected state " << state);

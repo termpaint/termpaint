@@ -81,6 +81,7 @@ _tERMPAINT_PUBLIC const char *termpaint_input_focus_out(void);
 #define TERMPAINT_EV_REPAINT_REQUESTED 9
 #define TERMPAINT_EV_MOUSE 10
 #define TERMPAINT_EV_MISC 11
+#define TERMPAINT_EV_PALETTE_COLOR_REPORT 12
 
 #define TERMPAINT_EV_RAW_PRI_DEV_ATTRIB 100
 #define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 101
@@ -149,11 +150,20 @@ struct termpaint_event_ {
             const char *string;
         } raw;
 
+        // TERMPAINT_EV_COLOR_SLOT_REPORT
         struct {
             int slot;
             const char *color;
             unsigned length;
         } color_slot_report;
+
+        // TERMPAINT_EV_PALETTE_COLOR_REPORT
+        struct {
+            int color_index;
+            const char *color_desc;
+            unsigned length;
+        } palette_color_report;
+
     };
 };
 typedef struct termpaint_event_ termpaint_event;

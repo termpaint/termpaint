@@ -1232,6 +1232,42 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 num = -1;
             }
 
+            if (num_end && num == 4) {
+                event.palette_color_report.color_index = 0;
+                // the normal report has the form OSC 4 ; color_index ; color_desc ST
+                // but at least urxvt does send an different form of OSC 4 ; color_desc ST
+                //    (set color_index == -1 in the event in that case)
+                bool color_index_ok = true;
+                size_t end_idx1 = num_end + 1;
+                while (end_idx1 < st_offset && data[end_idx1] != ';') {
+                    if ('0' <= data[end_idx1] && data[end_idx1] <= '9') {
+                        if (!termpaintp_input_checked_append_digit(&event.palette_color_report.color_index,
+                                                                   10, data[end_idx1] - '0')) {
+                            color_index_ok = false;
+                        }
+                    } else {
+                        color_index_ok = false;
+                    }
+                    end_idx1++;
+                }
+                if (end_idx1 + 1 < st_offset) {
+                    size_t end_idx2 = end_idx1 + 1;
+                    while (end_idx2 < st_offset && data[end_idx2] != ';') {
+                        end_idx2++;
+                    }
+                    if (color_index_ok) {
+                        event.type = TERMPAINT_EV_PALETTE_COLOR_REPORT;
+                        event.palette_color_report.color_desc = (const char*)data + end_idx1 + 1;
+                        event.palette_color_report.length = end_idx2 - end_idx1 - 1;
+                    }
+                } else {
+                    event.palette_color_report.color_index = -1;
+                    event.type = TERMPAINT_EV_PALETTE_COLOR_REPORT;
+                    event.palette_color_report.color_desc = (const char*)data + num_end + 1;
+                    event.palette_color_report.length = end_idx1 - num_end - 1;
+                }
+            }
+
             if (num_end && ((num >= 10 && num <= 14) || num == 17 || num == 19 || (num >= 705 && num <= 708))) {
                 event.type = TERMPAINT_EV_COLOR_SLOT_REPORT;
                 event.color_slot_report.slot = num;
