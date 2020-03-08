@@ -157,6 +157,8 @@ typedef enum auto_detect_state_ {
     AD_BASIC_CURPOS_RECVED,
     AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB,
     AD_BASIC_SEC_DEV_ATTRIB_RECVED,
+    // urxvt palette size detection
+    AD_URXVT_88_256_REQ,
     // finger print 1: Test for 'private' cursor position, xterm secondary id quirk, vte CSI 1x quirk
     AD_FP1_REQ,
     AD_FP1_REQ_TERMID_RECVED,
@@ -223,7 +225,7 @@ typedef struct termpaint_integration_private_ {
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 10
+#define NUM_CAPABILITIES 11
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -2599,8 +2601,18 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_BASIC_SEC_DEV_ATTRIB_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 if (terminal->terminal_type_confidence >= 2) {
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    if (terminal->terminal_type == TT_URXVT) {
+                        // auto detect 88 or 256 color mode by observing if querying color 255 results in a response
+                        termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_88_COLOR);
+                        // Using BEL as termination, because urxvt doesn't properly support ESC \ as terminator
+                        int_puts(integration, "\033]4;255;?\007");
+                        int_puts(integration, "\033[5n");
+                        terminal->ad_state = AD_URXVT_88_256_REQ;
+                        return true;
+                    } else {
+                        terminal->ad_state = AD_FINISHED;
+                        return false;
+                    }
                 }
                 int_puts(integration, "\033[=c");
                 int_puts(integration, "\033[>1c");
@@ -2609,6 +2621,15 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 int_puts(integration, "\033[5n");
                 int_awaiting_response(integration);
                 terminal->ad_state = AD_FP1_REQ;
+                return true;
+            }
+            break;
+        case AD_URXVT_88_256_REQ:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_PALETTE_COLOR_REPORT) {
+                termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_88_COLOR);
                 return true;
             }
             break;
@@ -3615,6 +3636,7 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
 static bool termpaintp_test_quantize_to_256(void) {
     termpaint_terminal terminal;
     terminal.cache_should_use_truecolor = false;
+    terminal.capabilities[TERMPAINT_CAPABILITY_88_COLOR] = false;
     struct pal_entry { int nr; int r,g,b; };
     const struct pal_entry palette[240] = {
         { 16, 0, 0, 0 }, { 17, 0, 0, 95 }, { 18, 0, 0, 135 }, { 19, 0, 0, 175 }, { 20, 0, 0, 215 },

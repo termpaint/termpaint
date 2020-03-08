@@ -119,6 +119,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *t
 #define TERMPAINT_CAPABILITY_EXTENDED_CHARSET 7
 #define TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED 8
 #define TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED 9
+#define TERMPAINT_CAPABILITY_88_COLOR 10
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability);
 _tERMPAINT_PUBLIC void termpaint_terminal_promise_capability(termpaint_terminal *terminal, int capability);
