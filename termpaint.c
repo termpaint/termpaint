@@ -1714,7 +1714,7 @@ termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term) {
     return &term->primary;
 }
 
-static int termpaintp_quantize_color_grid(int val) {
+static int termpaintp_quantize_color_grid6(int val) {
     // index of nearest int to [0, 95, 135, 175, 215, 255]
     // cut points: 47, 115, 155, 195, 235
     if (val <= 47) {
@@ -1726,7 +1726,28 @@ static int termpaintp_quantize_color_grid(int val) {
     return 2 + (val - 115) / 40;
 }
 
-static const int termpaintp_grid_values[] = {0, 95, 135, 175, 215, 255};
+static int termpaintp_quantize_color_grid4(int val) {
+    // index of nearest int to [0, 139, 205, 255]
+    // cut points: 69, 172, 230
+    if (val <= 172) {
+        if (val <= 69) {
+            return 0;
+        } else {
+            return 1;
+        }
+    } else {
+        if (val < 230) {
+            return 2;
+        } else {
+            return 3;
+        }
+    }
+}
+
+static const int termpaintp_grid6_values[] = {0, 95, 135, 175, 215, 255};
+static const int termpaintp_grid4_values[] = {0, 139, 205, 255};
+
+static const int termpaintp_ramp8_values[] = {46, 92, 115, 139, 162, 185, 208, 231};
 
 static uint32_t termpaintp_quantize_color(termpaint_terminal *term, uint32_t color) {
     if (!term->cache_should_use_truecolor) {
@@ -1735,33 +1756,58 @@ static uint32_t termpaintp_quantize_color(termpaint_terminal *term, uint32_t col
             const int g = (color >> 8) & 0xff;
             const int b = (color) & 0xff;
 
-            // find nearest grey value ([8, 18, ..., 228, 238]
             const int grey = (r+g+b) / 3;
-            int grey_index = (((grey - 8)+5) / 10); // -3 / 10 rounds to zero, so grey == 0 still gives index 0
-            if (grey_index >= 24) {
-                grey_index = 23;
-            }
-            const int grey_quantized = 8 + grey_index * 10;
+            if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_88_COLOR)) {
+                // find nearest color on grid ((r,g,b) for r,b,g in [0, 95, 135, 175, 215, 255])
+                const int red_index = termpaintp_quantize_color_grid4(r);
+                const int green_index = termpaintp_quantize_color_grid4(g);
+                const int blue_index = termpaintp_quantize_color_grid4(b);
 
-            // find nearest color on grid ((r,g,b) for r,b,g in [0, 95, 135, 175, 215, 255])
-            const int red_index = termpaintp_quantize_color_grid(r);
-            const int green_index = termpaintp_quantize_color_grid(g);
-            const int blue_index = termpaintp_quantize_color_grid(b);
+                const int red_quantized = termpaintp_grid4_values[red_index];
+                const int green_quantized = termpaintp_grid4_values[green_index];
+                const int blue_quantized = termpaintp_grid4_values[blue_index];
 
-            const int red_quantized = termpaintp_grid_values[red_index];
-            const int green_quantized = termpaintp_grid_values[green_index];
-            const int blue_quantized = termpaintp_grid_values[blue_index];
+                color = TERMPAINT_INDEXED_COLOR + 16 + red_index * 16 + green_index * 4 + blue_index;
+#define SQ(x) ((x) * (x))
+                int best_metric = SQ(red_quantized - r) + SQ(green_quantized - g) + SQ(blue_quantized - b);
+
+                for (int grey_index = 0; grey_index < 8; grey_index++) {
+                    const int grey_quantized = termpaintp_ramp8_values[grey_index];
+                    const int cur_metric = SQ(grey_quantized - r) + SQ(grey_quantized - g) + SQ(grey_quantized - b);
+                    if (cur_metric < best_metric) {
+                        color = TERMPAINT_INDEXED_COLOR + 80 + grey_index;
+                        best_metric = cur_metric;
+                    }
+                }
+#undef SQ
+            } else {
+                // find nearest grey value in [8, 18, ..., 228, 238]
+                int grey_index = (((grey - 8)+5) / 10); // -3 / 10 rounds to zero, so grey == 0 still gives index 0
+                if (grey_index >= 24) {
+                    grey_index = 23;
+                }
+                const int grey_quantized = 8 + grey_index * 10;
+
+                // find nearest color on grid ((r,g,b) for r,b,g in [0, 95, 135, 175, 215, 255])
+                const int red_index = termpaintp_quantize_color_grid6(r);
+                const int green_index = termpaintp_quantize_color_grid6(g);
+                const int blue_index = termpaintp_quantize_color_grid6(b);
+
+                const int red_quantized = termpaintp_grid6_values[red_index];
+                const int green_quantized = termpaintp_grid6_values[green_index];
+                const int blue_quantized = termpaintp_grid6_values[blue_index];
 
 #define SQ(x) ((x) * (x))
-            if ((SQ(grey_quantized - r) + SQ(grey_quantized - g) + SQ(grey_quantized - b))
-                    < (SQ(red_quantized - r) + SQ(green_quantized - g) + SQ(blue_quantized - b))) {
+                if ((SQ(grey_quantized - r) + SQ(grey_quantized - g) + SQ(grey_quantized - b))
+                        < (SQ(red_quantized - r) + SQ(green_quantized - g) + SQ(blue_quantized - b))) {
 #undef SQ
-                color = TERMPAINT_INDEXED_COLOR + 232 + grey_index;
-            } else {
-                color = TERMPAINT_INDEXED_COLOR + 16
-                        + red_index * 36
-                        + green_index * 6
-                        + blue_index;
+                    color = TERMPAINT_INDEXED_COLOR + 232 + grey_index;
+                } else {
+                    color = TERMPAINT_INDEXED_COLOR + 16
+                            + red_index * 36
+                            + green_index * 6
+                            + blue_index;
+                }
             }
         }
     }
@@ -3730,6 +3776,75 @@ static bool termpaintp_test_quantize_to_256(void) {
     return true;
 }
 
+static bool termpaintp_test_quantize_to_88(void) {
+    termpaint_terminal terminal;
+    terminal.cache_should_use_truecolor = false;
+    terminal.capabilities[TERMPAINT_CAPABILITY_88_COLOR] = true;
+    struct pal_entry { int nr; int r,g,b; };
+    const struct pal_entry palette[72] = {
+        { 16, 0x00, 0x00, 0x00 }, { 17, 0x00, 0x00, 0x8b }, { 18, 0x00, 0x00, 0xcd }, { 19, 0x00, 0x00, 0xff },
+        { 20, 0x00, 0x8b, 0x00 }, { 21, 0x00, 0x8b, 0x8b }, { 22, 0x00, 0x8b, 0xcd }, { 23, 0x00, 0x8b, 0xff },
+        { 24, 0x00, 0xcd, 0x00 }, { 25, 0x00, 0xcd, 0x8b }, { 26, 0x00, 0xcd, 0xcd }, { 27, 0x00, 0xcd, 0xff },
+        { 28, 0x00, 0xff, 0x00 }, { 29, 0x00, 0xff, 0x8b }, { 30, 0x00, 0xff, 0xcd }, { 31, 0x00, 0xff, 0xff },
+        { 32, 0x8b, 0x00, 0x00 }, { 33, 0x8b, 0x00, 0x8b }, { 34, 0x8b, 0x00, 0xcd }, { 35, 0x8b, 0x00, 0xff },
+        { 36, 0x8b, 0x8b, 0x00 }, { 37, 0x8b, 0x8b, 0x8b }, { 38, 0x8b, 0x8b, 0xcd }, { 39, 0x8b, 0x8b, 0xff },
+        { 40, 0x8b, 0xcd, 0x00 }, { 41, 0x8b, 0xcd, 0x8b }, { 42, 0x8b, 0xcd, 0xcd }, { 43, 0x8b, 0xcd, 0xff },
+        { 44, 0x8b, 0xff, 0x00 }, { 45, 0x8b, 0xff, 0x8b }, { 46, 0x8b, 0xff, 0xcd }, { 47, 0x8b, 0xff, 0xff },
+        { 48, 0xcd, 0x00, 0x00 }, { 49, 0xcd, 0x00, 0x8b }, { 50, 0xcd, 0x00, 0xcd }, { 51, 0xcd, 0x00, 0xff },
+        { 52, 0xcd, 0x8b, 0x00 }, { 53, 0xcd, 0x8b, 0x8b }, { 54, 0xcd, 0x8b, 0xcd }, { 55, 0xcd, 0x8b, 0xff },
+        { 56, 0xcd, 0xcd, 0x00 }, { 57, 0xcd, 0xcd, 0x8b }, { 58, 0xcd, 0xcd, 0xcd }, { 59, 0xcd, 0xcd, 0xff },
+        { 60, 0xcd, 0xff, 0x00 }, { 61, 0xcd, 0xff, 0x8b }, { 62, 0xcd, 0xff, 0xcd }, { 63, 0xcd, 0xff, 0xff },
+        { 64, 0xff, 0x00, 0x00 }, { 65, 0xff, 0x00, 0x8b }, { 66, 0xff, 0x00, 0xcd }, { 67, 0xff, 0x00, 0xff },
+        { 68, 0xff, 0x8b, 0x00 }, { 69, 0xff, 0x8b, 0x8b }, { 70, 0xff, 0x8b, 0xcd }, { 71, 0xff, 0x8b, 0xff },
+        { 72, 0xff, 0xcd, 0x00 }, { 73, 0xff, 0xcd, 0x8b }, { 74, 0xff, 0xcd, 0xcd }, { 75, 0xff, 0xcd, 0xff },
+        { 76, 0xff, 0xff, 0x00 }, { 77, 0xff, 0xff, 0x8b }, { 78, 0xff, 0xff, 0xcd }, { 79, 0xff, 0xff, 0xff },
+
+        { 80, 0x2e, 0x2e, 0x2e }, { 81, 0x5c, 0x5c, 0x5c }, { 82, 0x73, 0x73, 0x73 }, { 83, 0x8b, 0x8b, 0x8b },
+        { 84, 0xa2, 0xa2, 0xa2 }, { 85, 0xb9, 0xb9, 0xb9 }, { 86, 0xd0, 0xd0, 0xd0 }, { 87, 0xe7, 0xe7, 0xe7 },
+    };
+
+    for (int r = 0; r < 256; r++) for (int g = 0; g < 256; g++) for (int b = 0; b < 256; b++) {
+        int best_metric = 0x7fffffff;
+
+        unsigned candidates[10] = { 0 };
+        int candidates_count = 0;
+
+        for (int i = 0; i < 72; i++) {
+#define SQ(x) ((x) * (x))
+            const int cur_metric = SQ(palette[i].r - r) + SQ(palette[i].g - g) + SQ(palette[i].b - b);
+#undef SQ
+            if (cur_metric < best_metric) {
+                candidates_count = 0;
+                candidates[candidates_count++] = TERMPAINT_INDEXED_COLOR + palette[i].nr;
+                best_metric = cur_metric;
+            } else if (cur_metric == best_metric) {
+                candidates[candidates_count++] = TERMPAINT_INDEXED_COLOR + palette[i].nr;
+            }
+        }
+        if (candidates_count == 9) {
+            return false;
+        }
+
+        unsigned res = termpaintp_quantize_color(&terminal, TERMPAINT_RGB_COLOR(r, g, b));
+
+        bool ok = false;
+        for (int i = 0; i < candidates_count; i++) {
+            if (candidates[i] == res) {
+                ok = true;
+                break;
+            }
+        }
+
+        if (!ok) {
+            return false;
+        }
+    }
+    return true;
+}
+
 _tERMPAINT_PUBLIC bool termpaintp_test(void) {
-    return termpaintp_test_quantize_to_256();
+    bool ret = true;
+    ret &= termpaintp_test_quantize_to_256();
+    ret &= termpaintp_test_quantize_to_88();
+    return ret;
 }
