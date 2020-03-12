@@ -225,7 +225,7 @@ typedef struct termpaint_integration_private_ {
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 11
+#define NUM_CAPABILITIES 12
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -1674,6 +1674,10 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal) 
     // is known to support true-color additionally set TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED during
     // detection
     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+
+    // Most terminals support background color erase (bce) and allow multiple colors in cleared parts
+    // of lines.
+    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CLEARED_COLORING);
 }
 
 inline bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability) {
@@ -1897,13 +1901,15 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         }
 
         int first_noncopy_space = term->primary.width;
-        if (softwrap == sw_no) {
-            for (int x = term->primary.width - 1; x >= 0; x--) {
-                cell* c = termpaintp_getcell(&term->primary, x, y);
-                if ((c->text_len == 0 && c->text_overflow == nullptr)) {
-                    first_noncopy_space = x;
-                } else {
-                    break;
+        if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CLEARED_COLORING)) {
+            if (softwrap == sw_no) {
+                for (int x = term->primary.width - 1; x >= 0; x--) {
+                    cell* c = termpaintp_getcell(&term->primary, x, y);
+                    if ((c->text_len == 0 && c->text_overflow == nullptr)) {
+                        first_noncopy_space = x;
+                    } else {
+                        break;
+                    }
                 }
             }
         }
@@ -2385,6 +2391,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
             }
         }
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CLEARED_COLORING);
     } else if (term->terminal_type == TT_TMUX) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_KONSOLE) {
@@ -2402,6 +2409,8 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
     } else if (term->terminal_type == TT_MACOS) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+        // does background color erase (bce) but does not allow multiple colors of cleared cells
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CLEARED_COLORING);
     } else if (term->terminal_type == TT_FULL) {
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
