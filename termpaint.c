@@ -69,6 +69,9 @@
  * text_len == 0 && text_overflow == nullptr -> same as ' '
  * text_len == 0 && text_overflow == WIDE_RIGHT_PADDING -> character hidden by multi cell cluster
  * text_len == 1 && text[0] == '\x01', only in cells_last_flush => cell was hidden, will need repaint if start of char.
+ *
+ * Additional invariants:
+ * - The colors and flags (except CELL_SOFTWRAP_MARKER) of all cells in a cluster are identical.
  */
 
 struct termpaint_attr_ {
@@ -179,9 +182,9 @@ typedef enum auto_detect_state_ {
 } auto_detect_state;
 
 typedef enum terminal_type_enum_ {
-    TT_INCOMPATIBLE,
+    TT_INCOMPATIBLE,  // does not respond to ESC 5n, or similar deal breakers
     TT_TOODUMB,
-    TT_MISPARSING,
+    TT_MISPARSING,    // valid sequences (bare or >) leave visual traces
     TT_UNKNOWN,
     TT_BASE,
     TT_XTERM,
