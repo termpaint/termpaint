@@ -1317,7 +1317,7 @@ void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *, termp
     ctx->event_user_data = user_data;
 }
 
-bool termpaintp_input_legacy_mouse_bytes_finished(termpaint_input *ctx) {
+static bool termpaintp_input_legacy_mouse_bytes_finished(termpaint_input *ctx) {
     const unsigned char cur_ch = ctx->buff[ctx->used - 1];
     if (0xc0 == (0xc0 & cur_ch)) {
         // start of multi code unit sequence.

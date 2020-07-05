@@ -35,7 +35,7 @@
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
 
-bool termpaintp_is_file_rw(int fd) {
+static bool termpaintp_is_file_rw(int fd) {
     int ret = fcntl(fd, F_GETFL);
     return ret != -1 && (ret & O_ACCMODE) == O_RDWR;
 }
@@ -217,7 +217,7 @@ static bool termpaintp_has_option(const char *options, const char *name) {
     return false;
 }
 
-bool termpaintp_fd_set_termios(int fd, const char *options) {
+static bool termpaintp_fd_set_termios(int fd, const char *options) {
     struct termios tattr;
     tcgetattr(fd, &tattr);
     tattr.c_iflag |= IGNBRK|IGNPAR;

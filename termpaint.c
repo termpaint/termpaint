@@ -338,7 +338,7 @@ static void termpaintp_prepend_str(char **s, const char* src) {
     memcpy(*s, src, src_len);
 }
 
-bool termpaintp_str_ends_with(const unsigned char* str, const unsigned char* postfix) {
+static bool termpaintp_str_ends_with(const unsigned char* str, const unsigned char* postfix) {
     size_t str_len = strlen(str);
     size_t postfix_len = strlen(postfix);
     if (str_len < postfix_len) return false;
