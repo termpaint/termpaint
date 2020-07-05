@@ -428,7 +428,7 @@ static void fd_restore_sequence_updated(struct termpaint_integration_ *integrati
     }
 }
 
-bool termpaint_full_integration_ttyrescue_start(termpaint_integration *integration) {
+bool termpaintx_full_integration_ttyrescue_start(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
     if (t->rescue || !t->terminal) return false;
     t->rescue = termpaint_ttyrescue_start(t->fd, termpaint_terminal_restore_sequence(t->terminal));

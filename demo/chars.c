@@ -70,7 +70,7 @@ bool init(void) {
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-    termpaint_full_integration_ttyrescue_start(integration);
+    termpaintx_full_integration_ttyrescue_start(integration);
 
     return 1;
 }

@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-    termpaint_full_integration_ttyrescue_start(integration);
+    termpaintx_full_integration_ttyrescue_start(integration);
 
     if (termpaint_terminal_auto_detect_state(terminal) == termpaint_auto_detect_done) {
         char buff[100];
