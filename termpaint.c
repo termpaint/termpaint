@@ -2166,16 +2166,17 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             int_puts(integration, "B");
         }
     }
-    if (pending_colum_move) {
-        int_puts(integration, "\e[");
-        if (pending_colum_move != 1) {
-            int_put_num(integration, pending_colum_move);
-        }
-        int_puts(integration, "C");
-    }
 
     if (term->cursor_x != -1 && term->cursor_y != -1) {
         termpaint_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
+    } else {
+        if (pending_colum_move) {
+            int_puts(integration, "\e[");
+            if (pending_colum_move != 1) {
+                int_put_num(integration, pending_colum_move);
+            }
+            int_puts(integration, "C");
+        }
     }
 
     termpaintp_terminal_update_cursor_style(term);
