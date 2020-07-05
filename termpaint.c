@@ -2044,7 +2044,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                         int_write(integration, speculation_buffer, speculation_buffer_state);
                     } else {
                         int_puts(integration, "\e[");
-                        int_put_num(integration, pending_colum_move);
+                        if (pending_colum_move != 1) {
+                            int_put_num(integration, pending_colum_move);
+                        }
                         int_puts(integration, "C");
                     }
                     speculation_buffer_state = 0;
@@ -2166,7 +2168,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     }
     if (pending_colum_move) {
         int_puts(integration, "\e[");
-        int_put_num(integration, pending_colum_move);
+        if (pending_colum_move != 1) {
+            int_put_num(integration, pending_colum_move);
+        }
         int_puts(integration, "C");
     }
 
