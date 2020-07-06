@@ -154,7 +154,7 @@ typedef struct key_mapping_entry_ key_mapping_entry;
 //    ?1060  ???
 //    ?1061  ???
 
-static key_mapping_entry key_mapping_table[] = {
+static const key_mapping_entry key_mapping_table[] = {
     { "\x0d", ATOM_enter, 0 }, // also ctrl-m in traditional mode
     { "\e\x0d", ATOM_enter, MOD_ALT },
     XTERM_MODS("\e[27;", ";13~", ATOM_enter), // modifiy other keys mode
@@ -644,8 +644,8 @@ void termpaintp_input_selfcheck(void) {
     static bool finished;
     if (finished) return;
     bool ok = true;
-    for (key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
-        for (key_mapping_entry* entry_b = entry_a; entry_b->sequence != nullptr; entry_b++) {
+    for (const key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
+        for (const key_mapping_entry* entry_b = entry_a; entry_b->sequence != nullptr; entry_b++) {
             if (entry_a != entry_b && strcmp(entry_a->sequence, entry_b->sequence) == 0) {
                 printf("Duplicate key mapping: %s == %s\n", entry_a->atom, entry_b->atom);
                 ok = false;
@@ -660,7 +660,7 @@ void termpaintp_input_selfcheck(void) {
 
 void termpaintp_input_dump_table(void) {
     FILE * f = fopen("input.dump", "w");
-    for (key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
+    for (const key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
         fputs(entry_a->sequence, f);
         fputs("\n", f);
     }
@@ -859,7 +859,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             if (length + 1 < sizeof (dbl_esc_tmp)) {
                 dbl_esc_tmp[0] = '\e';
                 memcpy(dbl_esc_tmp + 1, data, length);
-                for (key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
+                for (const key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
                     if (strlen(entry->sequence) == length + 1 && memcmp(entry->sequence, dbl_esc_tmp, length + 1) == 0) {
                         found = true;
                     }
@@ -919,7 +919,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         event.key.modifier = MOD_CTRL | MOD_ALT;
     } else {
         // TODO optimize
-        for (key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
+        for (const key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
             if (strlen(entry->sequence) == length && memcmp(entry->sequence, data, length) == 0) {
                 if (entry->modifiers & MOD_PRINT) {
                     // special case for ctrl-X which is in the table but a modified printable
