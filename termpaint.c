@@ -1,5 +1,6 @@
 #include "termpaint.h"
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -226,6 +227,7 @@ typedef struct termpaint_integration_private_ {
     void (*request_callback)(struct termpaint_integration_ *integration);
     void (*awaiting_response)(struct termpaint_integration_ *integration);
     void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length);
+    void (*logging_func)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
 #define NUM_CAPABILITIES 12
@@ -464,6 +466,10 @@ _tERMPAINT_PUBLIC void termpaint_integration_set_awaiting_response(termpaint_int
 
 _tERMPAINT_PUBLIC void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length)) {
     integration->p->restore_sequence_updated = restore_sequence_updated;
+}
+
+_tERMPAINT_PUBLIC void termpaint_integration_set_logging_func(termpaint_integration *integration, void (*logging_func)(termpaint_integration *integration, const char *data, int length)) {
+    integration->p->logging_func = logging_func;
 }
 
 void termpaint_integration_deinit(termpaint_integration *integration) {
@@ -1457,6 +1463,27 @@ static void int_puts(termpaint_integration *integration, const char *str) {
 
 static void int_write(termpaint_integration *integration, const char *str, int len) {
     integration->p->write(integration, str, len);
+}
+
+static void int_debuglog(termpaint_terminal *term, const char *str, int len) {
+    if (term->integration_vtbl->logging_func) {
+        term->integration_vtbl->logging_func(term->integration, str, len);
+    }
+}
+
+static void int_debuglog_puts(termpaint_terminal *term, const char *str) {
+    int_debuglog(term, str, strlen(str));
+}
+
+static void int_debuglog_printf(termpaint_terminal *term, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    char buff[1024];
+    int len = vsnprintf(buff, sizeof(buff), fmt, args);
+    va_end(args);
+
+    buff[sizeof(buff) - 1] = 0;
+    int_debuglog_puts(term, buff);
 }
 
 static void int_write_printable(termpaint_integration *integration, const char *str, int len) {
