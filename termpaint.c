@@ -3006,12 +3006,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
     };
     // if this code runs auto detection failed by running off into the weeds
 
-#if 0
-    int_puts(integration, "ran off autodetect: ");
-    int_put_num(integration, terminal->ad_state);
-    int_puts(integration, ", ");
-    int_put_num(integration, event->type);
-#endif
+    int_debuglog_printf(terminal, "ran off autodetect: s=%d, e=%d", (int)terminal->ad_state, (int)event->type);
 
     terminal->terminal_type = TT_TOODUMB;
     terminal->ad_state = AD_FINISHED;
