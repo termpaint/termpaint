@@ -3120,7 +3120,7 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
     termpaintp_str_assign(init_sequence, "\033[?7l");
 
     if (!termpaintp_has_option(options, "-altscreen")) {
-        termpaintp_prepend_str(&terminal->restore_seq, "\033[?1049l");
+        termpaintp_prepend_str(&terminal->restore_seq, "\r\n\033[?1049l");
         termpaintp_str_append(init_sequence, "\033[?1049h");
     }
     termpaintp_prepend_str(&terminal->restore_seq, "\033[?66l");
