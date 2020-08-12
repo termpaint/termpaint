@@ -75,7 +75,7 @@ TEST_CASE( "Input is correctly seperated", "[sep]" ) {
     REQUIRE(parses_as_one(CSI8 "1;3A")); // xterm: alt-arrow_up with 8bit CSI
     REQUIRE(parses_as_one(DCS7 "1$r0m" ST7)); // possible reply to "\eP$qm\e\\";
     REQUIRE(parses_as_one(DCS8 "1$r0m" ST8));
-    REQUIRE(parses_as_one(DCS8 "1$r0m\007"));
+    REQUIRE(!parses_as_one(DCS8 "1$r0m\007"));
     REQUIRE(parses_as_one(OSC7 "lsome title" ST7)); // possible reply to "\[21t"
     REQUIRE(parses_as_one(OSC7 "lsome title\007"));
     REQUIRE(parses_as_one(SS3_7 "P")); // F1
@@ -468,7 +468,6 @@ TEST_CASE("input: unmapped/rejected sequences") {
         TestCase{ "\033P!700\033\\", "DCS with !700" },
         TestCase{ "\033P!700\007",   "DCS with !700 (BEL)" },
         TestCase{ "\033Pabc\\\033x", "DSC with backslash and mistermination" },
-        TestCase{ "\x90   \033x",    "8 bit DCS with mistermination" },
 
         TestCase{ "\033O;Z", "SS3 with empty parameters" }
     );

@@ -675,6 +675,7 @@ enum termpaint_input_state {
     tpis_ss3,
     tpis_csi,
     tpis_cmd_str,
+    tpis_cmd_str_c1,
     tpis_str_terminator_esc,
     tpid_utf8_5, tpid_utf8_4, tpid_utf8_3, tpid_utf8_2, tpid_utf8_1,
     tpis_mouse_btn, tpis_mouse_col, tpis_mouse_row
@@ -1391,11 +1392,11 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 } else if (cur_ch == 0x8f) { // SS3
                     ctx->state = tpis_ss3;
                 } else if (cur_ch == 0x90) { // DCS
-                    ctx->state = tpis_cmd_str;
+                    ctx->state = tpis_cmd_str_c1;
                 } else if (cur_ch == 0x9b) { // CSI
                     ctx->state = tpis_csi;
                 } else if (cur_ch == 0x9d) { // OSC
-                    ctx->state = tpis_cmd_str;
+                    ctx->state = tpis_cmd_str_c1;
                 } else {
                     finished = true;
                 }
@@ -1452,6 +1453,11 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 if (cur_ch == '\e') {
                     ctx->state = tpis_str_terminator_esc;
                 } else if (cur_ch == 0x9c || cur_ch == 0x07) {
+                    finished = true;
+                }
+                break;
+            case tpis_cmd_str_c1:
+                if (cur_ch == 0x9c) {
                     finished = true;
                 }
                 break;
