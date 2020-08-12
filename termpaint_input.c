@@ -1289,6 +1289,14 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.raw.length = length - 6;
             }
         }
+        if (!event.type && length > 3 && data[0] == 0x90 && data[length-1] == 0x9c) {
+            // DCS sequences
+            if (data[1] == '!' && data[2] == '|') {
+                event.type = TERMPAINT_EV_RAW_3RD_DEV_ATTRIB;
+                event.raw.string = (const char*)data + 3;
+                event.raw.length = length - 4;
+            }
+        }
     }
     ctx->event_cb(ctx->event_user_data, &event);
 }
