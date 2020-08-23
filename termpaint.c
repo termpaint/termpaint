@@ -29,6 +29,8 @@
 // ensures that the offsets work out in a way that alignment is correct.
 #define container_of(ptr, type, member) ((type *)(void*)(((char*)(ptr)) - offsetof(type, member)))
 
+#define BUG(x) abort()
+
 /* Data model
  *
  * A surface is a 2 dimensional array of cells. A cluster occupies a continuous span of
@@ -642,6 +644,7 @@ void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y,
 
 // This ensures that cells [x, x + cluster_width) have cluster_expansion = 0
 static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, int y, int cluster_width) {
+    // narrow contract, x + cluster_width <= width
     cell *cell = termpaintp_getcell(surface, x, y);
 
     int rightmost_vanished = x;
@@ -663,7 +666,7 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
             cell = termpaintp_getcell(surface, i, y);
 
             if (!cell) {
-                break;
+                BUG("padding cell without wide cell before");
             }
 
             cell->text_len = 1;
@@ -678,7 +681,7 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
         cell = termpaintp_getcell(surface, i, y);
 
         if (!cell) {
-            break;
+            BUG("x + cluster_width > width");
         }
 
         int expansion = cell->cluster_expansion;
@@ -694,7 +697,7 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
             cell = termpaintp_getcell(surface, i + j, y);
 
             if (!cell) {
-                break;
+                BUG("cluster expanding outside of width");
             }
         }
         i += j;
