@@ -24,6 +24,7 @@ import_whitelist_main = [
   # C99
     'snprintf',
     'vsnprintf',
+    'abort',
   # kernel independent posix
     'strdup',
     'strndup',
