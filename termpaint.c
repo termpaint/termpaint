@@ -198,6 +198,7 @@ typedef enum terminal_type_enum_ {
     TT_TMUX,
     TT_LINUXVC,
     TT_MACOS,
+    TT_TERMINOLOGY,
     TT_FULL,
 } terminal_type_enum;
 
@@ -2460,6 +2461,17 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
         // does background color erase (bce) but does not allow multiple colors of cleared cells
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CLEARED_COLORING);
+    } else if (term->terminal_type == TT_TERMINOLOGY) {
+        // To get here terminology has to be at least 1.4 (first version to support DA3)
+
+        // terminology approximates to 256 color palette internally (since 1.2.0), but that's ok.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+
+        // supported since 1.7.x
+        // termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+
+        // all shapes have been added in 1.2 so this is always safe.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
     } else if (term->terminal_type == TT_FULL) {
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
@@ -2774,6 +2786,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     // any unknown id will enable all features here. Allocate a new one!
                     if (memcmp(event->raw.string, "7E565445", 8) == 0) { // ~VTE
                         terminal->terminal_type = TT_VTE;
+                        terminal->terminal_type_confidence = 2;
+                    } else if (memcmp(event->raw.string, "7E7E5459", 8) == 0) { // ~~TY
+                        terminal->terminal_type = TT_TERMINOLOGY;
                         terminal->terminal_type_confidence = 2;
                     } else if (memcmp(event->raw.string, "7E4C4E58", 8) == 0) { // ~LNX
                         terminal->terminal_type = TT_LINUXVC;
@@ -3097,6 +3112,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
             break;
         case TT_URXVT:
             term_type = "urxvt";
+            break;
+        case TT_TERMINOLOGY:
+            term_type = "terminology";
             break;
     };
     snprintf(buffer, buffer_length, "Type: %s(%d) %s seq:%s%s", term_type, terminal->terminal_version,
