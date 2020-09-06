@@ -8,6 +8,28 @@ void null_callback(void *ctx, termpaint_event *event) {
 
 }
 
+typedef struct {
+    int id;
+    const char *name;
+    _Bool state;
+} Cap;
+
+Cap caps[] = {
+#define C(name) { TERMPAINT_CAPABILITY_ ## name, #name, 0 }
+    C(CSI_POSTFIX_MOD),
+    C(TITLE_RESTORE),
+    C(MAY_TRY_CURSOR_SHAPE_BAR),
+    C(CURSOR_SHAPE_OSC50),
+    C(EXTENDED_CHARSET),
+    C(TRUECOLOR_MAYBE_SUPPORTED),
+    C(TRUECOLOR_SUPPORTED),
+    C(88_COLOR),
+    C(CLEARED_COLORING),
+    C(7BIT_ST),
+#undef C
+    { 0, NULL }
+};
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -26,10 +48,17 @@ int main(int argc, char **argv) {
 
     char buff[1000];
     termpaint_terminal_auto_detect_result_text(terminal, buff, sizeof (buff));
+    for (Cap *c = caps; c->name; c++) {
+        c->state = termpaint_terminal_capable(terminal, c->id);
+    }
 
     termpaint_terminal_free_with_restore(terminal);
 
     puts(buff);
+
+    for (Cap *c = caps; c->name; c++) {
+        printf("%s: %s\n", c->name, c->state ? "1" : "0");
+    }
 
     for (int i=1; i < argc; i++) {
         if (strcmp(argv[i], "--write-file") == 0) {
@@ -39,6 +68,10 @@ int main(int argc, char **argv) {
                     perror("fopen");
                 } else {
                     fputs(buff, f);
+                    fprintf(f, "\n");
+                    for (Cap *c = caps; c->name; c++) {
+                        fprintf(f, "%s: %s\n", c->name, c->state ? "1" : "0");
+                    }
                     fclose(f);
                 }
             }
