@@ -232,7 +232,7 @@ typedef struct termpaint_integration_private_ {
     void (*logging_func)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 12
+#define NUM_CAPABILITIES 13
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -1711,6 +1711,10 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal) 
     // Most terminals support background color erase (bce) and allow multiple colors in cleared parts
     // of lines.
     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CLEARED_COLORING);
+
+    // Most terminals support support 7-bit ST (ESC backslash) for terminating OSC/DCS sequences,
+    // as that's what all traditional standards say.
+    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_7BIT_ST);
 }
 
 inline bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability) {
@@ -2225,7 +2229,11 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 int_puts(integration, entry->base.text);
                 int_puts(integration, ";");
                 int_puts(integration, entry->requested);
-                int_puts(integration, "\033\\");
+                if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
+                    int_puts(integration, "\033\\");
+                } else {
+                    int_puts(integration, "\a");
+                }
             } else {
                 int_puts(integration, "\033]1");
                 int_puts(integration, entry->base.text);
@@ -2436,6 +2444,9 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // konsole starting at version 18.07.70 could do the CSI space q one too, but
         // we don't have the konsole version.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50);
+        // konsole starting at version 19.08.2 supports 7-bit ST, but
+        // we don't have the konsole version.
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_7BIT_ST);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_URXVT) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
