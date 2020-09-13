@@ -769,6 +769,26 @@ static const std::initializer_list<TestCase> tests = {
           C(CLEARED_COLORING), C(7BIT_ST) },
         WithoutGlitchPatching
     },
+    // ---------------
+    {
+        "Apple Terminal 433" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;95;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "\033[?1;2c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[24;1R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+        },
+        "Type: apple terminal(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET),
+          C(7BIT_ST) },
+        WithoutGlitchPatching
+    },
 };
 
 static std::string replace(const std::string& str, const std::string& from, const std::string& to) {

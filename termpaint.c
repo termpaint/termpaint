@@ -3131,6 +3131,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
         case TT_TERMINOLOGY:
             term_type = "terminology";
             break;
+        case TT_MACOS:
+            term_type = "apple terminal";
+            break;
     };
     snprintf(buffer, buffer_length, "Type: %s(%d) %s seq:%s%s", term_type, terminal->terminal_version,
              termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT) ? "safe-CPR" : "",
