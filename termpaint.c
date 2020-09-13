@@ -2660,8 +2660,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->terminal_type = TT_TOODUMB;
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                return true;
             } else if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->terminal_type = TT_TOODUMB;
                 terminal->ad_state = AD_FINISHED;
