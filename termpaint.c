@@ -2476,7 +2476,11 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
         // and TERMPAINT_CAPABILITY_CSI_EQUALS are detected in main finger printing.
+        // 88_COLOR disables 256 color support and is quite rxvt-unicode specific
+        // CURSOR_SHAPE_OSC50 is konsole (and derived) specific, general terminals are expected to use
+        // the ESC[ VAL SP q  sequence for cursor shape and blink setup.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     }
 }
 
