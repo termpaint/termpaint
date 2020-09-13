@@ -186,6 +186,7 @@ testlib = static_library('testlib', 'tests/catch_main.cpp')
 
 #ide:editable-filelist
 test_files = [
+  'tests/fingerprintingtests.cpp',
   'tests/hashtest.cpp',
   'tests/input_tests.cpp',
   'tests/measurement_tests.cpp',
