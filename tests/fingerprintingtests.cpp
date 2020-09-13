@@ -312,6 +312,25 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "no cursor position but terminal status and ESC[>c" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;115;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "" }},
+            { "\033[?6n",         { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: toodumb(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        WithoutGlitchPatching
+    },
+    {
         "only ESC[>c" LINEINFO,
         {
             { "\033[>c",          { "\033[>0;115;0c" }},
