@@ -233,7 +233,7 @@ typedef struct termpaint_integration_private_ {
     void (*logging_func)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 13
+#define NUM_CAPABILITIES 14
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -1564,7 +1564,7 @@ static void termpaintp_terminal_show_cursor(termpaint_terminal *term) {
 }
 
 static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
-    bool nonharmful = termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+    bool nonharmful = termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
 
     if (term->cursor_style != -1 && nonharmful) {
         const char *resetSequence = "\033[0 q";
@@ -2351,6 +2351,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // use TERMPAINT_CAPABILITY_CSI_GREATER as indication for more advanced parsing capabilities,
         // as there is no dedicated detection for this.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
     }
 
     if (term->terminal_type == TT_MISPARSING) {
@@ -2382,12 +2383,22 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 if (*data == ';' && (version < 5400) == vte_old) {
                     term->terminal_version = version;
 
-                    if (term->terminal_version < 4600) {
-                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+                    if (term->terminal_version < 4000) {
+                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
+                    } else {
+                        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
                     }
+
                     if (term->terminal_version >= 5400) {
                         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
                     }
+                    if (term->terminal_version < 5400) {
+                        // fragile dictinary base parsing.
+                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_GREATER);
+                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_EQUALS);
+                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+                    }
+
                 }
             }
         }
