@@ -1549,7 +1549,7 @@ TEST_CASE("finger printing") {
 
         INFO(integration.log);
 
-        REQUIRE(integration.sent.empty());
+        REQUIRE(integration.sent == "");
 
         CHECK_UPDATE_OK(termpaint_terminal_auto_detect_state(term) != termpaint_auto_detect_running);
         CHECK_UPDATE_OK(!events_leaked);
