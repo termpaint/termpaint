@@ -3135,6 +3135,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 if (terminal->auto_detect_sec_device_attributes && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0
                         && terminal->glitch_cursor_y == -1) {
+                    // this triggers on VTE < 0.54 which has fragile dictionary based parsing.
+                    // The self reporting stage would cause misparsing, so skip it here.
                     terminal->terminal_type = TT_VTE;
                     terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
                 } else {
