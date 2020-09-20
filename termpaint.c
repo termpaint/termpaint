@@ -185,6 +185,10 @@ typedef enum auto_detect_state_ {
     AD_FP2_CURSOR_DONE,
     AD_FP2_SEC_DEV_ATTRIB_RECVED1,
     AD_FP2_SEC_DEV_ATTRIB_RECVED2,
+    // post
+    AD_WAIT_FOR_SYNC_TO_SELF_REPORTING,
+    AD_EXPECT_SYNC_TO_SELF_REPORTING,
+    AD_SELF_REPORTING,
     // sub routine
     AD_GLITCH_PATCHING
 } auto_detect_state;
@@ -252,6 +256,7 @@ typedef struct termpaint_terminal_ {
     int terminal_type;
     int terminal_version;
     int terminal_type_confidence;
+    char *terminal_self_reported_name_version;
     void (*event_cb)(void *, termpaint_event *);
     void *event_user_data;
     bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
@@ -1674,6 +1679,8 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 void termpaint_terminal_free(termpaint_terminal *term) {
     free(term->auto_detect_sec_device_attributes);
     term->auto_detect_sec_device_attributes = nullptr;
+    free(term->terminal_self_reported_name_version);
+    term->terminal_self_reported_name_version = nullptr;
     termpaintp_surface_destroy(&term->primary);
     free(term->restore_seq);
     term->restore_seq = nullptr;
@@ -2640,6 +2647,15 @@ static void termpaintp_patch_misparsing_from_event(termpaint_terminal *terminal,
     termpaintp_patch_misparsing_defered(terminal, integration, next_state);
 }
 
+static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_terminal *terminal, int new_state) {
+    termpaint_integration *integration = terminal->integration;
+
+    int_puts(integration, "\033[>q");
+    int_puts(integration, "\033[5n");
+    int_awaiting_response(integration);
+    terminal->ad_state = new_state;
+}
+
 // known terminals where auto detections hangs: freebsd system console using vt module
 // TODO add a time out and display a message to press any key to abort.
 static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
@@ -2796,8 +2812,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         terminal->ad_state = AD_URXVT_88_256_REQ;
                         return true;
                     } else {
-                        terminal->ad_state = AD_FINISHED;
-                        return false;
+                        termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                        return true;
                     }
                 }
                 int_puts(integration, "\033[=c");
@@ -2812,8 +2828,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_URXVT_88_256_REQ:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                return true;
             } else if (event->type == TERMPAINT_EV_PALETTE_COLOR_REPORT) {
                 termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_88_COLOR);
                 return true;
@@ -2910,8 +2926,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     return true;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                    return true;
                 }
             }
             break;
@@ -2935,6 +2951,33 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 return true;
             }
         break;
+        case AD_WAIT_FOR_SYNC_TO_SELF_REPORTING:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                return true;
+            } else {
+                if (event->type != TERMPAINT_EV_KEY && event->type != TERMPAINT_EV_CHAR) {
+                    return true;
+                }
+            }
+            break;
+        case AD_EXPECT_SYNC_TO_SELF_REPORTING:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                return true;
+            }
+            break;
+        case AD_SELF_REPORTING:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_RAW_TERM_NAME) {
+                terminal->ad_state = AD_SELF_REPORTING;
+                free(terminal->terminal_self_reported_name_version);
+                terminal->terminal_self_reported_name_version = strndup(event->raw.string, event->raw.length);
+                return true;
+            }
+            break;
         case AD_WAIT_FOR_SYNC_TO_FINISH:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 terminal->ad_state = AD_FINISHED;
@@ -2948,8 +2991,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_FP1_REQ_TERMID_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                return true;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->ad_state = AD_FP1_REQ_TERMID_RECVED_SEC_DEV_ATTRIB_RECVED;
                 return true;
@@ -2960,18 +3003,18 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 } else {
                     termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 }
-                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
+                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_SELF_REPORTING;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
-                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_SELF_REPORTING;
                 return true;
             }
             break;
         case AD_FP1_REQ_TERMID_RECVED_SEC_DEV_ATTRIB_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
-                terminal->ad_state = AD_FINISHED;
+                termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
                 return true;
             } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 if (event->cursor_position.safe) {
@@ -2979,7 +3022,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 } else {
                     termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 }
-                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
+                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_SELF_REPORTING;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 // ignore
@@ -3023,8 +3066,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
                     return true;
                 } else {
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                    return true;
                 }
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 // ignore
@@ -3069,8 +3112,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type = TT_BASE;
                 }
                 if (terminal->glitch_cursor_y == -1) {
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                    return true;
                 } else {
                     termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
                     return true;
@@ -3086,8 +3129,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type = TT_BASE;
                 }
                 if (terminal->glitch_cursor_y == -1) {
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                    return true;
                 } else {
                     termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
                     return true;
@@ -3105,8 +3148,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_FP2_SEC_DEV_ATTRIB_RECVED2:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
                 if (terminal->glitch_cursor_y == -1) {
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    termpaintp_terminal_auto_detect_prepare_self_reporting(terminal, AD_SELF_REPORTING);
+                    return true;
                 } else {
                     termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
                     return true;
@@ -3229,6 +3272,10 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
              termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_GREATER) ? ">" : "",
              termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS) ? "=" : "");
     buffer[buffer_length-1] = 0;
+}
+
+const char *termpaint_terminal_self_reported_name_and_version(const termpaint_terminal *terminal) {
+    return terminal->terminal_self_reported_name_version;
 }
 
 static bool termpaintp_has_option(const char *options, const char *name) {

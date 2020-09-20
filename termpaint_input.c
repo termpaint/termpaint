@@ -1288,6 +1288,11 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.raw.string = (const char*)data + 4;
                 event.raw.length = length - 6;
             }
+            if (data[2] == '>' && data[3] == '|') {
+                event.type = TERMPAINT_EV_RAW_TERM_NAME;
+                event.raw.string = (const char*)data + 4;
+                event.raw.length = length - 6;
+            }
         }
         if (!event.type && length > 3 && data[0] == 0x90 && data[length-1] == 0x9c) {
             // DCS sequences

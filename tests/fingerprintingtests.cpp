@@ -11,7 +11,7 @@
 
 #define C(name) TERMPAINT_CAPABILITY_ ## name
 
-static const std::array<const char*, 9> allSeq = {
+static const std::array<const char*, 10> allSeq = {
         "\033[>c",
         "\033[>1c",
         "\033[>0;1c",
@@ -19,6 +19,7 @@ static const std::array<const char*, 9> allSeq = {
         "\033[5n",
         "\033[6n",
         "\033[?6n",
+        "\033[>q",
         "\033[1x",
         "\033]4;255;?\007",
     };
@@ -49,6 +50,7 @@ struct TestCase {
     std::map<std::string, SeqResult> seq;
     std::string auto_detect_result_text;
     std::vector<int> caps;
+    std::string self_reported_name_and_version;
     PatchStatus glitchPatching;
 };
 
@@ -68,6 +70,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;128;128;1;0x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -75,6 +78,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE),
           C(EXTENDED_CHARSET),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -88,6 +92,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -95,6 +100,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE),
           C(EXTENDED_CHARSET),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -108,6 +114,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -115,6 +122,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -128,6 +136,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "\033P>|XTerm(354)\033\\" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -135,6 +144,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "XTerm(354)",
         WithoutGlitchPatching
     },
     // ---------------
@@ -148,6 +158,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n", }},
             { "\033[6n",          { "\033[{POS}R", }},
             { "\033[?6n",         { "\033[?{POS}R", }},
+            { "\033[>q",          { "", }},
             { "\033[1x",          { "", }},
             { "\033]4;255;?\007", { "", }},
         },
@@ -155,6 +166,73 @@ static const std::initializer_list<TestCase> tests = {
         allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
             // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
             // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (safe-CPR) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "\033[?{POS}R", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0) safe-CPR seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
+            // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
+            // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "Someterm 34.56",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (?CPR not safe)" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "\033[{POS}R", }},
+            { "\033[>q",          { "", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
+            // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
+            // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (?CPR not safe) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "\033[{POS}R", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
+            // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
+            // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "Someterm 34.56",
         WithoutGlitchPatching
     },
     // ---------------
@@ -168,11 +246,33 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n", }},
             { "\033[6n",          { "\033[{POS}R", }},
             { "\033[?6n",         { "", }},
+            { "\033[>q",          { "", }},
             { "\033[1x",          { "", }},
             { "\033]4;255;?\007", { "", }},
         },
         "Type: unknown full featured(0)  seq:>=",
         allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (no safe-CPR) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "Someterm 34.56",
         WithoutGlitchPatching
     },
     // ---------------
@@ -186,6 +286,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n", }},
             { "\033[6n",          { "\033[{POS}R", }},
             { "\033[?6n",         { "\033[?{POS}R", }},
+            { "\033[>q",          { "", }},
             { "\033[1x",          { "", }},
             { "\033]4;255;?\007", { "", }},
         },
@@ -193,6 +294,73 @@ static const std::initializer_list<TestCase> tests = {
         allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
             // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
             // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (safe-CPR, CSI>1c) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "\033[>61;234;0c" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "\033[?{POS}R", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0) safe-CPR seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
+            // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
+            // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "Someterm 34.56",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (?CPR not safe, CSI>1c)" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "\033[>61;234;0c" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "\033[{POS}R", }},
+            { "\033[>q",          { "", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
+            // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
+            // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (?CPR not safe, CSI>1c) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "\033[>61;234;0c" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "\033[{POS}R", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites.
+            // excluding CURSOR_SHAPE_OSC50 because it's konsole specific and non standard
+            // excluding 88_COLOR because it reduces 256 color palette to 88 color.
+        "Someterm 34.56",
         WithoutGlitchPatching
     },
     // ---------------
@@ -206,13 +374,36 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n", }},
             { "\033[6n",          { "\033[{POS}R", }},
             { "\033[?6n",         { "", }},
+            { "\033[>q",          { "", }},
             { "\033[1x",          { "", }},
             { "\033]4;255;?\007", { "", }},
         },
         "Type: unknown full featured(0)  seq:>=",
         allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "",
         WithoutGlitchPatching
     },
+    // ---------------
+    {
+        "DA3 new id promise (no safe-CPR, CSI>1c) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "\033[>61;234;0c" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "Someterm 34.56",
+        WithoutGlitchPatching
+    },
+    // ---------------
     {
         "DA3 new id promise (no safe-CPR, CSI 1x)" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
         {
@@ -223,11 +414,73 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n", }},
             { "\033[6n",          { "\033[{POS}R", }},
             { "\033[?6n",         { "", }},
+            { "\033[>q",          { "", }},
             { "\033[1x",          { "\033[3;1;1;128;128;1;0x", }},
             { "\033]4;255;?\007", { "", }},
         },
         "Type: unknown full featured(0)  seq:>=",
         allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (no safe-CPR, CSI 1x) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "\033[3;1;1;128;128;1;0x", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "Someterm 34.56",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (no safe-CPR, CSI>1c, CSI 1x)" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "\033[>61;234;0c" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "", }},
+            { "\033[>q",          { "", }},
+            { "\033[1x",          { "\033[3;1;1;128;128;1;0x", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "DA3 new id promise (no safe-CPR, CSI>1c, CSI 1x) with terminal software self report" LINEINFO, // promise that newly allocated DA3 ids will be seen as fully featured
+        {
+            { "\033[>c",          { "\033[>61;234;0c" }},
+            { "\033[>1c",         { "\033[>61;234;0c" }},
+            { "\033[>0;1c",       { "\033[>61;234;0c", }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\", }},
+            { "\033[5n",          { "\033[0n", }},
+            { "\033[6n",          { "\033[{POS}R", }},
+            { "\033[?6n",         { "", }},
+            { "\033[>q",          { "\033P>|Someterm 34.56\033\\", }},
+            { "\033[1x",          { "\033[3;1;1;128;128;1;0x", }},
+            { "\033]4;255;?\007", { "", }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        allCapsBut({C(CURSOR_SHAPE_OSC50), C(88_COLOR)}), // should have all compliant capabilites. See above for details
+        "Someterm 34.56",
         WithoutGlitchPatching
     },
     // ---------------
@@ -241,6 +494,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "", "XXXX" }},
             { "\033[1x",          { "\033[?x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -248,6 +502,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -261,6 +516,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "", "XXXX" }},
             { "\033[1x",          { "\033[?x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -268,6 +524,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -281,6 +538,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "", "XXXX" }},
             { "\033[1x",          { "\033[?x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -288,6 +546,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -301,6 +560,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
         },
@@ -308,6 +568,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -321,6 +582,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
         },
@@ -328,6 +590,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         NeedsGlitchPatching
     },
     // ---------------
@@ -341,6 +604,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -348,6 +612,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -361,6 +626,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -368,6 +634,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -381,6 +648,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -388,6 +656,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -401,6 +670,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -408,6 +678,29 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status and terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
         WithoutGlitchPatching
     },
     // ---------------
@@ -421,6 +714,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -428,6 +722,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     {
@@ -440,6 +735,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "" }},
             { "\033[6n",          { "" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -447,6 +743,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -460,6 +757,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -467,6 +765,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -480,6 +779,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -487,7 +787,30 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[>1c, ?CPR not safe and terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;13c" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
+        WithoutGlitchPatching
     },
     // ---------------
     {
@@ -500,6 +823,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
         },
@@ -507,7 +831,30 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[>1c, ESC[>0;1c and terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "\033[>1;4000;13c\033[>1;4000;13c" }},
+            { "\033[=c",          { "", }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
+        WithoutGlitchPatching
     },
     // ---------------
     {
@@ -520,6 +867,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -527,6 +875,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -540,6 +889,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -547,6 +897,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -560,6 +911,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -567,6 +919,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -580,6 +933,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -587,6 +941,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING) },
+        "",
         NeedsGlitchPatching
     },
     // ---------------
@@ -600,6 +955,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
         },
@@ -607,6 +963,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -620,6 +977,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -627,6 +985,29 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "like pangoterm with libvterm 0.1.3 but with terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;100;0c" }},
+            { "\033[>1c",         { "\033[>0;100;0c" }},
+            { "\033[>0;1c",       { "\033[>0;100;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
         WithoutGlitchPatching
     },
     // ---------------
@@ -640,6 +1021,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -647,6 +1029,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -660,6 +1043,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -667,6 +1051,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -680,6 +1065,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -687,6 +1073,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -700,6 +1087,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -707,6 +1095,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE),
           C(EXTENDED_CHARSET),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -720,6 +1109,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -727,6 +1117,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -740,6 +1131,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -747,6 +1139,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -760,6 +1153,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -767,6 +1161,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -780,6 +1175,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -787,6 +1183,29 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "like tmux 2.0 but with terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>84;0;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>84;0;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: tmux(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
         WithoutGlitchPatching
     },
     // ---------------
@@ -800,6 +1219,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;128;128;1;0x" }},
             { "\033]4;255;?\007", { "\033]4;rgb:eeee/eeee/eeee\007" }},
         },
@@ -807,6 +1227,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -820,6 +1241,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;128;128;1;0x" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -827,6 +1249,51 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(88_COLOR),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "like rxvt-unicode 9.09 but with terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>85;95;0c" }},
+            { "\033[>1c",         { "\033[>85;95;0c" }},
+            { "\033[>0;1c",       { "\033[>85;95;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;128;128;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;rgb:eeee/eeee/eeee\007" }},
+        },
+        "Type: urxvt(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "like rxvt-unicode 9.09 with 88color compile time option but with terminal software self report" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>85;95;0c" }},
+            { "\033[>1c",         { "\033[>85;95;0c" }},
+            { "\033[>0;1c",       { "\033[>85;95;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|fictional\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;128;128;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: urxvt(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(88_COLOR),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "fictional",
         WithoutGlitchPatching
     },
     // ---------------
@@ -840,6 +1307,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[24;1R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
             { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
         },
@@ -847,6 +1315,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -860,6 +1329,7 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[5n",          { "\033[0n" }},
             { "\033[6n",          { "\033[{POS}R" }},
             { "\033[?6n",         { "" }},
+            { "\033[>q",          { "", "q" }},
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
@@ -867,6 +1337,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         NeedsGlitchPatching
     },
 };
@@ -1047,6 +1518,12 @@ TEST_CASE("finger printing") {
             CHECK_UPDATE_OK(detected_caps == testcase.caps);
         }
 
+        if (testcase.self_reported_name_and_version.size()) {
+            REQUIRE(termpaint_terminal_self_reported_name_and_version(term));
+            CHECK_UPDATE_OK(termpaint_terminal_self_reported_name_and_version(term) == testcase.self_reported_name_and_version);
+        } else {
+            CHECK_UPDATE_OK(termpaint_terminal_self_reported_name_and_version(term) == NULL);
+        }
         CHECK_UPDATE_OK(glitchPatchingWasNeeded == testcase.glitchPatching);
 
         term.reset();
