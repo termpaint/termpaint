@@ -182,6 +182,8 @@ typedef enum auto_detect_state_ {
     AD_FP2_CURSOR_DONE,
     AD_FP2_SEC_DEV_ATTRIB_RECVED1,
     AD_FP2_SEC_DEV_ATTRIB_RECVED2,
+    // sub routine
+    AD_GLITCH_PATCHING
 } auto_detect_state;
 
 typedef enum terminal_type_enum_ {
@@ -279,6 +281,11 @@ typedef struct termpaint_terminal_ {
 
     char *restore_seq;
     auto_detect_state ad_state;
+    // additional auto detect state machine temporary space
+    int glitch_cursor_x;
+    int glitch_cursor_y;
+    auto_detect_state glitch_patching_next_state;
+    // </>
     bool capabilities[NUM_CAPABILITIES];
 } termpaint_terminal;
 
@@ -2594,39 +2601,40 @@ void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, in
     termpaint_input_expect_legacy_mouse_reports(term->input, s);
 }
 
-static void termpaintp_patch_misparsing(termpaint_terminal *terminal, termpaint_integration *integration,
-                                        termpaint_event *event) {
-    if (terminal->initial_cursor_y == event->cursor_position.y) {
-        if (terminal->initial_cursor_x + 1 == event->cursor_position.x) {
-            // the c in e.g. "\033[>c" was printed
-            // try to hide this
-            int_puts(integration, "\010 \010");
-        } else if (terminal->initial_cursor_x < event->cursor_position.x) {
-            // more of this sequence got printed
-            // try to hide this
-            int cols = event->cursor_position.x - terminal->initial_cursor_x;
-            for (int i = 0; i < cols; i++) {
-                int_puts(integration, "\010");
-            }
-            for (int i = 0; i < cols; i++) {
-                int_puts(integration, " ");
-            }
-            for (int i = 0; i < cols; i++) {
-                int_puts(integration, "\010");
-            }
-        } else if (event->cursor_position.x == 1) {
-            // the c in e.g. "\033[>c" was printed, causing a line wrap on the last line scrolling once
-            // should we check if this is acutally the last line? Terminal size might be stale or unavailable
-            // though.
-            int_puts(integration, "\010 \010");
-        }
-    } else if (terminal->initial_cursor_y + 1 == event->cursor_position.y
-               && event->cursor_position.x == 1) {
-        // the c in e.g. "\033[>c" was printed, causing a line wrap
-        int_puts(integration, "\010 \010");
-    } else if (terminal->initial_cursor_y != event->cursor_position.y) {
-        // something else, just bail out.
+static void termpaintp_patch_misparsing_defered(termpaint_terminal *terminal, termpaint_integration *integration,
+                                        auto_detect_state next_state) {
+    terminal->ad_state = AD_GLITCH_PATCHING;
+    terminal->glitch_patching_next_state = next_state;
+
+    int reset_x = terminal->initial_cursor_x;
+    int reset_y = terminal->initial_cursor_y;
+
+    if ((terminal->initial_cursor_y == terminal->glitch_cursor_y) && (terminal->initial_cursor_x > terminal->glitch_cursor_x)) {
+        // when starting on the last line a line wrap caused by glitches will scroll and thus the cursor seemingly
+        // just moves left on the same line. Gliches start on the line that has scrolled up when wraping thus start on
+        // that line
+        reset_y -= 1;
     }
+
+    int_puts(integration, "\033[");
+    int_put_num(integration, reset_y + 1);
+    int_puts(integration, ";");
+    int_put_num(integration, reset_x + 1);
+    int_puts(integration, "H");
+    int_puts(integration, " ");
+    if (termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT)) {
+        int_puts(integration, "\033[?6n");
+    } else {
+        int_puts(integration, "\033[6n");
+        termpaint_terminal_expect_cursor_position_report(terminal);
+    }
+}
+
+static void termpaintp_patch_misparsing_from_event(termpaint_terminal *terminal, termpaint_integration *integration,
+                                        termpaint_event *event, auto_detect_state next_state) {
+    terminal->glitch_cursor_x = event->cursor_position.x;
+    terminal->glitch_cursor_y = event->cursor_position.y;
+    termpaintp_patch_misparsing_defered(terminal, integration, next_state);
 }
 
 // known terminals where auto detections hangs: freebsd system console using vt module
@@ -2643,6 +2651,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             // should not happen
             break;
         case AD_INITIAL:
+            terminal->glitch_cursor_y = -1; // disarmed glitch patching state
             termpaint_input_expect_cursor_position_report(terminal->input);
             int_puts(integration, "\033[5n");
             int_puts(integration, "\033[6n");
@@ -2741,9 +2750,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 } else {
                     termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                     terminal->terminal_type = TT_MISPARSING;
-                    termpaintp_patch_misparsing(terminal, integration, event);
-                    terminal->ad_state = AD_FINISHED;
-                    return false;
+                    termpaintp_patch_misparsing_from_event(terminal, integration, event, AD_FINISHED);
+                    return true;
                 }
             }
             break;
@@ -2830,7 +2838,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 }
                 if (terminal->initial_cursor_y != event->cursor_position.y
                      || terminal->initial_cursor_x != event->cursor_position.x) {
-                    termpaintp_patch_misparsing(terminal, integration, event);
+                    // prepare defered glitch patching
+                    terminal->glitch_cursor_x = event->cursor_position.x;
+                    terminal->glitch_cursor_y = event->cursor_position.y;
                     terminal->terminal_type = TT_BASE;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
@@ -2867,12 +2877,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 if (terminal->initial_cursor_y != event->cursor_position.y
                      || terminal->initial_cursor_x != event->cursor_position.x) {
-                    termpaintp_patch_misparsing(terminal, integration, event);
+                    termpaintp_patch_misparsing_from_event(terminal, integration, event, AD_FINISHED);
+                    return true;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
                 }
-                terminal->ad_state = AD_FINISHED;
-                return false;
             }
             break;
         case AD_EXPECT_SYNC_TO_FINISH:
@@ -2964,7 +2975,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 }
                 if (terminal->initial_cursor_y != event->cursor_position.y
                      || terminal->initial_cursor_x != event->cursor_position.x) {
-                    termpaintp_patch_misparsing(terminal, integration, event);
+                     // prepare defered glitch patching
+                     terminal->glitch_cursor_x = event->cursor_position.x;
+                     terminal->glitch_cursor_y = event->cursor_position.y;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                 }
@@ -2977,8 +2990,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_FP1_QMCURSOR_POS_RECVED:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                if (terminal->glitch_cursor_y != -1) {
+                    termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
+                    return true;
+                } else {
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
+                }
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 // ignore
                 return true;
@@ -2992,7 +3010,8 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP2_CURSOR_DONE;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
-                if (terminal->auto_detect_sec_device_attributes && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0) {
+                if (terminal->auto_detect_sec_device_attributes && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0
+                        && terminal->glitch_cursor_y == -1) {
                     terminal->terminal_type = TT_VTE;
                     terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
                 } else {
@@ -3005,7 +3024,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 if (terminal->initial_cursor_y != event->cursor_position.y
                      || terminal->initial_cursor_x != event->cursor_position.x) {
-                    termpaintp_patch_misparsing(terminal, integration, event);
+                    // prepare defered glitch patching
+                    terminal->glitch_cursor_x = event->cursor_position.x;
+                    terminal->glitch_cursor_y = event->cursor_position.y;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                 }
@@ -3018,8 +3039,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 if (terminal->terminal_type_confidence == 0) {
                     terminal->terminal_type = TT_BASE;
                 }
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                if (terminal->glitch_cursor_y == -1) {
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
+                } else {
+                    termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
+                    return true;
+                }
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 terminal->ad_state = AD_FP2_SEC_DEV_ATTRIB_RECVED1;
                 return true;
@@ -3030,8 +3056,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 if (terminal->terminal_type_confidence == 0) {
                     terminal->terminal_type = TT_BASE;
                 }
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                if (terminal->glitch_cursor_y == -1) {
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
+                } else {
+                    termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
+                    return true;
+                }
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 if (terminal->auto_detect_sec_device_attributes) {
                     terminal->terminal_type = TT_KONSOLE;
@@ -3044,9 +3075,38 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             break;
         case AD_FP2_SEC_DEV_ATTRIB_RECVED2:
             if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
-                terminal->ad_state = AD_FINISHED;
-                return false;
+                if (terminal->glitch_cursor_y == -1) {
+                    terminal->ad_state = AD_FINISHED;
+                    return false;
+                } else {
+                    termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
+                    return true;
+                }
             }
+            break;
+        // sub routine glitch patching
+        case AD_GLITCH_PATCHING:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                if ((event->cursor_position.y < terminal->glitch_cursor_y)
+                        || ((event->cursor_position.y == terminal->glitch_cursor_y) && (event->cursor_position.x < terminal->glitch_cursor_x))) {
+                    if (termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT)) {
+                        int_puts(integration, " \033[?6n");
+                    } else {
+                        termpaint_input_expect_cursor_position_report(terminal->input);
+                        int_puts(integration, " \033[6n");
+                    }
+                    return true;
+                } else {
+                    terminal->glitch_cursor_y = -1; // disarm
+                    terminal->ad_state = terminal->glitch_patching_next_state;
+                    if (terminal->glitch_patching_next_state == AD_FINISHED) {
+                        return false;
+                    } else {
+                        BUG("AD_GLITCH_PATCHING called with destination state != AD_FINISHED");
+                    }
+                }
+            }
+            break;
     };
     // if this code runs auto detection failed by running off into the weeds
 

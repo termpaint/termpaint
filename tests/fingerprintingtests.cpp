@@ -451,6 +451,46 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "cursor position, terminal status and junk with ESC[>c" LINEINFO,
+        {
+            { "\033[>c",          { "", "XX" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: misparsing(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[=c glitches, ESC[>1c, safe-CPR" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;13c" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: base(0) safe-CPR seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
         "alacritty 0.2.9" LINEINFO,
         {
             { "\033[>c",          { "\033[?6c" }},
@@ -789,6 +829,26 @@ static const std::initializer_list<TestCase> tests = {
           C(7BIT_ST) },
         WithoutGlitchPatching
     },
+    // ---------------
+    {
+        "android: connectbot 1.9.5" LINEINFO,
+        {
+            { "\033[>c",          { "", "c" }},
+            { "\033[>1c",         { "", "1c" }},
+            { "\033[>0;1c",       { "", "0;1c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: misparsing(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        NeedsGlitchPatching
+    },
 };
 
 static std::string replace(const std::string& str, const std::string& from, const std::string& to) {
@@ -858,6 +918,7 @@ TEST_CASE("finger printing") {
 
         auto wrapIfNeeded = [&] {
             if (pendingWrap) {
+                pendingWrap = false;
                 cursorX = 0;
                 if (cursorY + 1 >= height) {
                     std::set<std::tuple<int, int>> glitchedNew;
@@ -878,9 +939,13 @@ TEST_CASE("finger printing") {
             }
         };
 
+        auto isNumeric = [](char c) { return '0' <= c && c <= '9';};
+
         for (size_t i = 1; i <= integration.sent.size(); i++) {
             const std::string part = integration.sent.substr(0, i);
             if (part == " ") {
+                wrapIfNeeded();
+                CHECK(glitched.find(std::make_tuple(cursorX, cursorY)) != glitched.end());
                 glitched.erase(std::make_tuple(cursorX, cursorY));
                 advance();
 
@@ -890,6 +955,16 @@ TEST_CASE("finger printing") {
                 cursorX = std::max(cursorX - 1, 0);
 
                 integration.sent = integration.sent.substr(1);
+                i = 0;
+            } else if (part.size() >= 4 && part.substr(0, 2) == "\033[" && part[part.length()-1] == 'H'
+                       && isNumeric(part[2]) && isNumeric(part[part.length()-2])) {
+                size_t colOffs;
+                CHECK_UPDATE_OK((colOffs = part.find_first_of(';')) != std::string::npos);
+                cursorX = std::stoi(part.substr(colOffs + 1)) - 1;
+                cursorY = std::stoi(part.substr(2)) - 1;
+                pendingWrap = false;
+
+                integration.sent = integration.sent.substr(i);
                 i = 0;
             } else {
                 const auto it = testcase.seq.find(part);
@@ -921,11 +996,25 @@ TEST_CASE("finger printing") {
 
         CHECK_UPDATE_OK(termpaint_terminal_auto_detect_state(term) != termpaint_auto_detect_running);
         CHECK_UPDATE_OK(!events_leaked);
-        CHECK_UPDATE_OK(glitched == std::set<std::tuple<int, int>>{});
+
+        bool misdetectionExpected = false;
+        if (initialX + 1 == width && ((testcase.seq.at("\033[>c").junk.size() == 1)
+                                      || (testcase.seq.at("\033[=c").junk.size() == 1))) {
+            misdetectionExpected = true;
+        }
+
+        auto glitchedFiltered = glitched;
+        // The last column can not be reliabily cleared, because cursor position does not advance
+        // instead an invisible wrap pending flag is set. Just ignore glitches there for now.
+        glitchedFiltered.erase(std::make_tuple(width - 1, cursorY));
+        CAPTURE(cursorY);
+        CHECK_UPDATE_OK(glitchedFiltered == std::set<std::tuple<int, int>>{});
 
         char auto_detect_result_text[1000];
         termpaint_terminal_auto_detect_result_text(term, auto_detect_result_text, sizeof (auto_detect_result_text));
-        CHECK_UPDATE_OK(auto_detect_result_text == testcase.auto_detect_result_text);
+        if (!misdetectionExpected) { // wrapping messes with misparsing detection
+            CHECK_UPDATE_OK(auto_detect_result_text == testcase.auto_detect_result_text);
+        }
 
         std::vector<int> detected_caps;
         for (int cap : allCaps) {
@@ -934,7 +1023,9 @@ TEST_CASE("finger printing") {
             }
         }
 
-        CHECK_UPDATE_OK(detected_caps == testcase.caps);
+        if (!misdetectionExpected) { // wrapping messes with misparsing detection
+            CHECK_UPDATE_OK(detected_caps == testcase.caps);
+        }
 
         CHECK_UPDATE_OK(glitchPatchingWasNeeded == testcase.glitchPatching);
 
@@ -951,9 +1042,9 @@ TEST_CASE("finger printing") {
 
             const auto setup = GENERATE(
                         TermSetup{38, 0, 40, 4},
-//                        TermSetup{39, 0, 40, 4}, // needs additional workaround for glitches at end of line
-                        TermSetup{0, 3, 40, 4}
-//                        TermSetup{39, 3, 40, 4}
+                        TermSetup{39, 0, 40, 4},
+                        TermSetup{0, 3, 40, 4},
+                        TermSetup{39, 3, 40, 4}
                         );
 
             CAPTURE(setup.initialX, setup.initialY, setup.width, setup.height);
