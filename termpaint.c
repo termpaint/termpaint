@@ -161,8 +161,11 @@ typedef enum auto_detect_state_ {
     // Basics: cursor position, secondary id, device ready?
     AD_BASIC_REQ,
     AD_BASIC_CURPOS_RECVED,
+    AD_BASIC_REQ_FAILED_CURPOS_RECVED,
     AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB,
+    AD_BASIC_NO_SEC_DEV_ATTRIB_MISPARSING,
     AD_BASIC_SEC_DEV_ATTRIB_RECVED,
+    AD_BASIC_SEC_DEV_ATTRIB_RECVED_CONSUME_CURPOS,
     // urxvt palette size detection
     AD_URXVT_88_256_REQ,
     // finger print 1: Test for 'private' cursor position, xterm secondary id quirk, vte CSI 1x quirk
@@ -2653,9 +2656,11 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_INITIAL:
             terminal->glitch_cursor_y = -1; // disarmed glitch patching state
             termpaint_input_expect_cursor_position_report(terminal->input);
+            termpaint_input_expect_cursor_position_report(terminal->input);
             int_puts(integration, "\033[5n");
             int_puts(integration, "\033[6n");
             int_puts(integration, "\033[>c");
+            int_puts(integration, "\033[6n");
             int_puts(integration, "\033[5n");
             int_awaiting_response(integration);
             terminal->ad_state = AD_BASICCOMPAT;
@@ -2668,8 +2673,18 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->initial_cursor_x = event->cursor_position.x;
                 terminal->initial_cursor_y = event->cursor_position.y;
                 terminal->terminal_type = TT_INCOMPATIBLE;
+                terminal->ad_state = AD_BASIC_REQ_FAILED_CURPOS_RECVED;
+                return true;
+            }
+            break;
+        case AD_BASIC_REQ_FAILED_CURPOS_RECVED:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 terminal->ad_state = AD_FINISHED;
                 return false;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                // no use, but still need to wait for cursor report reply
+                terminal->ad_state = AD_BASIC_REQ_FAILED_CURPOS_RECVED;
+                return true;
             }
             break;
         case AD_BASIC_REQ:
@@ -2716,43 +2731,57 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type_confidence = 2;
                 }
 
-                terminal->ad_state = AD_BASIC_SEC_DEV_ATTRIB_RECVED;
+                terminal->ad_state = AD_BASIC_SEC_DEV_ATTRIB_RECVED_CONSUME_CURPOS;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_PRI_DEV_ATTRIB) {
                 // We never asked for primary device attributes. This means the terminal gets
                 // basic parsing rules wrong.
                 terminal->terminal_type = TT_TOODUMB;
-                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
                 return true;
-            } else if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+            } else if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 // check if finger printing left printed characters
-                termpaint_input_expect_cursor_position_report(terminal->input);
-                int_puts(integration, "\033[6n");
-                int_awaiting_response(integration);
-                terminal->ad_state = AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB;
-                return true;
-            }
-            break;
-        case AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB:
-            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
                 if (terminal->initial_cursor_x == event->cursor_position.x
                         && terminal->initial_cursor_y == event->cursor_position.y) {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
+                    terminal->ad_state = AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB;
 
-                    int_puts(integration, "\033[=c");
-                    int_puts(integration, "\033[>1c");
-                    int_puts(integration, "\033[?6n");
-                    int_puts(integration, "\033[1x");
-                    int_puts(integration, "\033[5n");
-                    int_awaiting_response(integration);
-                    terminal->ad_state = AD_FP1_REQ;
                     return true;
                 } else {
                     termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                     terminal->terminal_type = TT_MISPARSING;
-                    termpaintp_patch_misparsing_from_event(terminal, integration, event, AD_FINISHED);
+                    // prepare defered glitch patching
+                    terminal->glitch_cursor_x = event->cursor_position.x;
+                    terminal->glitch_cursor_y = event->cursor_position.y;
+                    terminal->ad_state = AD_BASIC_NO_SEC_DEV_ATTRIB_MISPARSING;
                     return true;
                 }
+            }
+            break;
+        case AD_BASIC_NO_SEC_DEV_ATTRIB_MISPARSING:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                termpaintp_patch_misparsing_defered(terminal, integration, AD_FINISHED);
+                return true;
+            }
+            break;
+        case AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB:
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
+
+                int_puts(integration, "\033[=c");
+                int_puts(integration, "\033[>1c");
+                int_puts(integration, "\033[?6n");
+                int_puts(integration, "\033[1x");
+                int_puts(integration, "\033[5n");
+                int_awaiting_response(integration);
+                terminal->ad_state = AD_FP1_REQ;
+                return true;
+            }
+            break;
+        case AD_BASIC_SEC_DEV_ATTRIB_RECVED_CONSUME_CURPOS:
+            if (event->type == TERMPAINT_EV_CURSOR_POSITION) {
+                terminal->ad_state = AD_BASIC_SEC_DEV_ATTRIB_RECVED;
+                return true;
             }
             break;
         case AD_BASIC_SEC_DEV_ATTRIB_RECVED:
