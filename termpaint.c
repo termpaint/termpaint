@@ -2960,8 +2960,16 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             }
             break;
         case AD_FP1_3RD_DEV_ATTRIB_ALIASED_TO_PRI:
-            if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+            if (event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync()) {
+                terminal->terminal_type = TT_BASE;
+                terminal->ad_state = AD_FINISHED;
+                return false;
+            } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 terminal->terminal_type = TT_MACOS;
+                terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
+                return true;
+            } else {
+                terminal->terminal_type = TT_BASE;
                 terminal->ad_state = AD_WAIT_FOR_SYNC_TO_FINISH;
                 return true;
             }

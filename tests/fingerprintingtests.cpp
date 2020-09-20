@@ -858,6 +858,50 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "cursor position, terminal status, ESC[>c and aliases ESC[=c" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;95;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "\033[?1;2c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[24;1R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[>c, ESC[>1c, aliases ESC[=c, ?CPR is not safe and ESC[1x" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;95;0c" }},
+            { "\033[>1c",         { "\033[>1;95;0c" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "\033[?1;2c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[24;1R" }},
+            { "\033[?6n",         { "\033[24;1R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "alacritty 0.2.9" LINEINFO,
         {
             { "\033[>c",          { "\033[?6c" }},
