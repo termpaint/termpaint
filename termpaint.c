@@ -2363,6 +2363,38 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
     }
 }
 
+static int termpaintp_parse_version(char *s) {
+    int res = 0;
+    int place = 0;
+    int tmp = 0;
+    for (; *s; s++) {
+        if ('0' <= *s && *s <= '9') {
+            tmp = tmp * 10 + *s - '0';
+        } else if (*s == '.') {
+            if (place == 0) {
+                res += tmp * 1000000;
+            } else if (place == 1) {
+                res += tmp * 1000;
+            } else if (place == 2) {
+                break;
+            }
+            tmp = 0;
+            ++place;
+        } else {
+            break;
+        }
+    }
+    if (place == 0) {
+        res += tmp * 1000000;
+    } else if (place == 1) {
+        res += tmp * 1000;
+    } else if (place == 2) {
+        res += tmp;
+        return res;
+    }
+    return res;
+}
+
 static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_terminal *term) {
     if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CSI_GREATER)) {
         // use TERMPAINT_CAPABILITY_CSI_GREATER as indication for more advanced parsing capabilities,
@@ -2492,11 +2524,19 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
     } else if (term->terminal_type == TT_TERMINOLOGY) {
         // To get here terminology has to be at least 1.4 (first version to support DA3)
 
+        if (term->terminal_self_reported_name_version) {
+            char *version_part = strchr(term->terminal_self_reported_name_version, ' ');
+            if (version_part) {
+                term->terminal_version = termpaintp_parse_version(version_part + 1);
+            }
+        }
+
         // terminology approximates to 256 color palette internally (since 1.2.0), but that's ok.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
 
-        // supported since 1.7.x
-        // termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+        if (term->terminal_version >= 1007000) { // supported since 1.7.0
+            termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+        }
 
         // all shapes have been added in 1.2 so this is always safe.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
@@ -2609,6 +2649,14 @@ void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term) 
 
 void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s) {
     termpaint_input_expect_legacy_mouse_reports(term->input, s);
+}
+
+static bool termpaintp_string_prefix(const char * prefix, const char *s, int len) {
+    const int plen = strlen(prefix);
+    if (plen <= len) {
+        return memcmp(prefix, s, plen) == 0;
+    }
+    return false;
 }
 
 static void termpaintp_patch_misparsing_defered(termpaint_terminal *terminal, termpaint_integration *integration,
@@ -2975,6 +3023,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_SELF_REPORTING;
                 free(terminal->terminal_self_reported_name_version);
                 terminal->terminal_self_reported_name_version = strndup(event->raw.string, event->raw.length);
+                if (termpaintp_string_prefix("terminology ", event->raw.string, event->raw.length)) {
+                    terminal->terminal_type = TT_TERMINOLOGY;
+                }
                 return true;
             }
             break;
@@ -4085,9 +4136,28 @@ static bool termpaintp_test_quantize_to_88(void) {
     return true;
 }
 
+static bool termpaintp_test_parse_version(void) {
+    bool ret = true;
+    ret &= (termpaintp_parse_version("0.5.0") == 5000);
+    ret &= (termpaintp_parse_version("0.5.1") == 5001);
+    ret &= (termpaintp_parse_version("1") == 1000000);
+    ret &= (termpaintp_parse_version("1.0") == 1000000);
+    ret &= (termpaintp_parse_version("1.0.0") == 1000000);
+    ret &= (termpaintp_parse_version("1.7") == 1007000);
+    ret &= (termpaintp_parse_version("1.7.0") == 1007000);
+    ret &= (termpaintp_parse_version("1.7.0a") == 1007000);
+    ret &= (termpaintp_parse_version("1.7a.0") == 1007000);
+    ret &= (termpaintp_parse_version("1.7.0.1") == 1007000);
+    ret &= (termpaintp_parse_version("1.7.1") == 1007001);
+    ret &= (termpaintp_parse_version("1.7.1a") == 1007001);
+    ret &= (termpaintp_parse_version("1.7a.1") == 1007000);
+    return ret;
+}
+
 _tERMPAINT_PUBLIC bool termpaintp_test(void) {
     bool ret = true;
     ret &= termpaintp_test_quantize_to_256();
     ret &= termpaintp_test_quantize_to_88();
+    ret &= termpaintp_test_parse_version();
     return ret;
 }

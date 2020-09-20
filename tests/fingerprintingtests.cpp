@@ -1078,6 +1078,28 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "terminology 1.7.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>61;337;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;337;0c" }},
+            { "\033[=c",          { "\033P!|7E7E5459\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[5;1R" }},
+            { "\033[?6n",         { "\033[?5;1;1R" }},
+            { "\033[>q",          { "\033P>|terminology 1.7.0\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: terminology(1007000) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "terminology 1.7.0",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "terminus 1.0.104 with xtermjs" LINEINFO,
         {
             { "\033[>c",          { "\033[>0;276;0c" }},

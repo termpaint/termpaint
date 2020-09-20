@@ -18,6 +18,7 @@ import_whitelist_main = [
     'memmove',
     'realloc',
     'sprintf',
+    'strchr',
     'strcmp',
     'strlen',
     'strstr',
