@@ -2659,6 +2659,10 @@ static bool termpaintp_string_prefix(const char * prefix, const char *s, int len
     return false;
 }
 
+static bool termpaintp_char_ascii_num(char c) {
+    return '0' <= c && c <= '9';
+}
+
 static void termpaintp_patch_misparsing_defered(termpaint_terminal *terminal, termpaint_integration *integration,
                                         auto_detect_state next_state) {
     terminal->ad_state = AD_GLITCH_PATCHING;
@@ -2911,13 +2915,50 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         terminal->terminal_type_confidence = 2;
                     } else if (memcmp(event->raw.string, "00000000", 8) == 0) {
                         // xterm uses this since 336. But this could be something else too.
-                        terminal->terminal_type = TT_XTERM;
-                        terminal->terminal_type_confidence = 1;
+                        terminal->terminal_type = TT_BASE;
+                        const char* data = terminal->auto_detect_sec_device_attributes;
+                        if (data && strlen(data) > 10) {
+                            while (*data != ';' && *data != 0) {
+                                ++data;
+                            }
+                            if (*data == ';') {
+                                ++data;
+                                int version = 0;
+                                while ('0' <= *data && *data <= '9') {
+                                    version = version * 10 + *data - '0';
+                                    ++data;
+                                }
+                                if (*data == ';') {
+                                    if (version >= 336) {
+                                        terminal->terminal_type = TT_XTERM;
+                                        terminal->terminal_type_confidence = 1;
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         terminal->terminal_type = TT_FULL;
                         terminal->terminal_type_confidence = 1;
                     }
                     terminal->ad_state = AD_FP1_REQ_TERMID_RECVED;
+                } else if (event->raw.length == 1 && event->raw.string[0] == '0') {
+                    // xterm uses this between 280 and 335. But this could be something else too.
+                    if (terminal->auto_detect_sec_device_attributes
+                            && strlen(terminal->auto_detect_sec_device_attributes) == 12
+                            && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>41;", 6) == 0
+                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes[6])
+                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes[7])
+                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes[8])
+                            && memcmp(terminal->auto_detect_sec_device_attributes + 9, ";0c", 3) == 0) {
+                        int version = (terminal->auto_detect_sec_device_attributes[6] - '0') * 100
+                                + (terminal->auto_detect_sec_device_attributes[7] - '0') * 10
+                                + terminal->auto_detect_sec_device_attributes[8] - '0';
+                        if (280 <= version && version <= 335) {
+                            terminal->terminal_type = TT_XTERM;
+                            terminal->terminal_type_confidence = 1;
+                            terminal->ad_state = AD_FP1_REQ_TERMID_RECVED;
+                        }
+                    }
                 }
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
@@ -2937,12 +2978,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type = TT_BASE;
                 } else {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
-                    if (terminal->auto_detect_sec_device_attributes && event->cursor_position.safe
-                            && termpaintp_str_ends_with(terminal->auto_detect_sec_device_attributes, ";0c")) {
-                        terminal->terminal_type = TT_XTERM;
-                    } else {
-                        terminal->terminal_type = TT_BASE;
-                    }
+                    terminal->terminal_type = TT_BASE;
                 }
                 terminal->ad_state = AD_FP1_QMCURSOR_POS_RECVED;
                 return true;
@@ -3129,7 +3165,12 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     return true;
                 }
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
-                // ignore
+                if (terminal->auto_detect_sec_device_attributes
+                        && termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT)
+                        && termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS)
+                        && termpaintp_str_ends_with(terminal->auto_detect_sec_device_attributes, ";0c")) {
+                    terminal->terminal_type = TT_XTERM;
+                }
                 return true;
             }
             break;

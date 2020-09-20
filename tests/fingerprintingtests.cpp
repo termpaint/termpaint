@@ -1157,9 +1157,9 @@ static const std::initializer_list<TestCase> tests = {
             { "\033[1x",          { "" }},
             { "\033]4;255;?\007", { "" }},
         },
-        "Type: xterm(276) safe-CPR seq:>=",
-        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE),
-          C(EXTENDED_CHARSET),
+        "Type: base(0) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
         "",
         WithoutGlitchPatching
