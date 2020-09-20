@@ -688,7 +688,7 @@ struct termpaint_input_ {
     _Bool overflow;
     _Bool esc_pending;
 
-    _Bool expect_cursor_position_report;
+    int expect_cursor_position_report;
     _Bool expect_mouse_char_mode;
     _Bool expect_mouse_multibyte_mode;
     _Bool expect_apc;
@@ -1143,7 +1143,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
 
 
-            if ((!event.type || ctx->expect_cursor_position_report)
+            if ((!event.type || ctx->expect_cursor_position_report > 0)
                     && length > 5 && (sequence_id == SEQ('R', 0, 0) || sequence_id == SEQ('R', '?', 0))) {
                 int x, y;
                 if (termpaintp_input_parse_dec_2(data + params_start, params_len, &y, &x)
@@ -1152,7 +1152,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                     event.cursor_position.x = x - 1;
                     event.cursor_position.y = y - 1;
                     if (prefix_modifier == 0) {
-                        ctx->expect_cursor_position_report = false;
+                        ctx->expect_cursor_position_report -= 1;
                     }
                     event.cursor_position.safe = prefix_modifier == '?';
                 }
@@ -1308,7 +1308,7 @@ termpaint_input *termpaint_input_new() {
     ctx->esc_pending = false;
     ctx->raw_filter_cb = nullptr;
     ctx->event_cb = nullptr;
-    ctx->expect_cursor_position_report = false;
+    ctx->expect_cursor_position_report = 0;
     return ctx;
 }
 
@@ -1584,7 +1584,7 @@ int termpaint_input_peek_buffer_length(const termpaint_input *ctx) {
 }
 
 void termpaint_input_expect_cursor_position_report(termpaint_input *ctx) {
-    ctx->expect_cursor_position_report = true;
+    ctx->expect_cursor_position_report += 1;
 }
 
 void termpaint_input_expect_legacy_mouse_reports(termpaint_input *ctx, int s) {
