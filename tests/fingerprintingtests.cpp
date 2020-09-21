@@ -1408,6 +1408,50 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "microsoft terminal 1.1.1812.0" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "microsoft terminal 1.3.2382.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;10;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "\033P!|00000000\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: microsoft terminal(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "android: connectbot 1.9.5" LINEINFO,
         {
             { "\033[>c",          { "", "c" }},
