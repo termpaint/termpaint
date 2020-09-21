@@ -3384,6 +3384,10 @@ enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(const
     }
 }
 
+bool termpaint_terminal_might_be_supported(const termpaint_terminal *terminal) {
+    return terminal->terminal_type != TT_INCOMPATIBLE;
+}
+
 void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length) {
     const char *term_type = nullptr;
     switch (terminal->terminal_type) {
