@@ -208,6 +208,7 @@ typedef enum terminal_type_enum_ {
     TT_LINUXVC,
     TT_MACOS,
     TT_TERMINOLOGY,
+    TT_MINTTY,
     TT_FULL,
 } terminal_type_enum;
 
@@ -2540,6 +2541,22 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
 
         // all shapes have been added in 1.2 so this is always safe.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
+    } else if (term->terminal_type == TT_MINTTY) {
+        const char* data = term->auto_detect_sec_device_attributes;
+        if (data && strlen(data) > 10 && memcmp(data, "\033[>77;", 6) == 0) {
+            data += 6;
+            int version = 0;
+            while ('0' <= *data && *data <= '9') {
+                version = version * 10 + *data - '0';
+                ++data;
+            }
+            if (*data == ';') {
+                term->terminal_version = version;
+            }
+        }
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     } else if (term->terminal_type == TT_FULL) {
         // full is promised to claim support for everything
         // But TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT, TERMPAINT_CAPABILITY_CSI_GREATER
@@ -2796,6 +2813,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     // no version here
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
                     terminal->terminal_type = TT_TMUX;
+                    terminal->terminal_type_confidence = 2;
+                }
+                if (event->raw.length > 6 && memcmp("\033[>77;", event->raw.string, 6) == 0) {
+                    // 77 = 'M'
+                    // second parameter is version as major*10000 + minor * 100 + patch
+                    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
+                    terminal->terminal_type = TT_MINTTY;
                     terminal->terminal_type_confidence = 2;
                 }
 
@@ -3367,6 +3391,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
             break;
         case TT_MACOS:
             term_type = "apple terminal";
+            break;
+        case TT_MINTTY:
+            term_type = "mintty";
             break;
     };
     snprintf(buffer, buffer_length, "Type: %s(%d) %s seq:%s%s", term_type, terminal->terminal_version,

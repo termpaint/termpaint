@@ -1386,6 +1386,28 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "mintty 3.2.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>77;30200;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>77;30200;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "\033P>|mintty 3.2.0\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: mintty(30200) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "mintty 3.2.0",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "android: connectbot 1.9.5" LINEINFO,
         {
             { "\033[>c",          { "", "c" }},
