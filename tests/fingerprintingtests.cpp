@@ -1780,6 +1780,28 @@ static const std::initializer_list<TestCase> tests = {
         "",
         NeedsGlitchPatching
     },
+    // ---------------
+    {
+        "terminus 1.0.104 with hterm" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;256;0c" }},
+            { "\033[>1c",         { "\033[>0;256;0c" }},
+            { "\033[>0;1c",       { "\033[>0;256;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\0330n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+        },
+        "Type: incompatible with input handling(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
 };
 
 static std::string replace(const std::string& str, const std::string& from, const std::string& to) {

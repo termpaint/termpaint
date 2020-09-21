@@ -190,7 +190,10 @@ typedef enum auto_detect_state_ {
     AD_EXPECT_SYNC_TO_SELF_REPORTING,
     AD_SELF_REPORTING,
     // sub routine
-    AD_GLITCH_PATCHING
+    AD_GLITCH_PATCHING,
+    // hacks
+    AD_HTERM_RECOVERY1,
+    AD_HTERM_RECOVERY2
 } auto_detect_state;
 
 typedef enum terminal_type_enum_ {
@@ -2762,6 +2765,12 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->terminal_type = TT_INCOMPATIBLE;
                 terminal->ad_state = AD_BASIC_REQ_FAILED_CURPOS_RECVED;
                 return true;
+            } else if (event->type == TERMPAINT_EV_CHAR && event->c.length == 1
+                       && event->c.string[0] == '0' && event->c.modifier == TERMPAINT_MOD_ALT) {
+                // hterm has a long standing typo in it's \033[5n reply that replys with a missing '['
+                terminal->terminal_type = TT_INCOMPATIBLE;
+                terminal->ad_state = AD_HTERM_RECOVERY1;
+                return true;
             }
             break;
         case AD_BASIC_REQ_FAILED_CURPOS_RECVED:
@@ -3312,6 +3321,28 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         BUG("AD_GLITCH_PATCHING called with destination state != AD_FINISHED");
                     }
                 }
+            }
+            break;
+        case AD_HTERM_RECOVERY1:
+            if (event->type == TERMPAINT_EV_CHAR && event->c.length == 1
+                       && event->c.string[0] == '0' && event->c.modifier == TERMPAINT_MOD_ALT) {
+                terminal->ad_state = AD_HTERM_RECOVERY2;
+                return true;
+            } else if (event->type == TERMPAINT_EV_CHAR && event->c.length == 1
+                       && event->c.string[0] == 'n' && event->c.modifier == 0) {
+                // keep in recovery state.
+                return true;
+            } else if ((event->type == TERMPAINT_EV_CURSOR_POSITION)
+                       || (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB)) {
+                // keep in recovery state.
+                return true;
+            }
+            break;
+        case AD_HTERM_RECOVERY2:
+            if (event->type == TERMPAINT_EV_CHAR && event->c.length == 1
+                       && event->c.string[0] == 'n' && event->c.modifier == 0) {
+                terminal->ad_state = AD_FINISHED;
+                return true;
             }
             break;
     };
