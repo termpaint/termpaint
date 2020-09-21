@@ -2729,7 +2729,6 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
 }
 
 // known terminals where auto detections hangs: freebsd system console using vt module
-// TODO add a time out and display a message to press any key to abort.
 static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event) {
     termpaint_integration *integration = terminal->integration;
 
