@@ -792,6 +792,50 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "cursor position, terminal status and ESC[1x" LINEINFO,
+        {
+            { "\033[>c",          { "", "" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[>1c and ?CPR not safe" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;13c" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "cursor position, terminal status, ESC[>1c, ?CPR not safe and terminal software self report" LINEINFO,
         {
             { "\033[>c",          { "\033[>1;4000;13c" }},
@@ -833,6 +877,94 @@ static const std::initializer_list<TestCase> tests = {
           C(CLEARED_COLORING), C(7BIT_ST) },
         "",
         NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[=c glitches 2x, ESC[>1c, safe-CPR" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;13c" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "", "cc" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: base(0) safe-CPR seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[=c glitches, ESC[>1c" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;13c" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "\033[>1;4000;13c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: base(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[=c glitches, ESC[>1c, ESC[>0;1c, safe-CPR" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;13c" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "\033[>1;4000;13c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+        },
+        "Type: base(0) safe-CPR seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "cursor position, terminal status, ESC[>1c, ESC[>0;1c" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "\033[>1;4000;13c" }},
+            { "\033[>0;1c",       { "\033[>1;4000;13c\033[>1;4000;13c" }},
+            { "\033[=c",          { "", }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
     },
     // ---------------
     {
@@ -1364,6 +1496,50 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "linux vc" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "iTerm2 3.3.12" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;95;0c" }},
+            { "\033[>1c",         { "\033[>0;95;0c" }},
+            { "\033[>0;1c",       { "\033[>0;95;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:ee/ee/ed\007" }},
+        },
+        "Type: base(0) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "Apple Terminal 433" LINEINFO,
         {
             { "\033[>c",          { "\033[>1;95;0c" }},
@@ -1404,6 +1580,28 @@ static const std::initializer_list<TestCase> tests = {
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
         "mintty 3.2.0",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "conhost.exe" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: incompatible with input handling(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
         WithoutGlitchPatching
     },
     // ---------------
@@ -1452,7 +1650,117 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "ZOC Terminal 7.25.8" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;206;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>1;206;0c" }},
+            { "\033[=c",          { std::string("\x90!|\007%\010\000\x9c", 8) }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[21;1R" }},
+            { "\033[?6n",         { "\033[21;1;1R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "jetbrains jediterm" LINEINFO,
+        {
+            { "\033[>c",          { "\033[?6c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[?6c" }},
+            { "\033[=c",          { "\033[?6c", "=" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: toodumb(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "xshell 7 beta" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;136;0c" }},
+            { "\033[>1c",         { "\033[>0;136;0c" }},
+            { "\033[>0;1c",       { "\033[>0;136;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[37;1R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "ios: Termius 4.6.7" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;95;0c" }},
+            { "\033[>1c",         { "\033[>0;95;0c" }},
+            { "\033[>0;1c",       { "\033[>0;95;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;5;2;64;64;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: base(0) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "android: connectbot 1.9.5" LINEINFO,
+        {
+            { "\033[>c",          { "", "c" }},
+            { "\033[>1c",         { "", "1c" }},
+            { "\033[>0;1c",       { "", "0;1c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "", "q" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+        },
+        "Type: misparsing(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "android: JuiceSSH 3.2.0" LINEINFO,
         {
             { "\033[>c",          { "", "c" }},
             { "\033[>1c",         { "", "1c" }},
