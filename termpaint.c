@@ -2740,6 +2740,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
     }
 
     switch (terminal->ad_state) {
+        case AD_NONE:
         case AD_FINISHED:
             // should not happen
             break;
