@@ -920,22 +920,25 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         event.key.modifier = MOD_CTRL | MOD_ALT;
     } else {
         // TODO optimize
+        const key_mapping_entry* matched_entry = nullptr;
         for (const key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
             if (strlen(entry->sequence) == length && memcmp(entry->sequence, data, length) == 0) {
-                if (entry->modifiers & MOD_PRINT) {
-                    // special case for ctrl-X which is in the table but a modified printable
-                    event.type = TERMPAINT_EV_CHAR;
-                    event.c.length = strlen(entry->atom);
-                    event.c.string = entry->atom;
-                    event.c.modifier = entry->modifiers & ~MOD_PRINT;
-                    break;
-                } else {
-                    event.type = TERMPAINT_EV_KEY;
-                    event.key.length = strlen(entry->atom);
-                    event.key.atom = entry->atom;
-                    event.key.modifier = entry->modifiers;
-                    break;
-                }
+                matched_entry = entry;
+                break;
+            }
+        }
+        if (matched_entry) {
+            if (matched_entry->modifiers & MOD_PRINT) {
+                // special case for ctrl-X which is in the table but a modified printable
+                event.type = TERMPAINT_EV_CHAR;
+                event.c.length = strlen(matched_entry->atom);
+                event.c.string = matched_entry->atom;
+                event.c.modifier = matched_entry->modifiers & ~MOD_PRINT;
+            } else {
+                event.type = TERMPAINT_EV_KEY;
+                event.key.length = strlen(matched_entry->atom);
+                event.key.atom = matched_entry->atom;
+                event.key.modifier = matched_entry->modifiers;
             }
         }
         // the nice xterm extensions:
