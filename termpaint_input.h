@@ -35,6 +35,11 @@ _tERMPAINT_PUBLIC const char* termpaint_input_peek_buffer(const termpaint_input 
 _tERMPAINT_PUBLIC int termpaint_input_peek_buffer_length(const termpaint_input *ctx);
 
 
+#define TERMPAINT_INPUT_QUIRK_BACKSPACE_X08_AND_X7F_SWAPPED          1
+
+_tERMPAINT_PUBLIC void termpaint_input_activate_quirk(termpaint_input *ctx, int quirk);
+
+
 #ifdef __cplusplus
 }
 #endif

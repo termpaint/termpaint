@@ -693,6 +693,9 @@ struct termpaint_input_ {
     _Bool expect_mouse_multibyte_mode;
     _Bool expect_apc;
 
+    int quirks_len;
+    key_mapping_entry *quirks;
+
     _Bool extended_unicode;
 
     _Bool (*raw_filter_cb)(void *user_data, const char *data, unsigned length, _Bool overflow);
@@ -919,12 +922,23 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         event.key.atom = ATOM_space;
         event.key.modifier = MOD_CTRL | MOD_ALT;
     } else {
-        // TODO optimize
         const key_mapping_entry* matched_entry = nullptr;
-        for (const key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
+
+        for (int i = 0; i < ctx->quirks_len; i++) {
+            const key_mapping_entry* entry = &ctx->quirks[i];
             if (strlen(entry->sequence) == length && memcmp(entry->sequence, data, length) == 0) {
                 matched_entry = entry;
                 break;
+            }
+        }
+
+        // TODO optimize
+        if (!matched_entry) {
+            for (const key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
+                if (strlen(entry->sequence) == length && memcmp(entry->sequence, data, length) == 0) {
+                    matched_entry = entry;
+                    break;
+                }
             }
         }
         if (matched_entry) {
@@ -1321,6 +1335,11 @@ termpaint_input *termpaint_input_new() {
 }
 
 void termpaint_input_free(termpaint_input *ctx) {
+    for (int i = 0; i < ctx->quirks_len; i++) {
+        key_mapping_entry* entry = &ctx->quirks[i];
+        free((void*)entry->sequence); // cast away const, quirks is always dynamically allocated.
+    }
+    free(ctx->quirks);
     free(ctx);
 }
 
@@ -1605,5 +1624,36 @@ void termpaint_input_expect_legacy_mouse_reports(termpaint_input *ctx, int s) {
     } else {
         ctx->expect_mouse_char_mode = false;
         ctx->expect_mouse_multibyte_mode = false;
+    }
+}
+
+static void termpaintp_input_prepend_quirk(termpaint_input *ctx, const key_mapping_entry *e) {
+    // takes ownership of e.sequence;
+    key_mapping_entry* new_quirks = calloc(sizeof(key_mapping_entry), ctx->quirks_len + 1);
+    new_quirks[0] = *e;
+    if (ctx->quirks_len) {
+        memcpy(new_quirks + 1, ctx->quirks, ctx->quirks_len * sizeof(*ctx->quirks));
+    }
+    free(ctx->quirks);
+    ctx->quirks = new_quirks;
+    ctx->quirks_len += 1;
+}
+
+void termpaint_input_activate_quirk(termpaint_input *ctx, int quirk) {
+    if (quirk == TERMPAINT_INPUT_QUIRK_BACKSPACE_X08_AND_X7F_SWAPPED) {
+        {
+            key_mapping_entry e;
+            e.atom = termpaint_input_backspace();
+            e.sequence = strdup("\x08");
+            e.modifiers = 0;
+            termpaintp_input_prepend_quirk(ctx, &e);
+        }
+        {
+            key_mapping_entry e;
+            e.atom = termpaint_input_backspace();
+            e.sequence = strdup("\x7f");
+            e.modifiers = TERMPAINT_MOD_CTRL;
+            termpaintp_input_prepend_quirk(ctx, &e);
+        }
     }
 }

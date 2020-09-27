@@ -656,6 +656,42 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
     }
 }
 
+TEST_CASE("input: quirk: backspace 0x08/0x7f swapped") {
+    struct TestCase { std::string rawInput; int mod; };
+
+    const auto testCase = GENERATE(
+                TestCase{"\x08", 0},
+                TestCase{"\x7f", TERMPAINT_MOD_CTRL}
+    );
+
+    std::string rawInput = testCase.rawInput;
+
+    enum { START, GOT_EVENT } state = START;
+
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
+        if (state == GOT_EVENT) {
+            FAIL("more events than expected");
+        } else if (state == START) {
+            REQUIRE(event->type == TERMPAINT_EV_KEY);
+            CHECK(event->key.modifier == testCase.mod);
+            CHECK(std::string(event->key.atom) == termpaint_input_backspace());
+            state = GOT_EVENT;
+        } else {
+            FAIL("unexpected state " << state);
+        }
+    };
+
+    termpaint_input *input_ctx = termpaint_input_new();
+    termpaint_input_activate_quirk(input_ctx, TERMPAINT_INPUT_QUIRK_BACKSPACE_X08_AND_X7F_SWAPPED);
+    wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+    std::string input;
+    termpaint_input_add_data(input_ctx, rawInput.data(), rawInput.size());
+    REQUIRE(state == GOT_EVENT);
+    REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
+}
+
 TEST_CASE("input: events using raw") {
     struct TestCase { const std::string sequence; int type; const std::string contents; };
     const auto testCase = GENERATE(
