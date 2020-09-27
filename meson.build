@@ -1,4 +1,4 @@
-project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized'])
+project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized', 'cpp_std=c++14'])
 
 if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_id() == 'clang'
   add_project_arguments('-fvisibility=hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'c')
@@ -11,7 +11,6 @@ add_project_arguments('-Wall', '-Wextra', '-Werror=strict-prototypes', '-Werror=
                       language: 'c')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'c')
 
-add_project_arguments('-std=gnu++14', language : 'cpp')
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration',
                       '-Werror=incompatible-pointer-types', '-Werror=discarded-qualifiers',
