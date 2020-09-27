@@ -1,11 +1,10 @@
-project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized', 'cpp_std=c++14'])
+project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized', 'cpp_std=c++14', 'c_std=gnu11'])
 
 if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_id() == 'clang'
   add_project_arguments('-fvisibility=hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'c')
   add_project_arguments('-fvisibility=hidden', '-fvisibility-inlines-hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'cpp')
 endif
 
-add_project_arguments('-std=gnu11', language : 'c')
 add_project_arguments('-Wall', '-Wextra', '-Werror=strict-prototypes', '-Werror=incompatible-pointer-types',
                       '-Werror=implicit-int', '-Werror=discarded-qualifiers',
                       language: 'c')
@@ -34,7 +33,7 @@ main_lib_cargs = []
 # does not really allow doing that in a reasonable way. So just ignore it on other platforms.
 if get_option('ttyrescue-fexec-blob') and host_machine.system() == 'linux'
   ttyrescue_nolibc_exe = executable('ttyrescue_nolibc', 'ttyrescue_nolibc.c',
-    cpp_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
+    c_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
                '-fvisibility=hidden', '-std=gnu11'],
     link_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
                 '-fvisibility=hidden', '-std=gnu11'])
