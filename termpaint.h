@@ -101,6 +101,7 @@ _tERMPAINT_PUBLIC int termpaint_terminal_peek_input_buffer_length(const termpain
 
 _tERMPAINT_PUBLIC void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s);
+_tERMPAINT_PUBLIC void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk);
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal);
 enum termpaint_auto_detect_state_enum { termpaint_auto_detect_none,
@@ -108,6 +109,7 @@ enum termpaint_auto_detect_state_enum { termpaint_auto_detect_none,
                                                  termpaint_auto_detect_done };
 _tERMPAINT_PUBLIC enum termpaint_auto_detect_state_enum termpaint_terminal_auto_detect_state(const termpaint_terminal *terminal);
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_might_be_supported(const termpaint_terminal *terminal);
+_tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_apply_input_quirks(termpaint_terminal *terminal, _Bool backspace_is_x08);
 _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length);
 _tERMPAINT_PUBLIC const char *termpaint_terminal_self_reported_name_and_version(const termpaint_terminal *terminal);
 _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);

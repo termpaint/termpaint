@@ -172,6 +172,18 @@ Functions
 
   Get the state of a possibly running terminal type auto-detection.
 
+.. c:function:: void termpaint_terminal_auto_detect_apply_input_quirks(termpaint_terminal *terminal, _Bool backspace_is_x08)
+
+  Setup input handling based on the auto detection result and ``backspace_is_x08``.
+
+  Needs to be called after auto detection is finished.
+
+  Pass ``backspace_is_x08`` as true if the terminal uses 0x08 (ASCII BS) for the backspace key.
+
+  On \*nix platforms this information can be obtained from the ``termios`` structure by ``original_termios.c_cc[VERASE] == 0x08``.
+  For ssh connections the VERASE value is transmitted as part of the pseudo terminal request in the encoded
+  terminal modes.
+
 .. c:function:: void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length)
 
   Fills ``buffer`` with null terminaled string with debugging details about the detected terminal type.

@@ -94,6 +94,7 @@ An example using this integration looks like this::
   termpaintx_full_integration_set_terminal(integration, terminal);
   termpaint_terminal_auto_detect(terminal);
   termpaintx_full_integration_wait_for_ready(integration);
+  termpaintx_full_integration_apply_input_quirks(integration);
   int width, height;
   termpaintx_full_integration_terminal_size(integration, &width, &height);
   termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
@@ -162,6 +163,14 @@ integration.
 
   Waits for the auto-detection to be finished. It internally calls :c:func:`termpaint_full_integration_do_iteration`
   while waiting.
+
+.. c:function:: void termpaintx_full_integration_apply_input_quirks(termpaint_integration *integration)
+
+  Setup input handling based on the auto detection result and tty parameters.
+
+  Needs to be called after auto detection is finished.
+
+  It internally calls :c:func:`termpaint_terminal_auto_detect_apply_input_quirks`
 
 .. c:function:: void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal)
 

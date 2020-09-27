@@ -2575,6 +2575,17 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
     }
 }
 
+void termpaint_terminal_auto_detect_apply_input_quirks(termpaint_terminal *terminal, bool backspace_is_x08) {
+    // For now apply backspace_is_x08 for all terminal types. The can be tuned to disregard this for
+    // specific types when needed.
+
+    // Note: terminology does not support ctrl-backspace in backspace_is_x08 mode, but does when !backspace_is_x08.
+    //       so it seems swapped is still a ok mapping.
+    if (backspace_is_x08) {
+        termpaint_input_activate_quirk(terminal->input, TERMPAINT_INPUT_QUIRK_BACKSPACE_X08_AND_X7F_SWAPPED);
+    }
+}
+
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event) {
     termpaint_terminal *term = user_data;
     if (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED) {
@@ -2672,6 +2683,10 @@ void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term) 
 
 void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s) {
     termpaint_input_expect_legacy_mouse_reports(term->input, s);
+}
+
+void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk) {
+    termpaint_input_activate_quirk(term->input, quirk);
 }
 
 static bool termpaintp_string_prefix(const char * prefix, const char *s, int len) {

@@ -421,6 +421,11 @@ const struct termios *termpaintx_full_integration_original_terminal_attributes(t
     return &t->original_terminal_attributes;
 }
 
+void termpaintx_full_integration_apply_input_quirks(termpaint_integration *integration) {
+    termpaint_integration_fd *t = FDPTR(integration);
+    termpaint_terminal_auto_detect_apply_input_quirks(t->terminal, t->original_terminal_attributes.c_cc[VERASE] == 0x08);
+}
+
 static void fd_restore_sequence_updated(struct termpaint_integration_ *integration, const char *data, int length) {
     termpaint_integration_fd *t = FDPTR(integration);
     if (t->rescue) {
