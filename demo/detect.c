@@ -70,10 +70,14 @@ int main(int argc, char **argv) {
 
     termpaint_terminal_free_with_restore(terminal);
 
-    puts(buff);
+    _Bool quiet = (argc > 1 && strcmp(argv[1], "--quiet") == 0);
 
-    for (Cap *c = caps; c->name; c++) {
-        printf("%s: %s\n", c->name, c->state ? "1" : "0");
+    if (!quiet) {
+        puts(buff);
+
+        for (Cap *c = caps; c->name; c++) {
+            printf("%s: %s\n", c->name, c->state ? "1" : "0");
+        }
     }
 
     for (int i=1; i < argc; i++) {
