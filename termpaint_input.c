@@ -85,6 +85,8 @@ DEF_ATOM(f12, "F12")
 DEF_ATOM(focus_in, "FocusIn")
 DEF_ATOM(focus_out, "FocusOut")
 
+DEF_ATOM(paste_begin, "pasteBegin")
+DEF_ATOM(paste_end, "pasteEnd")
 
 
 #define MOD_CTRL TERMPAINT_MOD_CTRL
@@ -693,6 +695,9 @@ struct termpaint_input_ {
     _Bool expect_mouse_multibyte_mode;
     _Bool expect_apc;
 
+    _Bool in_paste;
+    _Bool handle_paste;
+
     int quirks_len;
     key_mapping_entry *quirks;
 
@@ -721,6 +726,24 @@ static bool termpaintp_input_checked_append_digit(int *to_update, int base, int 
     if (termpaint_sadd_overflow(tmp, value, to_update)) {
         return false;
     }
+    return true;
+}
+
+static bool termpaintp_input_parse_dec_1(const unsigned char *data, size_t length, int *a) {
+    int val = 0;
+    for (size_t i = 0; i < length; i++) {
+        if (data[i] >= '0' && data[i] <= '9') {
+            if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
+                return false;
+            }
+        } else if (data[i] == ';') {
+            *a = val;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    *a = val;
     return true;
 }
 
@@ -1183,6 +1206,41 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.misc.length = strlen(event.misc.atom);
             }
 
+            if (!event.type && sequence_id == SEQ('~', 0, 0)) {
+                int num;
+                if (termpaintp_input_parse_dec_1(data + params_start, params_len, &num)) {
+                    if (num == 200) {
+                        if (ctx->handle_paste) {
+                            ctx->in_paste = true;
+                            termpaint_event event2;
+                            event2.type = TERMPAINT_EV_PASTE;
+                            event2.paste.string = "";
+                            event2.paste.length = 0;
+                            event2.paste.initial = true;
+                            event2.paste.final = false;
+                            ctx->event_cb(ctx->event_user_data, &event2);
+                        } else {
+                            event.type = TERMPAINT_EV_MISC;
+                            event.misc.atom = termpaint_input_paste_begin();
+                            event.misc.length = strlen(event.misc.atom);
+                        }
+                    } else if (num == 201) {
+                        if (ctx->handle_paste) {
+                            ctx->in_paste = false;
+                            event.type = TERMPAINT_EV_PASTE;
+                            event.paste.string = "";
+                            event.paste.length = 0;
+                            event.paste.initial = false;
+                            event.paste.final = true;
+                        } else {
+                            event.type = TERMPAINT_EV_MISC;
+                            event.misc.atom = termpaint_input_paste_end();
+                            event.misc.length = strlen(event.misc.atom);
+                        }
+                    }
+                }
+            }
+
             if (!event.type) {
                 if (length > 5 &&
                         (sequence_id == SEQ('y', 0, '$') || sequence_id == SEQ('y', '?', '$'))) {
@@ -1320,7 +1378,22 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
         }
     }
-    ctx->event_cb(ctx->event_user_data, &event);
+    if (!ctx->in_paste) {
+        ctx->event_cb(ctx->event_user_data, &event);
+    } else {
+        // while in paste state ignore anything that is not a plain character.
+        // in a paste there shouldn't be any escape sequences, but don't depend on
+        // all terminals applying strict filtering.
+        if (event.type == TERMPAINT_EV_CHAR && event.c.modifier == 0) {
+            termpaint_event event2;
+            event2.type = TERMPAINT_EV_PASTE;
+            event2.paste.string = event.c.string;
+            event2.paste.length = event.c.length;
+            event2.paste.initial = false;
+            event2.paste.final = false;
+            ctx->event_cb(ctx->event_user_data, &event2);
+        }
+    }
 }
 
 termpaint_input *termpaint_input_new() {
@@ -1331,6 +1404,9 @@ termpaint_input *termpaint_input_new() {
     ctx->raw_filter_cb = nullptr;
     ctx->event_cb = nullptr;
     ctx->expect_cursor_position_report = 0;
+
+    ctx->handle_paste = true;
+
     return ctx;
 }
 
@@ -1655,5 +1731,13 @@ void termpaint_input_activate_quirk(termpaint_input *ctx, int quirk) {
             e.modifiers = TERMPAINT_MOD_CTRL;
             termpaintp_input_prepend_quirk(ctx, &e);
         }
+    }
+}
+
+void termpaint_input_handle_paste(termpaint_input *ctx, bool enable) {
+    ctx->handle_paste = enable;
+    if (!enable) {
+        // TODO emit paste end event here too?
+        ctx->in_paste = false;
     }
 }

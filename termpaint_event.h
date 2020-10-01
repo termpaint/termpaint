@@ -68,6 +68,8 @@ _tERMPAINT_PUBLIC const char *termpaint_input_f12(void);
 // Misc Events
 _tERMPAINT_PUBLIC const char *termpaint_input_focus_in(void);
 _tERMPAINT_PUBLIC const char *termpaint_input_focus_out(void);
+_tERMPAINT_PUBLIC const char *termpaint_input_paste_begin(void);
+_tERMPAINT_PUBLIC const char *termpaint_input_paste_end(void);
 
 #define TERMPAINT_EV_UNKNOWN 0
 #define TERMPAINT_EV_CHAR 1
@@ -82,6 +84,7 @@ _tERMPAINT_PUBLIC const char *termpaint_input_focus_out(void);
 #define TERMPAINT_EV_MOUSE 10
 #define TERMPAINT_EV_MISC 11
 #define TERMPAINT_EV_PALETTE_COLOR_REPORT 12
+#define TERMPAINT_EV_PASTE 13
 
 #define TERMPAINT_EV_RAW_PRI_DEV_ATTRIB 100
 #define TERMPAINT_EV_RAW_SEC_DEV_ATTRIB 101
@@ -115,6 +118,14 @@ struct termpaint_event_ {
             int modifier;
         } key;
 
+        // EV_PASTE
+        struct {
+            unsigned length;
+            const char *string;
+            _Bool initial;
+            _Bool final;
+        } paste;
+
         // EV_MOUSE
         struct {
             int x;
@@ -125,7 +136,7 @@ struct termpaint_event_ {
             int modifier;
         } mouse;
 
-        // EV_EVENT
+        // EV_MISC
         struct {
             unsigned length;
             const char *atom;

@@ -115,6 +115,12 @@ void event_handler(void *user_data, termpaint_event *event) {
         } else {
             pretty = "Mode status report: mode=" + std::to_string(event->mode.number) + " status=" + std::to_string(event->mode.status);
         }
+    } else if (event->type == TERMPAINT_EV_PASTE) {
+        pretty = "Paste: ";
+        pretty += (event->paste.initial) ? "I" : " ";
+        pretty += (event->paste.final) ? "F" : " ";
+        pretty += " ";
+        pretty += std::string { event->paste.string, event->paste.length };
     } else {
         pretty = "Other event no. " + std::to_string(event->type);
     }

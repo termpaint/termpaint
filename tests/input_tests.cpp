@@ -1051,6 +1051,86 @@ TEST_CASE("input: palette color report") {
     termpaint_input_free(input_ctx);
 }
 
+TEST_CASE("input: bracketed paste manual") {
+    enum { START, PASTE_BEGIN, GOT_A, GOT_B, GOT_C, PASTE_END } state = START;
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
+        if (state == PASTE_END) {
+            FAIL("more events than expected");
+        } else if (state == START) {
+            REQUIRE(event->type == TERMPAINT_EV_MISC);
+            CHECK(event->misc.atom == termpaint_input_paste_begin());
+            state = PASTE_BEGIN;
+        } else if (state == PASTE_BEGIN) {
+            REQUIRE(event->type == TERMPAINT_EV_CHAR);
+            CHECK(event->c.length == 1);
+            CHECK(event->c.string[0] == 'a');
+            state = GOT_A;
+        } else if (state == GOT_A) {
+            REQUIRE(event->type == TERMPAINT_EV_CHAR);
+            CHECK(event->c.length == 1);
+            CHECK(event->c.string[0] == 'b');
+            state = GOT_B;
+        } else if (state == GOT_B) {
+            REQUIRE(event->type == TERMPAINT_EV_CHAR);
+            CHECK(event->c.length == 1);
+            CHECK(event->c.string[0] == 'c');
+            state = GOT_C;
+        } else if (state == GOT_C) {
+            REQUIRE(event->type == TERMPAINT_EV_MISC);
+            CHECK(event->misc.atom == termpaint_input_paste_end());
+            state = PASTE_END;
+        } else {
+            FAIL("unexpected state " << state);
+        }
+    };
+    termpaint_input *input_ctx = termpaint_input_new();
+    wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+    termpaint_input_handle_paste(input_ctx, false);
+    std::string sequence = "\033[200~abc\033[201~";
+    termpaint_input_add_data(input_ctx, sequence.data(), sequence.size());
+    REQUIRE(state == PASTE_END);
+    REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
+}
+
+TEST_CASE("input: bracketed paste handling") {
+    // this test is intentionally loose not fixing the exact distribution
+    // of the sequence over events.
+    std::string pasted_data;
+    enum { START, PASTE_DATA, PASTE_END } state = START;
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
+        if (state == PASTE_END) {
+            FAIL("more events than expected");
+        } else if (state == START) {
+            REQUIRE(event->type == TERMPAINT_EV_PASTE);
+            CHECK(event->paste.initial);
+            pasted_data += std::string(event->paste.string, event->paste.length);
+            state = PASTE_DATA;
+        } else if (state == PASTE_DATA) {
+            REQUIRE(event->type == TERMPAINT_EV_PASTE);
+            if (event->paste.final) {
+                state = PASTE_END;
+            } else {
+                state = PASTE_DATA;
+            }
+            pasted_data += std::string(event->paste.string, event->paste.length);
+        } else {
+            FAIL("unexpected state " << state);
+        }
+    };
+    termpaint_input *input_ctx = termpaint_input_new();
+    wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+    // handle_paste is true by default
+    std::string sequence = "\033[200~abc\033[201~";
+    termpaint_input_add_data(input_ctx, sequence.data(), sequence.size());
+    REQUIRE(state == PASTE_END);
+    REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    REQUIRE(pasted_data == "abc");
+    termpaint_input_free(input_ctx);
+}
+
 TEST_CASE("input: retriggering") {
     // test mechanism to detect end of sequences that are prefixes to other valid sequence types.
     // this also force terminates most unterminated sequences.
