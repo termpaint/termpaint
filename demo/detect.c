@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "termpaint.h"
@@ -30,6 +31,19 @@ Cap caps[] = {
     { 0, NULL }
 };
 
+char *debug = NULL;
+
+void debug_log(termpaint_integration *integration, const char *data, int length) {
+    if (debug) {
+        const int oldlen = strlen(debug);
+        debug = realloc(debug, oldlen + length + 1);
+        memcpy(debug + oldlen, data, length);
+        debug[oldlen + length + 1] = 0;
+    } else {
+        debug = strndup(data, length);
+    }
+}
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -38,6 +52,8 @@ int main(int argc, char **argv) {
         puts("Could not init!");
         return 1;
     }
+
+    termpaint_integration_set_logging_func(integration, debug_log);
 
     termpaint_terminal *terminal = termpaint_terminal_new(integration);
     termpaint_terminal_set_event_cb(terminal, null_callback, NULL);
@@ -75,6 +91,9 @@ int main(int argc, char **argv) {
                     fclose(f);
                 }
             }
+        }
+        if (strcmp(argv[i], "--debug") == 0) {
+            printf("%s", debug);
         }
         if (strcmp(argv[i], "--key-wait") == 0) {
             puts("Press any key to continue");
