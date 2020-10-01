@@ -91,6 +91,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_bell(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode);
 
 _tERMPAINT_PUBLIC void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, _Bool enabled);
+_tERMPAINT_PUBLIC void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, _Bool enabled);
 
 _tERMPAINT_PUBLIC void termpaint_terminal_callback(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
@@ -99,8 +100,10 @@ _tERMPAINT_PUBLIC void termpaint_terminal_add_input_data(termpaint_terminal *ter
 _tERMPAINT_PUBLIC const char* termpaint_terminal_peek_input_buffer(const termpaint_terminal *term);
 _tERMPAINT_PUBLIC int termpaint_terminal_peek_input_buffer_length(const termpaint_terminal *term);
 
+// wrapped input option/state setters
 _tERMPAINT_PUBLIC void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s);
+_tERMPAINT_PUBLIC void termpaint_terminal_handle_paste(termpaint_terminal *term, _Bool enabled);
 _tERMPAINT_PUBLIC void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk);
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal);

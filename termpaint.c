@@ -280,6 +280,7 @@ typedef struct termpaint_terminal_ {
     unsigned did_terminal_add_mouse_to_restore : 1;
     unsigned did_terminal_enable_mouse : 1;
     unsigned did_terminal_add_focusreporting_to_restore : 1;
+    unsigned did_terminal_add_bracketedpaste_to_restore : 1;
     unsigned did_terminal_disable_wrap : 1;
 
     unsigned cache_should_use_truecolor : 1;
@@ -2685,6 +2686,10 @@ void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, in
     termpaint_input_expect_legacy_mouse_reports(term->input, s);
 }
 
+void termpaint_terminal_handle_paste(termpaint_terminal *term, bool enabled) {
+    termpaint_input_handle_paste(term->input, enabled);
+}
+
 void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk) {
     termpaint_input_activate_quirk(term->input, quirk);
 }
@@ -4111,6 +4116,25 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
     int_flush(integration);
 }
 
+void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, bool enabled) {
+    if (enabled && !term->did_terminal_add_bracketedpaste_to_restore) {
+        term->did_terminal_add_bracketedpaste_to_restore = true;
+         termpaintp_prepend_str(&term->restore_seq, "\033[?2004l");
+         int_restore_sequence_updated(term);
+    }
+
+    termpaint_integration *integration = term->integration;
+
+    termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "bracketed paste");
+
+    if (enabled) {
+        termpaintp_str_assign(sequences, "\033[?2004h");
+    } else {
+        termpaintp_str_assign(sequences, "\033[?2004l");
+    }
+    int_put_tps(integration, sequences);
+    int_flush(integration);
+}
 
 // --- tests
 
