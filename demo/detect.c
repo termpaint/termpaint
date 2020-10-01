@@ -44,6 +44,22 @@ void debug_log(termpaint_integration *integration, const char *data, int length)
     }
 }
 
+char *strdup_escaped(const char *tmp) {
+    // escaping could quadruple size
+    char *ret = malloc(strlen(tmp) * 4 + 1);
+    char *dst = ret;
+    for (; *tmp; tmp++) {
+        if (*tmp >= ' ' && *tmp <= 126 && *tmp != '\\') {
+            *dst = *tmp;
+            ++dst;
+        } else {
+            dst += sprintf(dst, "\\x%02hhx", (unsigned char)*tmp);
+        }
+    }
+    *dst = 0;
+    return ret;
+}
+
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
@@ -63,7 +79,11 @@ int main(int argc, char **argv) {
                                            "Terminal auto detection is taking unusually long, press space to abort.");
 
     char buff[1000];
+    char *self_reported_name_and_version = NULL;
     termpaint_terminal_auto_detect_result_text(terminal, buff, sizeof (buff));
+    if (termpaint_terminal_self_reported_name_and_version(terminal)) {
+        self_reported_name_and_version = strdup_escaped(termpaint_terminal_self_reported_name_and_version(terminal));
+    }
     for (Cap *c = caps; c->name; c++) {
         c->state = termpaint_terminal_capable(terminal, c->id);
     }
@@ -74,6 +94,10 @@ int main(int argc, char **argv) {
 
     if (!quiet) {
         puts(buff);
+
+        if (self_reported_name_and_version) {
+            printf("self reported: %s\n", self_reported_name_and_version);
+        }
 
         for (Cap *c = caps; c->name; c++) {
             printf("%s: %s\n", c->name, c->state ? "1" : "0");
@@ -89,6 +113,11 @@ int main(int argc, char **argv) {
                 } else {
                     fputs(buff, f);
                     fprintf(f, "\n");
+
+                    if (self_reported_name_and_version) {
+                        fprintf(f, "self reported: %s\n", self_reported_name_and_version);
+                    }
+
                     for (Cap *c = caps; c->name; c++) {
                         fprintf(f, "%s: %s\n", c->name, c->state ? "1" : "0");
                     }
