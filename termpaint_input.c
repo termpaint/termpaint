@@ -759,7 +759,7 @@ static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t lengt
             *a = val;
             val = 0;
             state = 1;
-        } else if (state == 1 && data[i] == ';'){
+        } else if (state == 1 && data[i] == ';') {
             *b = val;
             return true;
         } else {
