@@ -301,8 +301,14 @@ void render() {
 
 
 int main(int argc, char **argv) {
-    (void)argc; (void)argv;
-    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+    std::string init_str;
+    bool init_str_set = false;
+    if (argc >= 3 && argv[1] == std::string("--init")) {
+        init_str = argv[2];
+        init_str_set = true;
+    }
+
+    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, init_str_set ? init_str.data() : "+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 1;
@@ -319,7 +325,7 @@ int main(int argc, char **argv) {
     termpaintx_full_integration_apply_input_quirks(integration);
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
-    termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
+    termpaint_terminal_setup_fullscreen(terminal, width, height, init_str_set ? init_str.data() : "+kbdsig");
     termpaintx_full_integration_ttyrescue_start(integration);
 
     if (termpaint_terminal_auto_detect_state(terminal) == termpaint_auto_detect_done) {
