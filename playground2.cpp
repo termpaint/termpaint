@@ -211,9 +211,6 @@ void render() {
         ++y;
     }
 
-    if (y > 20) {
-        ring.erase(ring.begin());
-    }
 
     termpaint_terminal_flush(terminal, false);
 }
@@ -254,6 +251,11 @@ int main(int argc, char **argv) {
             break;
         }
         peek_buffer = std::string(termpaint_terminal_peek_input_buffer(terminal), termpaint_terminal_peek_input_buffer_length(terminal));
+
+        while (ring.size() > 18) {
+            ring.erase(ring.begin());
+        }
+
         render();
     }
 
