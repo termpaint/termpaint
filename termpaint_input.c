@@ -1393,6 +1393,39 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event2.paste.final = false;
             ctx->event_cb(ctx->event_user_data, &event2);
         }
+        // some terminals send line breaks as \x0a
+        if (event.type == TERMPAINT_EV_CHAR && event.c.modifier == TERMPAINT_MOD_CTRL
+                && event.c.length == 1 && event.c.string[0] == 'j') {
+            termpaint_event event2;
+            event2.type = TERMPAINT_EV_PASTE;
+            event2.paste.string = "\n";
+            event2.paste.length = 1;
+            event2.paste.initial = false;
+            event2.paste.final = false;
+            ctx->event_cb(ctx->event_user_data, &event2);
+        }
+        // But some plain strings are handled as keys, so process those as well
+        if (event.type == TERMPAINT_EV_KEY && event.key.modifier == 0) {
+            termpaint_event event2;
+            event2.type = TERMPAINT_EV_PASTE;
+            event2.paste.initial = false;
+            event2.paste.final = false;
+            if (event.key.atom == termpaint_input_space()) {
+                event2.paste.string = " ";
+                event2.paste.length = 1;
+                ctx->event_cb(ctx->event_user_data, &event2);
+            }
+            if (event.key.atom == termpaint_input_tab()) {
+                event2.paste.string = "\t";
+                event2.paste.length = 1;
+                ctx->event_cb(ctx->event_user_data, &event2);
+            }
+            if (event.key.atom == termpaint_input_enter()) {
+                event2.paste.string = "\r";
+                event2.paste.length = 1;
+                ctx->event_cb(ctx->event_user_data, &event2);
+            }
+        }
     }
 }
 
