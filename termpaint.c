@@ -247,7 +247,7 @@ typedef struct termpaint_integration_private_ {
     void (*logging_func)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 14
+#define NUM_CAPABILITIES 15
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -2420,6 +2420,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
             termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
         }
     } else if (term->terminal_type == TT_VTE) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         const char* data = term->auto_detect_sec_device_attributes;
         if (data && strlen(data) > 11) {
             bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
@@ -2490,6 +2491,9 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         } else {
             termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         }
+        // tab is converted to space by the default settings starting from version 333.
+        // But that's true regardless of state of bracketed paste.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
     } else if (term->terminal_type == TT_SCREEN) {
         const char* data = term->auto_detect_sec_device_attributes;
         if (data && strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
@@ -2508,6 +2512,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
     } else if (term->terminal_type == TT_TMUX) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_KONSOLE) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         // konsole starting at version 18.07.70 could do the CSI space q one too, but
         // we don't have the konsole version.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50);
@@ -2517,6 +2522,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_URXVT) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
+        // XXX: urxvt 9.19 seems to crash on bracketed paste, so don't
     } else if (term->terminal_type == TT_LINUXVC) {
         // Linux VC has to fit all character choices into 8 bit or 9 bit (depending on config)
         // thus is has a very limited set of characters available. What is available exactly
@@ -2528,6 +2534,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // does background color erase (bce) but does not allow multiple colors of cleared cells
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CLEARED_COLORING);
     } else if (term->terminal_type == TT_TERMINOLOGY) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         // To get here terminology has to be at least 1.4 (first version to support DA3)
 
         if (term->terminal_self_reported_name_version) {
@@ -2547,6 +2554,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // all shapes have been added in 1.2 so this is always safe.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
     } else if (term->terminal_type == TT_MINTTY) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         const char* data = term->auto_detect_sec_device_attributes;
         if (data && strlen(data) > 10 && memcmp(data, "\033[>77;", 6) == 0) {
             data += 6;
@@ -2571,6 +2579,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // 88_COLOR disables 256 color support and is quite rxvt-unicode specific
         // CURSOR_SHAPE_OSC50 is konsole (and derived) specific, general terminals are expected to use
         // the ESC[ VAL SP q  sequence for cursor shape and blink setup.
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     }
