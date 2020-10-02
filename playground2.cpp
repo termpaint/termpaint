@@ -131,29 +131,36 @@ void event_handler(void *user_data, termpaint_event *event) {
     ring.back().eventString = pretty;
 }
 
+const auto rgb_white = TERMPAINT_RGB_COLOR(0xff, 0xff, 0xff);
+const auto rgb_greyCC = TERMPAINT_RGB_COLOR(0xcc, 0xcc, 0xcc);
+const auto rgb_grey7F = TERMPAINT_RGB_COLOR(0x7f, 0x7f, 0x7f);
+const auto rgb_black = TERMPAINT_RGB_COLOR(0, 0, 0);
+const auto rgb_redFF = TERMPAINT_RGB_COLOR(0xff, 0, 0);
+const auto rgb_red7F = TERMPAINT_RGB_COLOR(0xff, 0, 0);
+
 void display_esc(int x, int y, const std::string &data) {
     for (unsigned i = 0; i < data.length(); i++) {
         if (u8(data[i]) == '\e') {
-            termpaint_surface_write_with_colors(surface, x, y, "^[", 0xffffff, 0x7f0000);
+            termpaint_surface_write_with_colors(surface, x, y, "^[", rgb_white, rgb_red7F);
             x+=2;
         } else if (0xfc == (0xfe & u8(data[i])) && i+5 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], data[i+3], data[i+4], data[i+5], 0};
-            termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
+            termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_grey7F);
             x += 1;
             i += 5;
         } else if (0xf8 == (0xfc & u8(data[i])) && i+4 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], data[i+3], data[i+4], 0};
-            termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
+            termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_grey7F);
             x += 1;
             i += 4;
         } else if (0xf0 == (0xf8 & u8(data[i])) && i+3 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], data[i+3], 0};
-            termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
+            termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_grey7F);
             x += 1;
             i += 3;
         } else if (0xe0 == (0xf0 & u8(data[i])) && i+2 < data.length()) {
             char buf[7] = {data[i], data[i+1], data[i+2], 0};
-            termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
+            termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_grey7F);
             x += 1;
             i += 2;
         } else if (0xc0 == (0xe0 & u8(data[i])) && i+1 < data.length()) {
@@ -163,44 +170,44 @@ void display_esc(int x, int y, const std::string &data) {
                 v = data[i+1] & 0xf;
                 char b = char(v < 10 ? '0' + v : 'a' + v - 10);
                 char buf[7] = {'\\', 'u', '0', '0', a, b, 0};
-                termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f0000);
+                termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_red7F);
                 x += 6;
             } else {
                 char buf[7] = {data[i], data[i+1], 0};
-                termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
+                termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_grey7F);
                 x += 1;
             }
             i += 1;
         } else if (data[i] < 32 || data[i] >= 127) {
-            termpaint_surface_write_with_colors(surface, x, y, "\\x", 0xffffff, 0x7f0000);
+            termpaint_surface_write_with_colors(surface, x, y, "\\x", rgb_white, rgb_red7F);
             x += 2;
             char buf[3];
             sprintf(buf, "%02x", (unsigned char)data[i]);
-            termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f0000);
+            termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_red7F);
             x += 2;
         } else {
             char buf[2] = {data[i], 0};
-            termpaint_surface_write_with_colors(surface, x, y, buf, 0xffffff, 0x7f7f7f);
+            termpaint_surface_write_with_colors(surface, x, y, buf, rgb_white, rgb_grey7F);
             x += 1;
         }
     }
 }
 
 void render() {
-    termpaint_surface_clear(surface, 0x1000000, 0x1000000);
+    termpaint_surface_clear(surface, rgb_white, rgb_black);
 
-    termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", 0x1ffffff, 0x1000000);
-    termpaint_surface_write_with_colors(surface, 20, 0, terminal_info.data(), 0x1cccccc, 0x1000000);
+    termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", rgb_white, rgb_black);
+    termpaint_surface_write_with_colors(surface, 20, 0, terminal_info.data(), rgb_greyCC, rgb_black);
 
     if (peek_buffer.length()) {
-        termpaint_surface_write_with_colors(surface, 0, 23, "unmatched:", 0xff0000, 0x1000000);
+        termpaint_surface_write_with_colors(surface, 0, 23, "unmatched:", rgb_redFF, rgb_black);
         display_esc(11, 23, peek_buffer);
     }
 
     int y = 2;
     for (DisplayEvent &event : ring) {
         display_esc(5, y, event.raw);
-        termpaint_surface_write_with_colors(surface, 30, y, event.eventString.data(), 0xff0000, 0x1000000);
+        termpaint_surface_write_with_colors(surface, 30, y, event.eventString.data(), rgb_redFF, rgb_black);
         ++y;
     }
 
