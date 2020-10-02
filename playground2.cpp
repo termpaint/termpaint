@@ -32,6 +32,8 @@ bool focus_tracking = false;
 bool tagged_paste = false;
 bool raw_paste = false;
 bool legacy_mouse_support = false;
+bool raw_command_mode = false;
+std::string raw_commmand_str;
 std::string terminal_info;
 
 
@@ -81,8 +83,29 @@ _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overf
         } else if (event == "r") {
             raw_paste = !raw_paste;
             termpaint_terminal_handle_paste(terminal, !raw_paste);
+        } else if (event == "x") {
+            raw_commmand_str = "";
+            raw_command_mode = true;
         } else if (event == "q") {
             quit = true;
+        }
+    } else if (raw_command_mode) {
+        if (event[1] == 0 && event[0] >= ' ' && event[0] <= 126) {
+            raw_commmand_str += event;
+        }
+        if (event == "\x0d") {
+            raw_command_mode = false;
+            if (raw_commmand_str.size()) {
+                printf("%s", "\033[0;0H\033");
+                printf("%s", raw_commmand_str.data());
+                fflush(stdout);
+                sleep(1);
+            }
+        }
+        if (event == "\x08" || event == "\x7f") {
+            if (raw_commmand_str.size()) {
+                raw_commmand_str.pop_back();
+            }
         }
 
     } else {
@@ -262,7 +285,15 @@ void render() {
         termpaint_surface_write_with_colors(surface, 10, y++, "| 6: toggle legacy mouse sup |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "| p: toggle tagged paste     |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "| r: toggle tagged paste raw |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| x: raw mode switch         |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "+----------------------------+", rgb_black, rgb_greyCC);
+    }
+
+    if (raw_command_mode) {
+        termpaint_surface_write_with_colors(surface, 10, 10, "+ Sequence to send:                          +", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, 11, "| ESC                                        |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 15, 11, raw_commmand_str.data(), rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, 12, "+--------------------------------------------+", rgb_black, rgb_greyCC);
     }
 
     termpaint_terminal_flush(terminal, false);
