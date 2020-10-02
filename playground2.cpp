@@ -26,7 +26,12 @@ std::string peek_buffer;
 termpaint_terminal *terminal;
 termpaint_surface *surface;
 time_t last_q;
+bool m_mode;
 bool quit;
+bool focus_tracking = false;
+bool tagged_paste = false;
+bool raw_paste = false;
+bool legacy_mouse_support = false;
 std::string terminal_info;
 
 
@@ -53,6 +58,39 @@ _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overf
     } else {
         last_q = 0;
     }
+
+    if (m_mode) {
+        m_mode = false;
+        if (event == "0") {
+            termpaint_terminal_set_mouse_mode(terminal, TERMPAINT_MOUSE_MODE_OFF);
+        } else if (event == "1") {
+            termpaint_terminal_set_mouse_mode(terminal, TERMPAINT_MOUSE_MODE_CLICKS);
+        } else if (event == "2") {
+            termpaint_terminal_set_mouse_mode(terminal, TERMPAINT_MOUSE_MODE_DRAG);
+        } else if (event == "3") {
+            termpaint_terminal_set_mouse_mode(terminal, TERMPAINT_MOUSE_MODE_MOVEMENT);
+        } else if (event == "4") {
+            focus_tracking = !focus_tracking;
+            termpaint_terminal_request_focus_change_reports(terminal, focus_tracking);
+        } else if (event == "6") {
+            legacy_mouse_support = !legacy_mouse_support;
+            termpaint_terminal_expect_legacy_mouse_reports(terminal, legacy_mouse_support);
+        } else if (event == "p") {
+            tagged_paste = !tagged_paste;
+            termpaint_terminal_request_tagged_paste(terminal, tagged_paste);
+        } else if (event == "r") {
+            raw_paste = !raw_paste;
+            termpaint_terminal_handle_paste(terminal, !raw_paste);
+        } else if (event == "q") {
+            quit = true;
+        }
+
+    } else {
+        if (event == "m") {
+            m_mode = true;
+        }
+    }
+
     return 0;
 }
 
@@ -197,6 +235,7 @@ void render() {
     termpaint_surface_clear(surface, rgb_white, rgb_black);
 
     termpaint_surface_write_with_colors(surface, 0, 0, "Input Decoding", rgb_white, rgb_black);
+    termpaint_surface_write_with_colors(surface, 5, 23, "m for menu", rgb_white, rgb_black);
     termpaint_surface_write_with_colors(surface, 20, 0, terminal_info.data(), rgb_greyCC, rgb_black);
 
     if (peek_buffer.length()) {
@@ -211,6 +250,20 @@ void render() {
         ++y;
     }
 
+    if (m_mode) {
+        y = 10;
+        termpaint_surface_write_with_colors(surface, 10, y++, "+ Choose:                    +", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| q: quit                    |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| 0: mouse off               |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| 1: mouse clicks on         |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| 2: mouse drag on           |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| 3: mouse movements on      |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| 4: toggle focus tracking   |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| 6: toggle legacy mouse sup |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| p: toggle tagged paste     |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| r: toggle tagged paste raw |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "+----------------------------+", rgb_black, rgb_greyCC);
+    }
 
     termpaint_terminal_flush(terminal, false);
 }
