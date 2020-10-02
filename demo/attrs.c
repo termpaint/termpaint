@@ -160,6 +160,11 @@ void named_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change, i
     int color = 0;
 
     while (!quit) {
+        {
+            termpaint_attr* preview = termpaint_attr_new(0, TERMPAINT_INDEXED_COLOR + color);
+            termpaint_surface_write_with_attr(surface, 50, 7, "  ", preview);
+            termpaint_attr_free(preview);
+        }
         termpaint_surface_write_with_attr(surface, 25, 7, "  Black", attr_ui);
         termpaint_surface_write_with_attr(surface, 25, 8, "  Red", attr_ui);
         termpaint_surface_write_with_attr(surface, 25, 9, "  Green", attr_ui);
@@ -238,6 +243,11 @@ void indexed_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change,
     termpaint_surface_write_with_attr(surface, 29, 6, "  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15", attr_ui);
 
     while (!quit) {
+        {
+            termpaint_attr* preview = termpaint_attr_new(0, TERMPAINT_INDEXED_COLOR + color);
+            termpaint_surface_write_with_attr(surface, 28, 6, "  ", preview);
+            termpaint_attr_free(preview);
+        }
         termpaint_surface_clear_rect_with_attr(surface, 29, 7, 50, 16, attr_ui);
         char buff[11];
         sprintf(buff, "%3d", color);
@@ -306,6 +316,12 @@ void rgb_color_menu(termpaint_attr* attr_ui, termpaint_attr* attr_to_change, int
         sprintf(buff, "R: %3d G: %3d B: %3d", red, green, blue);
         termpaint_surface_write_with_attr(surface, 29, 7, buff, attr_ui);
         termpaint_surface_write_with_attr(surface, 29, 8, "                    ", attr_ui);
+
+        {
+            termpaint_attr* preview = termpaint_attr_new(0, TERMPAINT_RGB_COLOR(red, green, blue));
+            termpaint_surface_write_with_attr(surface, 52, 7, "  ", preview);
+            termpaint_attr_free(preview);
+        }
 
         if (selected == &red) {
             termpaint_surface_write_with_attr(surface, 32, 8, "^^^", attr_ui);
