@@ -350,6 +350,18 @@ static int replace_unusable_codepoints(int codepoint) {
     }
 }
 
+static bool termpaintp_string_prefix(const char * prefix, const char *s, int len) {
+    const int plen = strlen(prefix);
+    if (plen <= len) {
+        return memcmp(prefix, s, plen) == 0;
+    }
+    return false;
+}
+
+static bool termpaintp_char_ascii_num(char c) {
+    return '0' <= c && c <= '9';
+}
+
 static void termpaintp_prepend_str(char **s, const char* src) {
     size_t s_len = 0;
     if (*s) {
@@ -2701,18 +2713,6 @@ void termpaint_terminal_handle_paste(termpaint_terminal *term, bool enabled) {
 
 void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk) {
     termpaint_input_activate_quirk(term->input, quirk);
-}
-
-static bool termpaintp_string_prefix(const char * prefix, const char *s, int len) {
-    const int plen = strlen(prefix);
-    if (plen <= len) {
-        return memcmp(prefix, s, plen) == 0;
-    }
-    return false;
-}
-
-static bool termpaintp_char_ascii_num(char c) {
-    return '0' <= c && c <= '9';
 }
 
 static void termpaintp_patch_misparsing_defered(termpaint_terminal *terminal, termpaint_integration *integration,
