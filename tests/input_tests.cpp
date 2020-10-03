@@ -707,7 +707,8 @@ TEST_CASE("input: events using raw") {
         TestCase{ "\033[>1;3000;0c", TERMPAINT_EV_RAW_SEC_DEV_ATTRIB, "\033[>1;3000;0c" },
         TestCase{ "\033[>41;280;0c", TERMPAINT_EV_RAW_SEC_DEV_ATTRIB, "\033[>41;280;0c" },
         TestCase{ "\033[?6c", TERMPAINT_EV_RAW_PRI_DEV_ATTRIB, "\033[?6c" },
-        TestCase{ "\033P>|fancyterm 1.23\033\\", TERMPAINT_EV_RAW_TERM_NAME, "fancyterm 1.23"}
+        TestCase{ "\033P>|fancyterm 1.23\033\\", TERMPAINT_EV_RAW_TERM_NAME, "fancyterm 1.23"},
+        TestCase{ "\033P1+r544e=787465726d2d6b69747479\033\\", TERMPAINT_EV_RAW_TERMINFO_QUERY_REPLY, "1+r544e=787465726d2d6b69747479"}
     );
     enum { START, GOT_EVENT } state = START;
     std::function<void(termpaint_event* event)> event_callback

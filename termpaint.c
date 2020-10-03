@@ -211,6 +211,7 @@ typedef enum terminal_type_enum_ {
     TT_LINUXVC,
     TT_MACOS,
     TT_TERMINOLOGY,
+    TT_KITTY,
     TT_MINTTY,
     TT_MSFT_TERMINAL,
     TT_FULL,
@@ -360,6 +361,23 @@ static bool termpaintp_string_prefix(const char * prefix, const char *s, int len
 
 static bool termpaintp_char_ascii_num(char c) {
     return '0' <= c && c <= '9';
+}
+
+static char termpaintp_char_ascii_to_lower(char c) {
+    if ('A' <= c && c <= 'Z') {
+        return c | 0x20;
+    }
+    return c;
+}
+
+static bool termpaintp_mem_ascii_case_insensitive_equals(const char *a, const char *b, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        char ch1 = termpaintp_char_ascii_to_lower(a[i]);
+        char ch2 = termpaintp_char_ascii_to_lower(b[i]);
+        if (ch1 == ch2) continue;
+        return false;
+    }
+    return true;
 }
 
 static void termpaintp_prepend_str(char **s, const char* src) {
@@ -2582,6 +2600,42 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+    } else if (term->terminal_type == TT_KITTY) {
+        if (term->auto_detect_sec_device_attributes
+                &&termpaintp_string_prefix("\033[>1;", term->auto_detect_sec_device_attributes, strlen(term->auto_detect_sec_device_attributes))) {
+            int val = 0;
+            for (const char *tmp = term->auto_detect_sec_device_attributes + 5; *tmp; tmp++) {
+                if (termpaintp_char_ascii_num(*tmp)) {
+                    val = val * 10 + (*tmp - '0');
+                } else if (*tmp == ';') {
+                    if (val >= 4000) {
+                        int version = (val - 4000 ) * 1000;
+                        val = 0;
+                        tmp++;
+                        for (; *tmp; tmp++) {
+                            if (termpaintp_char_ascii_num(*tmp)) {
+                                val = val * 10 + (*tmp - '0');
+                            } else if (*tmp == ';' || *tmp == 'c') {
+                                if (val < 1000) {
+                                    version += val;
+                                } else {
+                                    version += 999;
+                                }
+                                term->terminal_version = version;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                } else {
+                    break;
+                }
+            }
+        }
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     } else if (term->terminal_type == TT_MSFT_TERMINAL) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_FULL) {
@@ -2755,6 +2809,26 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
     termpaint_integration *integration = terminal->integration;
 
     int_puts(integration, "\033[>q");
+    bool might_be_kitty = false;
+    if (terminal->auto_detect_sec_device_attributes
+            && termpaintp_string_prefix("\033[>1;", terminal->auto_detect_sec_device_attributes, strlen(terminal->auto_detect_sec_device_attributes))) {
+        int val = 0;
+        for (const char *tmp = terminal->auto_detect_sec_device_attributes + 5; *tmp; tmp++) {
+            if (termpaintp_char_ascii_num(*tmp)) {
+                val = val * 10 + (*tmp - '0');
+            } else if (*tmp == ';') {
+                if (val >= 4000) {
+                    might_be_kitty = true;
+                }
+                break;
+            } else {
+                break;
+            }
+        }
+    }
+    if (might_be_kitty) {
+        int_puts(integration, "\033P+q544e\033\\");
+    }
     int_puts(integration, "\033[5n");
     int_awaiting_response(integration);
     terminal->ad_state = new_state;
@@ -3143,6 +3217,17 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->terminal_type = TT_TERMINOLOGY;
                 }
                 return true;
+            } else if (event->type == TERMPAINT_EV_RAW_TERMINFO_QUERY_REPLY) {
+                terminal->ad_state = AD_SELF_REPORTING;
+                if (event->raw.length >= 8 && event->raw.string[0] == '1') { // only successful/valid reports
+                    if (memcmp(event->raw.string + 3, "544e=", 5) == 0) {
+                        if (event->raw.length == 30
+                                && termpaintp_mem_ascii_case_insensitive_equals(event->raw.string + 8, "787465726d2d6b69747479", 22)) {
+                            terminal->terminal_type = TT_KITTY;
+                        }
+                    }
+                }
+                return true;
             }
             break;
         case AD_WAIT_FOR_SYNC_TO_FINISH:
@@ -3468,6 +3553,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
             break;
         case TT_MINTTY:
             term_type = "mintty";
+            break;
+        case TT_KITTY:
+            term_type = "kitty";
             break;
         case TT_MSFT_TERMINAL:
             term_type = "microsoft terminal";
@@ -4333,5 +4421,7 @@ _tERMPAINT_PUBLIC bool termpaintp_test(void) {
     ret &= termpaintp_test_quantize_to_256();
     ret &= termpaintp_test_quantize_to_88();
     ret &= termpaintp_test_parse_version();
+    ret &= termpaintp_mem_ascii_case_insensitive_equals("A", "a", 1);
+    ret &= !termpaintp_mem_ascii_case_insensitive_equals("[", "{", 1);
     return ret;
 }
