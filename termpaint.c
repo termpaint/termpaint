@@ -210,6 +210,7 @@ typedef enum terminal_type_enum_ {
     TT_TMUX,
     TT_LINUXVC,
     TT_MACOS,
+    TT_ITERM2,
     TT_TERMINOLOGY,
     TT_KITTY,
     TT_MINTTY,
@@ -299,6 +300,7 @@ typedef struct termpaint_terminal_ {
     // additional auto detect state machine temporary space
     int glitch_cursor_x;
     int glitch_cursor_y;
+    bool seen_dec_terminal_param;
     auto_detect_state glitch_patching_next_state;
     // </>
     bool capabilities[NUM_CAPABILITIES];
@@ -2636,6 +2638,9 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+    } else if (term->terminal_type == TT_ITERM2) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
     } else if (term->terminal_type == TT_MSFT_TERMINAL) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_FULL) {
@@ -2810,23 +2815,30 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
 
     int_puts(integration, "\033[>q");
     bool might_be_kitty = false;
-    if (terminal->auto_detect_sec_device_attributes
-            && termpaintp_string_prefix("\033[>1;", terminal->auto_detect_sec_device_attributes, strlen(terminal->auto_detect_sec_device_attributes))) {
-        int val = 0;
-        for (const char *tmp = terminal->auto_detect_sec_device_attributes + 5; *tmp; tmp++) {
-            if (termpaintp_char_ascii_num(*tmp)) {
-                val = val * 10 + (*tmp - '0');
-            } else if (*tmp == ';') {
-                if (val >= 4000) {
-                    might_be_kitty = true;
+    bool might_be_iterm2 = false;
+    if (terminal->auto_detect_sec_device_attributes) {
+        const int attr_len = strlen(terminal->auto_detect_sec_device_attributes);
+        if (termpaintp_string_prefix("\033[>1;", terminal->auto_detect_sec_device_attributes, attr_len)) {
+            int val = 0;
+            for (const char *tmp = terminal->auto_detect_sec_device_attributes + 5; *tmp; tmp++) {
+                if (termpaintp_char_ascii_num(*tmp)) {
+                    val = val * 10 + (*tmp - '0');
+                } else if (*tmp == ';') {
+                    if (val >= 4000) {
+                        might_be_kitty = true;
+                    }
+                    break;
+                } else {
+                    break;
                 }
-                break;
-            } else {
-                break;
             }
         }
+
+        might_be_iterm2 = (!terminal->seen_dec_terminal_param
+                           && attr_len == 10
+                           && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>0;95;0c", 10) == 0);
     }
-    if (might_be_kitty) {
+    if (might_be_kitty || might_be_iterm2) {
         int_puts(integration, "\033P+q544e\033\\");
     }
     int_puts(integration, "\033[5n");
@@ -3129,6 +3141,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP1_QMCURSOR_POS_RECVED;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 if (terminal->terminal_type_confidence == 0) {
                     terminal->terminal_type = TT_BASE;
                 }
@@ -3147,6 +3160,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FINISHED;
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 terminal->terminal_type = TT_MACOS;
                 terminal->ad_state = AD_EXPECT_SYNC_TO_FINISH;
                 return true;
@@ -3220,10 +3234,14 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
             } else if (event->type == TERMPAINT_EV_RAW_TERMINFO_QUERY_REPLY) {
                 terminal->ad_state = AD_SELF_REPORTING;
                 if (event->raw.length >= 8 && event->raw.string[0] == '1') { // only successful/valid reports
-                    if (memcmp(event->raw.string + 3, "544e=", 5) == 0) {
+                    if (termpaintp_mem_ascii_case_insensitive_equals(event->raw.string + 3, "544e=", 5)) {
                         if (event->raw.length == 30
                                 && termpaintp_mem_ascii_case_insensitive_equals(event->raw.string + 8, "787465726d2d6b69747479", 22)) {
                             terminal->terminal_type = TT_KITTY;
+                        }
+                        if (event->raw.length == 20
+                                && termpaintp_mem_ascii_case_insensitive_equals(event->raw.string + 8, "695465726d32", 12)) {
+                            terminal->terminal_type = TT_ITERM2;
                         }
                     }
                 }
@@ -3258,6 +3276,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_WAIT_FOR_SYNC_TO_SELF_REPORTING;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
                 terminal->ad_state = AD_EXPECT_SYNC_TO_SELF_REPORTING;
                 return true;
@@ -3277,6 +3296,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_WAIT_FOR_SYNC_TO_SELF_REPORTING;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 // ignore
                 return true;
             }
@@ -3308,6 +3328,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP1_SEC_DEV_ATTRIB_QMCURSOR_POS_RECVED;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 // ignore
                 return true;
             }
@@ -3322,6 +3343,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     return true;
                 }
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 if (terminal->auto_detect_sec_device_attributes
                         && termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT)
                         && termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS)
@@ -3339,6 +3361,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_FP2_CURSOR_DONE;
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
+                terminal->seen_dec_terminal_param = true;
                 if (terminal->auto_detect_sec_device_attributes && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0
                         && terminal->glitch_cursor_y == -1) {
                     // this triggers on VTE < 0.54 which has fragile dictionary based parsing.
@@ -3550,6 +3573,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
             break;
         case TT_MACOS:
             term_type = "apple terminal";
+            break;
+        case TT_ITERM2:
+            term_type = "iterm2";
             break;
         case TT_MINTTY:
             term_type = "mintty";
