@@ -2386,7 +2386,7 @@ static int termpaintp_parse_version(char *s) {
     int place = 0;
     int tmp = 0;
     for (; *s; s++) {
-        if ('0' <= *s && *s <= '9') {
+        if (termpaintp_char_ascii_num(*s)) {
             tmp = tmp * 10 + *s - '0';
         } else if (*s == '.') {
             if (place == 0) {
@@ -2444,7 +2444,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                     data += 6;
                 }
                 int version = 0;
-                while ('0' <= *data && *data <= '9') {
+                while (termpaintp_char_ascii_num(*data)) {
                     version = version * 10 + *data - '0';
                     ++data;
                 }
@@ -2484,7 +2484,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
             if (*data == ';') {
                 ++data;
                 int version = 0;
-                while ('0' <= *data && *data <= '9') {
+                while (termpaintp_char_ascii_num(*data)) {
                     version = version * 10 + *data - '0';
                     ++data;
                 }
@@ -2511,7 +2511,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         if (data && strlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
             data += 6;
             int version = 0;
-            while ('0' <= *data && *data <= '9') {
+            while (termpaintp_char_ascii_num(*data)) {
                 version = version * 10 + *data - '0';
                 ++data;
             }
@@ -2571,7 +2571,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         if (data && strlen(data) > 10 && memcmp(data, "\033[>77;", 6) == 0) {
             data += 6;
             int version = 0;
-            while ('0' <= *data && *data <= '9') {
+            while (termpaintp_char_ascii_num(*data)) {
                 version = version * 10 + *data - '0';
                 ++data;
             }
@@ -2995,7 +2995,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                                 if (*data == ';') {
                                     ++data;
                                     int version = 0;
-                                    while ('0' <= *data && *data <= '9') {
+                                    while (termpaintp_char_ascii_num(*data)) {
                                         version = version * 10 + *data - '0';
                                         ++data;
                                     }
