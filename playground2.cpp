@@ -181,7 +181,18 @@ void event_handler(void *user_data, termpaint_event *event) {
         pretty += (event->paste.initial) ? "I" : " ";
         pretty += (event->paste.final) ? "F" : " ";
         pretty += " ";
-        pretty += std::string { event->paste.string, event->paste.length };
+        std::string pasted = std::string { event->paste.string, event->paste.length };
+        pretty += "\"";
+        for (auto ch : pasted) {
+            if (ch < ' ') {
+                pretty += "\\x" + std::to_string(ch);
+            } else if (ch == '\\') {
+                pretty += "\\x5c";
+            } else {
+                pretty.append(1, ch);
+            }
+        }
+        pretty += "\"";
     } else {
         pretty = "Other event no. " + std::to_string(event->type);
     }
