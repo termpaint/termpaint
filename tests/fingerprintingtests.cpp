@@ -1211,10 +1211,10 @@ static const std::initializer_list<TestCase> tests = {
             { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
             { "\033P+q544e\033\\",{ "\033P1+r544e=6D6C7465726D\033\\" }},
         },
-        "Type: base(0) safe-CPR seq:>=",
+        "Type: mlterm(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
-          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
         "",
         WithoutGlitchPatching
     },

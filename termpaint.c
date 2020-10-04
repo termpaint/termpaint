@@ -204,6 +204,7 @@ typedef enum terminal_type_enum_ {
     TT_BASE,
     TT_XTERM,
     TT_URXVT,
+    TT_MLTERM,
     TT_KONSOLE,
     TT_VTE,
     TT_SCREEN,
@@ -2702,6 +2703,10 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
     } else if (term->terminal_type == TT_ITERM2) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
+    } else if (term->terminal_type == TT_MLTERM) {
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
+        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+        term->max_csi_parameters = 10;
     } else if (term->terminal_type == TT_MSFT_TERMINAL) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_FULL) {
@@ -2877,6 +2882,7 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
     int_puts(integration, "\033[>q");
     bool might_be_kitty = false;
     bool might_be_iterm2 = false;
+    bool might_be_mlterm = false;
     if (terminal->auto_detect_sec_device_attributes) {
         const int attr_len = strlen(terminal->auto_detect_sec_device_attributes);
         if (termpaintp_string_prefix("\033[>1;", terminal->auto_detect_sec_device_attributes, attr_len)) {
@@ -2898,8 +2904,11 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
         might_be_iterm2 = (!terminal->seen_dec_terminal_param
                            && attr_len == 10
                            && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>0;95;0c", 10) == 0);
+        might_be_mlterm = (terminal->seen_dec_terminal_param
+                           && attr_len == 12
+                           && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>24;279;0c", 10) == 0);
     }
-    if (might_be_kitty || might_be_iterm2) {
+    if (might_be_kitty || might_be_iterm2 || might_be_mlterm) {
         int_puts(integration, "\033P+q544e\033\\");
     }
     int_puts(integration, "\033[5n");
@@ -3304,6 +3313,10 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                                 && termpaintp_mem_ascii_case_insensitive_equals(event->raw.string + 8, "695465726d32", 12)) {
                             terminal->terminal_type = TT_ITERM2;
                         }
+                        if (event->raw.length == 20
+                                && termpaintp_mem_ascii_case_insensitive_equals(event->raw.string + 8, "6D6C7465726D", 12)) {
+                            terminal->terminal_type = TT_MLTERM;
+                        }
                     }
                 }
                 return true;
@@ -3628,6 +3641,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
             break;
         case TT_URXVT:
             term_type = "urxvt";
+            break;
+        case TT_MLTERM:
+            term_type = "mlterm";
             break;
         case TT_TERMINOLOGY:
             term_type = "terminology";
