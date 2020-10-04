@@ -1105,6 +1105,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "weston-terminal 8.0.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[?6c" }},
+            { "\033[>1c",         { "\033[?6c" }},
+            { "\033[>0;1c",       { "\033[?6c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: toodumb(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "alacritty 0.2.9" LINEINFO,
         {
             { "\033[>c",          { "\033[?6c" }},
@@ -1220,6 +1243,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "mosh 1.3.2" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;10;0c" }},
+            { "\033[>1c",         { "\033[>1;10;0c" }},
+            { "\033[>0;1c",       { "\033[>1;10;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "pangoterm with libvterm 0.1.3" LINEINFO,
         {
             { "\033[>c",          { "\033[>0;100;0c" }},
@@ -1307,6 +1353,29 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "Teraterm 3.105" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>32;331;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>32;331;0c" }},
+            { "\033[=c",          { "\033P!|FFFFFFFF\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\",{ "\033P0+r\033\\" }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
         "",
         WithoutGlitchPatching
     },
@@ -1772,7 +1841,7 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
-        "jetbrains jediterm" LINEINFO,
+        "jetbrains JediTerm 2.31" LINEINFO,
         {
             { "\033[>c",          { "\033[?6c" }},
             { "\033[>1c",         { "" }},
