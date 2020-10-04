@@ -144,7 +144,7 @@ struct termpaint_surface_ {
     bool primary;
     cell* cells;
     cell* cells_last_flush;
-    int cells_allocated;
+    unsigned cells_allocated;
     int width;
     int height;
 
@@ -565,12 +565,13 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
 }
 
 static inline cell* termpaintp_getcell(const termpaint_surface *surface, int x, int y) {
-    int index = y*surface->width+x;
-    // TODO undefined if overflow?
-    if (x >= 0 && y >= 0 && index < surface->cells_allocated) {
+    unsigned index = y*surface->width + x;
+    if (x >= 0 && y >= 0
+        && x < surface->width && y < surface->height
+        && index < surface->cells_allocated) {
         return &surface->cells[index];
     } else {
-        return nullptr; // FIXME how to handle this?
+        BUG("cell out of range");
     }
 }
 
@@ -638,15 +639,13 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
         for (int y = 0; y < surface->height; y++) {
             for (int x = 0; x < surface->width; x++) {
                 cell* c = termpaintp_getcell(surface, x, y);
-                if (c) {
-                    if (c->attr_patch_idx) {
-                        surface->patches[c->attr_patch_idx - 1].unused = false;
-                    }
-                    if (surface->cells_last_flush) {
-                        cell* old_c = &surface->cells_last_flush[y*surface->width+x];
-                        if (old_c->attr_patch_idx) {
-                            surface->patches[old_c->attr_patch_idx - 1].unused = false;
-                        }
+                if (c->attr_patch_idx) {
+                    surface->patches[c->attr_patch_idx - 1].unused = false;
+                }
+                if (surface->cells_last_flush) {
+                    cell* old_c = &surface->cells_last_flush[y*surface->width+x];
+                    if (old_c->attr_patch_idx) {
+                        surface->patches[old_c->attr_patch_idx - 1].unused = false;
                     }
                 }
             }
@@ -707,7 +706,7 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
 
     if (cell->text_len == 0 && cell->text_overflow == WIDE_RIGHT_PADDING) {
         int i = x;
-        while (cell && (cell->text_len == 0 && cell->text_overflow == WIDE_RIGHT_PADDING)) {
+        while (cell->text_len == 0 && cell->text_overflow == WIDE_RIGHT_PADDING) {
             cell->text_len = 1;
             cell->text[0] = ' ';
             rightmost_vanished = i;
@@ -721,10 +720,6 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
         do {
             cell = termpaintp_getcell(surface, i, y);
 
-            if (!cell) {
-                BUG("padding cell without wide cell before");
-            }
-
             cell->text_len = 1;
             cell->text[0] = ' ';
             // cell->cluster_expansion == 0 already unless this is the last iteration, see fixup below
@@ -735,10 +730,6 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
 
     for (int i = rightmost_vanished; i <= x + cluster_width - 1; i++) {
         cell = termpaintp_getcell(surface, i, y);
-
-        if (!cell) {
-            BUG("x + cluster_width > width");
-        }
 
         int expansion = cell->cluster_expansion;
         int j = 0;
@@ -751,10 +742,6 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
                 break;
             }
             cell = termpaintp_getcell(surface, i + j, y);
-
-            if (!cell) {
-                BUG("cluster expanding outside of width");
-            }
         }
         i += j;
     }
@@ -1097,15 +1084,13 @@ static void termpaintp_surface_gc_mark_cb(termpaint_hash *hash) {
     for (int y = 0; y < surface->height; y++) {
         for (int x = 0; x < surface->width; x++) {
             cell* c = termpaintp_getcell(surface, x, y);
-            if (c) {
-                if (c->text_len == 0 && c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
-                    c->text_overflow->unused = false;
-                }
-                if (surface->cells_last_flush) {
-                    cell* old_c = &surface->cells_last_flush[y*surface->width+x];
-                    if (old_c->text_len == 0 && old_c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
-                        old_c->text_overflow->unused = false;
-                    }
+            if (c->text_len == 0 && c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
+                c->text_overflow->unused = false;
+            }
+            if (surface->cells_last_flush) {
+                cell* old_c = &surface->cells_last_flush[y*surface->width+x];
+                if (old_c->text_len == 0 && old_c->text_overflow != nullptr && c->text_overflow != WIDE_RIGHT_PADDING) {
+                    old_c->text_overflow->unused = false;
                 }
             }
         }
