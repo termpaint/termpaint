@@ -1582,7 +1582,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING) },
         "",
         WithoutGlitchPatching
     },
@@ -1605,7 +1605,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(88_COLOR),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING) },
         "",
         WithoutGlitchPatching
     },
@@ -1628,7 +1628,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -1651,7 +1651,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(88_COLOR),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING) },
         "fictional",
         WithoutGlitchPatching
     },

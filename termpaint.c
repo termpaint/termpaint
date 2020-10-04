@@ -2640,7 +2640,9 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_URXVT) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
-        // XXX: urxvt 9.19 seems to crash on bracketed paste, so don't
+        // XXX: urxvt 9.19 seems to crash on bracketed paste, so don't set it
+        // at least till 9.22 urxvt sends just ESC as terminator in replies when using ESC \ in the request.
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_7BIT_ST);
     } else if (term->terminal_type == TT_LINUXVC) {
         // Linux VC has to fit all character choices into 8 bit or 9 bit (depending on config)
         // thus is has a very limited set of characters available. What is available exactly
@@ -3104,6 +3106,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         // auto detect 88 or 256 color mode by observing if querying color 255 results in a response
                         termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_88_COLOR);
                         // Using BEL as termination, because urxvt doesn't properly support ESC \ as terminator
+                        // at least till 9.22 urxvt sends just ESC as terminator when using ESC \ in the request.
                         int_puts(integration, "\033]4;255;?\007");
                         int_puts(integration, "\033[5n");
                         terminal->ad_state = AD_URXVT_88_256_REQ;
