@@ -575,6 +575,20 @@ static inline cell* termpaintp_getcell(const termpaint_surface *surface, int x, 
     }
 }
 
+static inline cell* termpaintp_getcell_or_null(const termpaint_surface *surface, int x, int y) {
+    unsigned index = y*surface->width + x;
+    if (x >= 0 && y >= 0
+        && x < surface->width && y < surface->height) {
+        if (index < surface->cells_allocated) {
+            return &surface->cells[index];
+        } else {
+            BUG("cell out of range");
+        }
+    } else {
+        return nullptr;
+    }
+}
+
 static void termpaintp_set_overflow_text(termpaint_surface *surface, cell *dst_cell, const unsigned char* data) {
     // hash_ensure needs to be done before touching text_len, because it can cause garbage collection which would
     // see an inconistant state if text_len is already set to zero.
@@ -1346,22 +1360,34 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
 }
 
 unsigned termpaint_surface_peek_fg_color(const termpaint_surface *surface, int x, int y) {
-    cell *cell = termpaintp_getcell(surface, x, y);
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell) {
+        return 0;
+    }
     return cell->fg_color;
 }
 
 unsigned termpaint_surface_peek_bg_color(const termpaint_surface *surface, int x, int y) {
-    cell *cell = termpaintp_getcell(surface, x, y);
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell) {
+        return 0;
+    }
     return cell->bg_color;
 }
 
 unsigned termpaint_surface_peek_deco_color(const termpaint_surface *surface, int x, int y) {
-    cell *cell = termpaintp_getcell(surface, x, y);
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell) {
+        return 0;
+    }
     return cell->deco_color;
 }
 
 int termpaint_surface_peek_style(const termpaint_surface *surface, int x, int y) {
-    cell *cell = termpaintp_getcell(surface, x, y);
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell) {
+        return 0;
+    }
     unsigned flags = cell->flags;
     int style = flags & TERMPAINT_STYLE_PASSTHROUGH;
     if ((flags & CELL_ATTR_UNDERLINE_MASK) == CELL_ATTR_UNDERLINE_SINGLE) {
@@ -1375,21 +1401,31 @@ int termpaint_surface_peek_style(const termpaint_surface *surface, int x, int y)
 }
 
 void termpaint_surface_peek_patch(const termpaint_surface *surface, int x, int y, const char **setup, const char **cleanup, bool *optimize) {
-    cell *cell = termpaintp_getcell(surface, x, y);
-    if (cell->attr_patch_idx) {
-        termpaintp_patch* patch = &surface->patches[cell->attr_patch_idx - 1];
-        *setup = patch->setup;
-        *cleanup = patch->cleanup;
-        *optimize = patch->optimize;
-    } else {
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell || !cell->attr_patch_idx) {
         *setup = nullptr;
         *cleanup = nullptr;
         *optimize = true;
+        return;
     }
+    termpaintp_patch* patch = &surface->patches[cell->attr_patch_idx - 1];
+    *setup = patch->setup;
+    *cleanup = patch->cleanup;
+    *optimize = patch->optimize;
 }
 
 const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x, int y, int *len, int *left, int *right) {
-    cell *cell = termpaintp_getcell(surface, x, y);
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell) {
+        if (left) {
+            *left = x;
+        }
+        if (right) {
+            *right = x;
+        }
+        *len = 1;
+        return TERMPAINT_ERASED;
+    }
     while (x > 0) {
         cell = termpaintp_getcell(surface, x, y);
         if (cell->text_len != 0 || cell->text_overflow != WIDE_RIGHT_PADDING) {
@@ -1421,7 +1457,10 @@ const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x,
 }
 
 bool termpaint_surface_peek_softwrap_marker(const termpaint_surface *surface, int x, int y) {
-    cell *cell = termpaintp_getcell(surface, x, y);
+    cell *cell = termpaintp_getcell_or_null(surface, x, y);
+    if (!cell) {
+        return false;
+    }
     return !!(cell->flags & CELL_SOFTWRAP_MARKER);
 }
 
