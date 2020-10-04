@@ -304,6 +304,7 @@ typedef struct termpaint_terminal_ {
     auto_detect_state glitch_patching_next_state;
     // </>
     bool capabilities[NUM_CAPABILITIES];
+    int max_csi_parameters;
 } termpaint_terminal;
 
 typedef enum termpaint_text_measurement_state_ {
@@ -1698,6 +1699,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaintp_terminal_reset_capabilites(ret);
     ret->terminal_type = TT_UNKNOWN;
     ret->terminal_type_confidence = 0;
+    ret->max_csi_parameters = 15;
     ret->input = termpaint_input_new();
     termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
@@ -1911,30 +1913,68 @@ static uint32_t termpaintp_quantize_color(termpaint_terminal *term, uint32_t col
     return color;
 }
 
-static inline void write_color_sgr_values(termpaint_integration *integration, uint32_t color, char *direct, char *indexed, char *sep, unsigned named, unsigned bright_named) {
+typedef struct {
+    int index;
+    int max;
+} termpaintp_sgr_params;
+
+static inline void write_color_sgr_values(termpaint_integration *integration, termpaintp_sgr_params *params, uint32_t color, char *direct, char *indexed, char *sep, unsigned named, unsigned bright_named) {
     if ((color & 0xff000000) == TERMPAINT_RGB_COLOR_OFFSET) {
-        int_puts(integration, direct);
+        if (params->index + 5 >= params->max) {
+            int_puts(integration, "m\033[");
+            params->index = 0;
+            int_puts(integration, direct + 1); // skip first ";"
+        } else {
+            int_puts(integration, direct);
+        }
         int_put_num(integration, (color >> 16) & 0xff);
         int_puts(integration, sep);
         int_put_num(integration, (color >> 8) & 0xff);
         int_puts(integration, sep);
         int_put_num(integration, (color) & 0xff);
+        params->index += 5;
     } else if (TERMPAINT_INDEXED_COLOR <= color && TERMPAINT_INDEXED_COLOR + 255 >= color) {
-        int_puts(integration, indexed);
+        if (params->index + 3 >= params->max) {
+            int_puts(integration, "m\033[");
+            params->index = 0;
+            int_puts(integration, indexed + 1); // skip first ";"
+        } else {
+            int_puts(integration, indexed);
+        }
         int_put_num(integration, (color) & 0xff);
+        params->index += 3;
     } else {
         if (named) {
             if (TERMPAINT_NAMED_COLOR <= color && TERMPAINT_NAMED_COLOR + 7 >= color) {
-                int_puts(integration, ";");
+                if (params->index + 1 >= params->max) {
+                    int_puts(integration, "m\033[");
+                    params->index = 0;
+                } else {
+                    int_puts(integration, ";");
+                }
                 int_put_num(integration, named + (color - TERMPAINT_NAMED_COLOR));
+                params->index += 1;
             } else if (TERMPAINT_NAMED_COLOR + 8 <= color && TERMPAINT_NAMED_COLOR + 15 >= color) {
-                int_puts(integration, ";");
+                if (params->index + 1 >= params->max) {
+                    int_puts(integration, "m\033[");
+                    params->index = 0;
+                } else {
+                    int_puts(integration, ";");
+                }
                 int_put_num(integration, bright_named + (color - (TERMPAINT_NAMED_COLOR + 8)));
+                params->index += 1;
             }
         } else {
             if (TERMPAINT_NAMED_COLOR <= color && TERMPAINT_NAMED_COLOR + 15 >= color) {
-                int_puts(integration, indexed);
+                if (params->index + 3 >= params->max) {
+                    int_puts(integration, "m\033[");
+                    params->index = 0;
+                    int_puts(integration, indexed + 1); // skip first ";"
+                } else {
+                    int_puts(integration, indexed);
+                }
                 int_put_num(integration, (color - TERMPAINT_NAMED_COLOR));
+                params->index += 3;
             }
         }
     }
@@ -2148,39 +2188,60 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
 
             if (needs_attribute_change) {
                 int_puts(integration, "\e[0");
-                write_color_sgr_values(integration, effective_bg_color, ";48;2;", ";48;5;", ";", 40, 100);
-                write_color_sgr_values(integration, effective_fg_color, ";38;2;", ";38;5;", ";", 30, 90);
-                write_color_sgr_values(integration, effective_deco_color, ";58:2:", ";58:5:", ":", 0, 0);
+                termpaintp_sgr_params params;
+                params.index = 1;
+                params.max = term->max_csi_parameters;
+#define PUT_PARAMETER(s)                        \
+    do { if (params.index + 1 >= params.max) {  \
+        int_puts(integration, "m\033[");        \
+        int_puts(integration, s + 1);           \
+        params.index = 1;                       \
+    } else {                                    \
+        int_puts(integration, s);               \
+        params.index += 1;                      \
+    } } while (false)                           \
+    /* end macro */
+                write_color_sgr_values(integration, &params, effective_bg_color, ";48;2;", ";48;5;", ";", 40, 100);
+                write_color_sgr_values(integration, &params, effective_fg_color, ";38;2;", ";38;5;", ";", 30, 90);
+                write_color_sgr_values(integration, &params, effective_deco_color, ";58:2:", ";58:5:", ":", 0, 0);
                 if (c->flags) {
                     if (c->flags & CELL_ATTR_BOLD) {
-                        int_puts(integration, ";1");
+                        PUT_PARAMETER(";1");
                     }
                     if (c->flags & CELL_ATTR_ITALIC) {
-                        int_puts(integration, ";3");
+                        PUT_PARAMETER(";3");
                     }
                     uint32_t underline = c->flags & CELL_ATTR_UNDERLINE_MASK;
                     if (underline == CELL_ATTR_UNDERLINE_SINGLE) {
-                        int_puts(integration, ";4");
+                        PUT_PARAMETER(";4");
                     } else if (underline == CELL_ATTR_UNDERLINE_DOUBLE) {
-                        int_puts(integration, ";21");
+                        PUT_PARAMETER(";21");
                     } else if (underline == CELL_ATTR_UNDERLINE_CURLY) {
                         // TODO maybe filter this by terminal capability somewhere?
-                        int_puts(integration, ";4:3");
+                        if (params.index + 2 >= params.max) {
+                            int_puts(integration, "m\033[");
+                            int_puts(integration, "4:3");
+                            params.index = 2;
+                        } else {
+                            int_puts(integration, ";4:3");
+                            params.index += 2;
+                        }
                     }
                     if (c->flags & CELL_ATTR_BLINK) {
-                        int_puts(integration, ";5");
+                        PUT_PARAMETER(";5");
                     }
                     if (c->flags & CELL_ATTR_OVERLINE) {
-                        int_puts(integration, ";53");
+                        PUT_PARAMETER(";53");
                     }
                     if (c->flags & CELL_ATTR_INVERSE) {
-                        int_puts(integration, ";7");
+                        PUT_PARAMETER(";7");
                     }
                     if (c->flags & CELL_ATTR_STRIKE) {
-                        int_puts(integration, ";9");
+                        PUT_PARAMETER(";9");
                     }
                 }
                 int_puts(integration, "m");
+#undef PUT_PARAMETER
                 current_bg = effective_bg_color;
                 current_fg = effective_fg_color;
                 current_deco = effective_deco_color;
