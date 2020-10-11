@@ -753,6 +753,29 @@ TEST_CASE("peek text") {
     CHECK(right == 4);
 }
 
+TEST_CASE("peek text on left most column") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 0, 3, "あえ", TERMPAINT_COLOR_RED, TERMPAINT_DEFAULT_COLOR);
+
+    int left, right;
+    int len;
+    const char *data;
+
+    len = -2;
+    data = termpaint_surface_peek_text(f.surface, 0, 3, &len, nullptr, nullptr);
+    REQUIRE(len == strlen("あ"));
+    CHECK(std::string(data, len) == std::string("あ"));
+
+    left = -2;
+    data = termpaint_surface_peek_text(f.surface, 0, 3, &len, &left, nullptr);
+    CHECK(left == 0);
+
+    right = -2;
+    data = termpaint_surface_peek_text(f.surface, 0, 3, &len, nullptr, &right);
+    CHECK(right == 1);
+}
+
 
 TEST_CASE("cluster with more than 8 bytes") {
     // white-box: Storage switches mode at 8 bytes length

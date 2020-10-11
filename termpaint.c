@@ -1427,11 +1427,11 @@ const char *termpaint_surface_peek_text(const termpaint_surface *surface, int x,
         return TERMPAINT_ERASED;
     }
     while (x > 0) {
-        cell = termpaintp_getcell(surface, x, y);
         if (cell->text_len != 0 || cell->text_overflow != WIDE_RIGHT_PADDING) {
             break;
         }
         --x;
+        cell = termpaintp_getcell(surface, x, y);
     }
 
     if (left) {
