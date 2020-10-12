@@ -1117,11 +1117,17 @@ static void termpaintp_surface_init(termpaint_surface *surface) {
 }
 
 termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height) {
+    (void)term; // If term is actually used, adjust termpaint_surface_new_surface to not pass a nullptr!
     termpaint_surface *ret = calloc(1, sizeof(termpaint_surface));
     termpaintp_surface_init(ret);
     termpaintp_collapse(ret);
     termpaintp_resize(ret, width, height);
     return ret;
+}
+
+termpaint_surface *termpaint_surface_new_surface(termpaint_surface *surface, int width, int height) {
+    (void)surface;
+    return termpaint_terminal_new_surface(nullptr, width, height);
 }
 
 void termpaint_surface_free(termpaint_surface *surface) {
@@ -1357,6 +1363,15 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
             }
         }
     }
+}
+
+termpaint_surface *termpaint_surface_duplicate(termpaint_surface *surface) {
+    termpaint_surface *ret = termpaint_surface_new_surface(surface, surface->width, surface->height);
+
+    termpaint_surface_copy_rect(surface, 0, 0, surface->width, surface->height,
+                                ret, 0, 0,
+                                TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+    return ret;
 }
 
 unsigned termpaint_surface_peek_fg_color(const termpaint_surface *surface, int x, int y) {
