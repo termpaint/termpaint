@@ -1181,6 +1181,10 @@ void termpaint_surface_tint(termpaint_surface *surface,
     }
 }
 
+static void termpaintp_surface_copy_rect_same_surface(termpaint_surface *src_surface, int x, int y, int width, int height,
+                                 int dst_x, int dst_y, int tile_left, int tile_right);
+
+
 void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, int width, int height,
                                  termpaint_surface *dst_surface, int dst_x, int dst_y, int tile_left, int tile_right) {
     if (x < 0) {
@@ -1236,6 +1240,11 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
     }
 
     if (width == 0) {
+        return;
+    }
+
+    if (src_surface == dst_surface) {
+        termpaintp_surface_copy_rect_same_surface(src_surface, x, y, width, height, dst_x, dst_y, tile_left, tile_right);
         return;
     }
 
@@ -1363,6 +1372,24 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
             }
         }
     }
+}
+
+static void termpaintp_surface_copy_rect_same_surface(termpaint_surface *dst_surface, int x, int y, int width, int height,
+                                                      int dst_x, int dst_y, int tile_left, int tile_right) {
+    // precondition: All rectangles are already fully within the surface.
+    termpaint_surface *src_surface = termpaint_surface_new_surface(dst_surface,
+                                                                   width + (x != 0 ? 1 : 0) + (x + width != dst_surface->width ? 1 : 0),
+                                                                   height + (y != 0 ? 1 : 0) + (y + height != dst_surface->height ? 1 : 0));
+
+    termpaint_surface_copy_rect(dst_surface, x - (x != 0 ? 1 : 0), y - (y != 0 ? 1 : 0), src_surface->width, src_surface->height,
+                                src_surface, 0, 0,
+                                TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+
+    termpaint_surface_copy_rect(src_surface, (x != 0 ? 1 : 0), (y != 0 ? 1 : 0), width, height,
+                                dst_surface, dst_x, dst_y,
+                                tile_left, tile_right);
+
+    termpaint_surface_free(src_surface);
 }
 
 termpaint_surface *termpaint_surface_duplicate(termpaint_surface *surface) {

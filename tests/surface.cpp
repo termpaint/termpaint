@@ -19,6 +19,12 @@ struct unique_cptr : public std::unique_ptr<T, Deleter<T, del>> {
     operator T*() {
         return this->get();
     }
+
+    static unique_cptr take_ownership(T* owning_raw_ptr) {
+        unique_cptr ret;
+        ret.reset(owning_raw_ptr);
+        return ret;
+    }
 };
 
 using uattr_ptr = unique_cptr<termpaint_attr, termpaint_attr_free>;
@@ -2915,7 +2921,140 @@ TEST_CASE("copy - double wide on src and dst and extending beyond the right most
         singleWideChar(TERMPAINT_ERASED).withFg(TERMPAINT_COLOR_CYAN).withBg(TERMPAINT_COLOR_GREEN));
 }
 
+static void termpaintp_test_surface_copy_rect_same_surface(termpaint_surface *dst_surface, int x, int y, int width, int height,
+                                                      int dst_x, int dst_y, int tile_left, int tile_right) {
+    // simple robust implementation to compare real implementation against
+    auto src_surface = usurface_ptr::take_ownership(termpaint_surface_new_surface(dst_surface, termpaint_surface_width(dst_surface), termpaint_surface_height(dst_surface)));
 
+    termpaint_surface_copy_rect(dst_surface, 0, 0, termpaint_surface_width(dst_surface), termpaint_surface_height(dst_surface),
+                                src_surface, 0, 0,
+                                TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_NO_TILE);
+
+    termpaint_surface_copy_rect(src_surface, x, y, width, height,
+                                dst_surface, dst_x, dst_y,
+                                tile_left, tile_right);
+}
+
+static void loremipsumify(termpaint_surface *dst_surface) {
+    // this is a random mix of normal ascii and full width variants of ascii letters.
+    const char* text[] = {
+        "Loｒem iｐｓuｍ doｌｏr ｓｉt　aｍｅｔ,　ｃonseｃtｅｔｕｒ　ａｄｉｐｉsicｉ ｅl ",
+        "ｉt, sｅｄ　ｅｉｕｓmｏd ｔｅｍｐoｒ iｎｃｉduｎｔ ｕt lａbｏre ｅｔ doloｒe　ma",
+        "gnａ　aliｑua.　Ｕt eｎim ａｄ　ｍｉｎｉm ｖeｎｉaｍ,　ｑuｉｓ nostruｄ ｅｘｅr ",
+        "ｃitatｉoｎ　uｌlaｍｃｏ lａbｏｒiｓ ｎiｓi ｕt ａliqｕid ｅｘ ea　ｃoｍmodi　ｃ",
+        "ｏnｓeｑuａｔ.　Ｑuiｓ aｕtｅ　ｉｕrｅ　rｅpreｈeｎdｅrｉt ｉn vｏｌｕｐｔaｔｅ ",
+        "ｖｅｌiｔ esｓe　ｃiｌluｍ doｌｏre ｅｕ fｕｇｉat nｕlla ｐaｒｉatｕr. Excｅｐt",
+        "ｅur　sｉnt obｃａｅcaｔ　cｕｐｉditat　ｎon pｒoiｄｅｎt, ｓｕnt　iｎ culpａ　q",
+        "ui　ｏｆｆｉｃia ｄｅｓｅｒｕnt moｌｌiｔ　anim ｉd　ｅｓｔ　laｂorum. Ｄｕｉｓ ",
+        "　autｅm ｖel ｅum　iｒiｕｒｅ ｄoｌor　ｉn ｈｅnｄrｅｒiｔ　iｎ vｕlpｕtａｔｅ ",
+        "ｖelit　ｅssｅ moｌｅｓtｉe　ｃｏnｓeｑuａt,　ｖel　ｉｌｌｕｍ　dolorｅ ｅu feug",
+        "ｉａｔ　nｕｌｌａ ｆaｃｉｌｉｓｉｓ ａt ｖｅrｏ　erｏｓ et ａｃcｕmｓａｎ　ｅt　",
+        "iｕsｔo　odｉo　ｄｉｇｎｉｓsiｍ　quｉ　ｂlａndｉｔ pｒaｅsｅｎｔ lｕptａtuｍ　 ",
+        "ｚｚｒil dｅｌeｎiｔ　ａuguｅ　duiｓ ｄｏｌｏｒe　tｅ　feuｇａｉt ｎullａ　ｆａc",
+        "ｉlisi.　Lｏｒeｍ ｉpｓuｍ doｌoｒ　ｓiｔ aｍｅｔ,　ｃｏnsecｔｅｔuer ａdｉpｉs ",
+        "ｃing ｅliｔ, seｄ　dｉａm　noｎuｍmｙ ｎｉｂh ｅｕiｓmｏd　tｉnｃidｕｎt　uｔ  ",
+        "ｌaoｒeｅt　ｄｏｌorｅ magｎa　alｉｑｕam　eraｔ　ｖｏｌｕｔｐａt. Uｔ　ｗｉsｉ ",
+        "ｅnｉｍ ａｄ　ｍｉnｉｍ ｖｅnｉａm, qｕiｓ　ｎostｒｕd eｘｅrｃｉ ｔａtｉoｎ ｕ ",
+        "ｌlａｍcｏｒｐｅｒ　sｕscｉｐｉt　lｏｂｏrｔiｓ ｎisｌ　ｕｔ aｌｉｑｕip　ex　ea",
+        " cｏmｍｏdo　ｃonsequａt.　Ｄｕｉｓ ａｕtｅｍ ｖｅｌ ｅｕm　ｉｒiｕｒe dｏlｏr  ",
+        "ｉn ｈeｎdｒｅｒiｔ　iｎ　vulｐutaｔｅ　vｅｌｉｔ eｓｓｅ ｍolestiｅ ｃｏｎsｅqu",
+        "ａt,　ｖel ｉｌluｍ　dolore　eu feugｉat ｎｕlla　ｆａｃｉlｉｓiｓ ａt ｖｅｒｏ ",
+        "　eros　et　accｕｍsan ｅt iｕｓｔｏ ｏdｉo dｉgnｉssiｍ　quｉ ｂlaｎｄｉｔ　pr ",
+        "ａｅseｎｔ　lｕｐｔａｔuｍ　ｚzｒiｌ　ｄelｅｎｉt augｕe dｕｉｓ dｏｌｏｒe　te ",
+        "feuｇaiｔ　nｕｌｌa fａｃiｌｉｓi. Naｍ libeｒ　ｔempor cuｍ　ｓｏluｔａ ｎobiｓ",
+    };
+    for (int i = 0; i < 24; i++) {
+        termpaint_surface_write_with_colors(dst_surface, 0, i, text[i],
+                                            TERMPAINT_COLOR_WHITE, TERMPAINT_COLOR_BLACK);
+    }
+}
+
+TEST_CASE("copy - same surface - same location") {
+    Fixture f{80, 24};
+
+    auto tileLeft = GENERATE(TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_TILE_PUT, TERMPAINT_COPY_TILE_PRESERVE);
+    auto tileRight = GENERATE(TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_TILE_PUT, TERMPAINT_COPY_TILE_PRESERVE);
+
+    // just get some coverage. nothing specific here.
+    auto place = [] (int v) {
+        if (v < 0) {
+            return 80 - v;
+        } else {
+            return v;
+        }
+    };
+
+    int x = place(GENERATE(range(-15, 15)));
+    int y = GENERATE(0, 8, 16);
+    int width = GENERATE(range(0, 10));
+    int height = GENERATE(1, 2, 4, 8);
+    int dst_x = x;
+    int dst_y = y;
+
+    CAPTURE(tileLeft);
+    CAPTURE(tileRight);
+    CAPTURE(x);
+    CAPTURE(width);
+
+    loremipsumify(f.surface);
+
+    auto dup = usurface_ptr::take_ownership(termpaint_surface_duplicate(f.surface));
+    CHECK(termpaint_surface_same_contents(f.surface, dup));
+
+    termpaintp_test_surface_copy_rect_same_surface(dup, x, y, width, height,
+                                                   dst_x, dst_y,
+                                                   tileLeft, tileRight);
+
+    termpaint_surface_copy_rect(f.surface, x, y, width, height,
+                                f.surface, dst_x, dst_y,
+                                tileLeft, tileRight);
+
+    CHECK(termpaint_surface_same_contents(f.surface, dup));
+}
+
+TEST_CASE("copy - same surface") {
+    Fixture f{40, 24};
+
+    auto tileLeft = GENERATE(TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_TILE_PUT, TERMPAINT_COPY_TILE_PRESERVE);
+    auto tileRight = GENERATE(TERMPAINT_COPY_NO_TILE, TERMPAINT_COPY_TILE_PUT, TERMPAINT_COPY_TILE_PRESERVE);
+
+
+    // just get some coverage. nothing specific here.
+    auto place = [] (int v) {
+        if (v < 0) {
+            return 40 - v;
+        } else {
+            return v;
+        }
+    };
+
+    int x = place(GENERATE(range(-10, 10)));
+    int y = 8;
+    int width = GENERATE(1, 2, 5);
+    int height = 4;
+    int dst_x = x + GENERATE(range(-7, 3));
+    int dst_y = GENERATE(0, 8, 16);
+
+    CAPTURE(tileLeft);
+    CAPTURE(tileRight);
+    CAPTURE(x);
+    CAPTURE(width);
+
+    loremipsumify(f.surface);
+
+    auto dup = usurface_ptr::take_ownership(termpaint_surface_duplicate(f.surface));
+    CHECK(termpaint_surface_same_contents(f.surface, dup));
+
+    termpaintp_test_surface_copy_rect_same_surface(dup, x, y, width, height,
+                                                   dst_x, dst_y,
+                                                   tileLeft, tileRight);
+
+    termpaint_surface_copy_rect(f.surface, x, y, width, height,
+                                f.surface, dst_x, dst_y,
+                                tileLeft, tileRight);
+
+    CHECK(termpaint_surface_same_contents(f.surface, dup));
+}
 
 // internal but exposed
 extern "C" {
