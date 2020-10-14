@@ -726,6 +726,10 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
             rightmost_vanished = i;
             // cell->cluster_expansion == 0 already because padding cell
 
+            if (i + 1 == surface->width) {
+                break;
+            }
+
             ++i;
             cell = termpaintp_getcell(surface, i, y);
         }
