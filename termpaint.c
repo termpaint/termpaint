@@ -550,7 +550,9 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
     surface->height = height;
     _Static_assert(sizeof(int) <= sizeof(size_t), "int smaller than size_t");
     int bytes;
-    if (termpaint_smul_overflow(width, height, &surface->cells_allocated)
+    if (
+        (width < 0) || (height < 0)
+     || termpaint_smul_overflow(width, height, &surface->cells_allocated)
      || termpaint_smul_overflow(surface->cells_allocated, sizeof(cell), &bytes)) {
         // collapse and bail
         free(surface->cells);
