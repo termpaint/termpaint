@@ -1382,8 +1382,8 @@ static void termpaintp_surface_copy_rect_same_surface(termpaint_surface *dst_sur
                                                       int dst_x, int dst_y, int tile_left, int tile_right) {
     // precondition: All rectangles are already fully within the surface.
     termpaint_surface *src_surface = termpaint_surface_new_surface(dst_surface,
-                                                                   width + (x != 0 ? 1 : 0) + (x + width != dst_surface->width ? 1 : 0),
-                                                                   height + (y != 0 ? 1 : 0) + (y + height != dst_surface->height ? 1 : 0));
+                                                                   width + (x != 0 ? 1 : 0) + ((x + width != dst_surface->width) ? 1 : 0),
+                                                                   height + (y != 0 ? 1 : 0) + ((y + height != dst_surface->height) ? 1 : 0));
 
     termpaint_surface_copy_rect(dst_surface, x - (x != 0 ? 1 : 0), y - (y != 0 ? 1 : 0), src_surface->width, src_surface->height,
                                 src_surface, 0, 0,
