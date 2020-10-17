@@ -5,21 +5,21 @@ if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_
   add_project_arguments('-fvisibility=hidden', '-fvisibility-inlines-hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'cpp')
 endif
 
-add_project_arguments('-Wall', '-Wextra', '-Werror=strict-prototypes', '-Werror=incompatible-pointer-types',
+cc = meson.get_compiler('c')
+
+add_project_arguments(cc.get_supported_arguments('-Wall', '-Wextra',
+                      '-Werror=strict-prototypes', '-Werror=incompatible-pointer-types',
                       '-Werror=implicit-int', '-Werror=discarded-qualifiers',
-                      language: 'c')
+                      '-Wno-string-plus-int'), language: 'c')
 add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'c')
 
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
-add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration',
-                      '-Werror=incompatible-pointer-types', '-Werror=discarded-qualifiers',
-                      '-Werror=implicit-int', language: 'cpp')
+add_project_arguments('-Werror=return-type', language: 'cpp')
 
 if get_option('valgrind-compat')
     add_project_arguments('-DTERMPAINTP_VALGRIND', language : 'c')
 endif
 
-cc = meson.get_compiler('c')
 lib_rt = cc.find_library('rt', required : false) # clock_gettime
 
 silence_warnings = [

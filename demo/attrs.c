@@ -24,6 +24,7 @@ typedef struct event_ {
 event* event_current;
 
 void event_callback(void *userdata, termpaint_event *tp_event) {
+    (void)userdata;
     // remember tp_event is only valid while this callback runs, so copy everything we need.
     event *my_event = NULL;
     if (tp_event->type == TERMPAINT_EV_CHAR) {

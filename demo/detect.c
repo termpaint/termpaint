@@ -6,7 +6,7 @@
 #include "termpaintx.h"
 
 void null_callback(void *ctx, termpaint_event *event) {
-
+    (void)ctx; (void)event;
 }
 
 typedef struct {
@@ -29,12 +29,13 @@ Cap caps[] = {
     C(7BIT_ST),
     C(MAY_TRY_TAGGED_PASTE),
 #undef C
-    { 0, NULL }
+    { 0, NULL, 0 }
 };
 
 char *debug = NULL;
 
 void debug_log(termpaint_integration *integration, const char *data, int length) {
+    (void)integration;
     if (debug) {
         const int oldlen = strlen(debug);
         debug = realloc(debug, oldlen + length + 1);

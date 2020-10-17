@@ -21,9 +21,15 @@ int driverFd;
 Queue queue;
 Queue asyncQueue;
 
+void write_or_abort(int fd, const void *buf, size_t n) {
+    if (write(fd, buf, n) != (ssize_t)n) {
+        abort();
+    }
+}
+
 void driver_quit() {
     char msg[] = "set:auto-quit";
-    write(driverFd, msg, sizeof(msg));
+    write_or_abort(driverFd, msg, sizeof(msg));
 }
 
 namespace Catch {
@@ -61,7 +67,7 @@ void reader() {
 
 void resetAndClear() {
     char msg[] = "reset";
-    write(driverFd, msg, sizeof(msg));
+    write_or_abort(driverFd, msg, sizeof(msg));
     queue.pop();
     asyncQueue.clear();
 }
@@ -93,7 +99,7 @@ CapturedState capture() {
     CapturedState state;
 
     char msg[] = "capture:all";
-    write(driverFd, msg, sizeof(msg));
+    write_or_abort(driverFd, msg, sizeof(msg));
 
     std::string reply = move(*queue.pop());
 

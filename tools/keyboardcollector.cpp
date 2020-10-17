@@ -46,7 +46,7 @@ unsigned char u8(char ch) {
 }
 
 _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overflow) {
-    (void)user_data;
+    (void)user_data; (void)overflow;
     std::string event { data, length };
     lastRaw.emplace_back(event);
 
@@ -347,7 +347,6 @@ public:
         outStr(message);
 
         std::string data;
-        bool done = false;
         while (true) {
             std::string inputChars;
             termpaint_terminal_set_event_cb(terminal, [] (void * p, termpaint_event *event) {
@@ -392,7 +391,7 @@ public:
     int main();
     int run() { return main(); }
     void outStr(const char *s) {
-        write(0, s, strlen(s));
+        (void)!write(0, s, strlen(s));
     }
 
     jobject menu(jarray options, std::function<bool()> /* not valid in this variant */) {

@@ -243,7 +243,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
             } while (err == EINTR);
 
             char buff[1];
-            read(ret->fd, buff, 1);
+            (void)!read(ret->fd, buff, 1); // failure doesn't matter, course of action keeps same
             shmctl(shmid, IPC_RMID, nullptr);
         }
         if (shmfd != -1) {
@@ -394,7 +394,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
                 // Valgrind does not grok that this is supposed to work, use a cluebat
                 VALGRIND_MAKE_MEM_DEFINED(argc_base, 22);
 #endif
-                memcpy((void*)argc_base, "ttyrescue (embedded)", 22);
+                memcpy((void*)argc_base, "ttyrescue (embedded)", 21);
             }
         }
 #endif
@@ -407,7 +407,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
             // There is no way to avoid leaking the main programs allocations
             // Valgrind's leak check would report these, so instead exit this process without valgrind noticeing.
             VALGRIND_PRINTF("termpaint embedded ttyrescue exited (supressing valgrind reports in rescue process)\n");
-            VALGRIND_NON_SIMD_CALL1(exit_wrapper, _exit);
+            (void)VALGRIND_NON_SIMD_CALL1(exit_wrapper, _exit);
         }
 #endif
         _exit(1);

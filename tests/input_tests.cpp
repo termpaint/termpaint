@@ -33,6 +33,7 @@ void wrap(void (*set_cb)(TYPE1 *ctx, Result (*cb)(void *user_data, Args...), voi
 bool parses_as_one(const char *input) {
     enum { START, OK, ERROR } state = START;
     std::function<_Bool(const char*, unsigned, _Bool overflow)> callback = [input, &state] (const char *data, unsigned length, _Bool overflow) -> _Bool {
+        (void)overflow;
         if (state == START) {
             if (length == strlen(input) && memcmp(input, data, length) == 0) {
                 state = OK;
@@ -107,6 +108,7 @@ TEST_CASE("input: raw filter") {
     int no_events = 0;
     std::function<void(termpaint_event* event)> event_callback
             = [&] (termpaint_event* event) -> void {
+        (void)event;
         if (do_filter_out) {
             FAIL("should have been filtered out");
         } else {
@@ -221,6 +223,7 @@ TEST_CASE( "Overflow is handled correctly", "[overflow]" ) {
     enum { START, GOT_RAW, GOT_EVENT, ERROR } state = START;
     std::function<_Bool(const char*, unsigned, _Bool overflow)> raw_callback
             = [&state] (const char *data, unsigned length, _Bool overflow) -> _Bool {
+        (void)data; (void)length;
         if (state == START) {
             if (overflow) {
                 state = GOT_RAW;

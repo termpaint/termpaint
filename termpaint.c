@@ -1263,7 +1263,6 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
             cell *src_cell = termpaintp_getcell(src_surface, x, y + yOffset);
             if (src_cell->text_len == 0 && src_cell->text_overflow == WIDE_RIGHT_PADDING) {
                 if (tile_left == TERMPAINT_COPY_TILE_PRESERVE) {
-                    bool skip = false;
                     for (int i = 0; i < width; i++) {
                         cell *src_scan = termpaintp_getcell(src_surface, x + i, y + yOffset);
                         cell *dst_scan = termpaintp_getcell(dst_surface, dst_x + i, dst_y + yOffset);
@@ -1278,7 +1277,6 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
 
                         if (!(dst_scan->text_len == 0 && dst_scan->text_overflow == WIDE_RIGHT_PADDING)) {
                             // cluster in dst is shorter than in src or shifted. This can not be valid tiling.
-                            skip = false;
                             break;
                         }
                         if (i == width - 1) {
@@ -1611,7 +1609,7 @@ static void int_debuglog_printf(termpaint_terminal *term, const char *fmt, ...) 
     va_list args;
     va_start(args, fmt);
     char buff[1024];
-    int len = vsnprintf(buff, sizeof(buff), fmt, args);
+    vsnprintf(buff, sizeof(buff), fmt, args);
     va_end(args);
 
     buff[sizeof(buff) - 1] = 0;

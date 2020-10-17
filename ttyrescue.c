@@ -19,7 +19,7 @@
 static char *restore;
 
 static void output(const char *s) {
-    write(2, s, strlen(s));
+    (void)!write(2, s, strlen(s)); // ignore error, exiting soon anyway.
 }
 
 #define TTYRESCUE_FLAG_ATTACHED    (1 << 0)
@@ -103,7 +103,7 @@ int termpaintp_rescue_embedded(struct termpaint_ipcseg *ctlseg) {
         }
         atomic_fetch_or(&ctlseg->flags, TTYRESCUE_FLAG_ATTACHED);
 #endif
-        write(0, "x", 1);
+        (void)!write(0, "x", 1); // nothing much we can do about an error here, likely read below will error too and exit anyway.
     }
 
     sigset_t fullset;
