@@ -237,9 +237,9 @@ struct Result {
 class MeasurementWrapper {
 public:
     MeasurementWrapper() {
-        auto free = [](MAYBE_UNUSED auto... params){};
-        auto flush = [](MAYBE_UNUSED auto... params){};
-        auto write = [](MAYBE_UNUSED auto... params){};
+        auto free = [](termpaint_integration*){};
+        auto flush = [](termpaint_integration*){};
+        auto write = [](termpaint_integration*, const char*, int){};
         termpaint_integration_init(&integration, free, write, flush);
         terminal = termpaint_terminal_new(&integration);
         measurement = termpaint_text_measurement_new(termpaint_terminal_get_surface(terminal));
