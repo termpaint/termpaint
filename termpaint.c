@@ -706,6 +706,7 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     attr.flags = 0;
     attr.patch_setup = nullptr;
     attr.patch_cleanup = nullptr;
+    attr.patch_optimize = false;
     termpaint_surface_write_with_attr_clipped(surface, x, y, string, &attr, clip_x0, clip_x1);
 }
 
