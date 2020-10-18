@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,17 +34,26 @@ Cap caps[] = {
 };
 
 char *debug = NULL;
+bool debug_used = false;
 
 void debug_log(termpaint_integration *integration, const char *data, int length) {
     (void)integration;
+    if (debug_used && !debug) return; // memory allocaton failure
     if (debug) {
         const int oldlen = strlen(debug);
-        debug = realloc(debug, oldlen + length + 1);
-        memcpy(debug + oldlen, data, length);
-        debug[oldlen + length + 1] = 0;
+        char *new_debug = realloc(debug, oldlen + length + 1);
+        if (new_debug) {
+            debug = new_debug;
+            memcpy(debug + oldlen, data, length);
+            debug[oldlen + length + 1] = 0;
+        } else {
+            free(debug);
+            debug = 0;
+        }
     } else {
         debug = strndup(data, length);
     }
+    debug_used = true;
 }
 
 char *strdup_escaped(const char *tmp) {
@@ -128,7 +138,11 @@ int main(int argc, char **argv) {
             }
         }
         if (strcmp(argv[i], "--debug") == 0) {
-            printf("%s", debug);
+            if (debug) {
+                printf("%s", debug);
+            } else if (debug_used) {
+                printf("debug log could not be allocated!\n");
+            }
         }
         if (strcmp(argv[i], "--key-wait") == 0) {
             puts("Press any key to continue");
