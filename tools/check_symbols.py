@@ -5,6 +5,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import NoteSection, SymbolTableSection
 
 # C standard functions and widespread kernel independent posix
+# (_chk variants are what some libc implementations use internally)
 # Allowed in portable core
 import_whitelist_main = [
   # implicit linux ABI
@@ -14,24 +15,24 @@ import_whitelist_main = [
     'free',
     'malloc',
     'memcmp',
-    'memcpy',
-    'memmove',
+    'memcpy', '__memcpy_chk',
+    'memmove', '__memmove_chk',
     'realloc',
-    'sprintf',
+    'sprintf', '__sprintf_chk',
     'strchr',
     'strcmp',
     'strlen',
     'strstr',
   # C99
-    'snprintf',
-    'vsnprintf',
+    'snprintf', '__snprintf_chk',
+    'vsnprintf', '__vsnprintf_chk',
     'abort',
   # kernel independent posix
     'strdup',
     'strndup',
 
   # debug code
-    'printf', 'exit', 'fopen64', 'fputs', 'fputc', 'fclose',
+    'printf', '__printf_chk', 'exit', 'fopen64', 'fputs', 'fputc', 'fclose',
 ]
 
 # OS functions needed for integration component
