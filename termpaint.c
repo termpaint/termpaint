@@ -141,6 +141,8 @@ typedef struct termpaintp_patch_ {
 } termpaintp_patch;
 
 struct termpaint_surface_ {
+    termpaint_terminal *terminal;
+
     bool primary;
     cell* cells;
     cell* cells_last_flush;
@@ -1118,23 +1120,25 @@ static void termpaintp_surface_gc_mark_cb(termpaint_hash *hash) {
     }
 }
 
-static void termpaintp_surface_init(termpaint_surface *surface) {
+static void termpaintp_surface_init(termpaint_surface *surface, termpaint_terminal *term) {
     surface->overflow_text.gc_mark_cb = termpaintp_surface_gc_mark_cb;
     surface->overflow_text.item_size = sizeof(termpaint_hash_item);
+    surface->terminal = term;
 }
 
 termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height) {
-    (void)term; // If term is actually used, adjust termpaint_surface_new_surface to not pass a nullptr!
+    if (!term) {
+        BUG("termpaint_terminal_new_surface with invalid terminal pointer");
+    }
     termpaint_surface *ret = calloc(1, sizeof(termpaint_surface));
-    termpaintp_surface_init(ret);
+    termpaintp_surface_init(ret, term);
     termpaintp_collapse(ret);
     termpaintp_resize(ret, width, height);
     return ret;
 }
 
 termpaint_surface *termpaint_surface_new_surface(termpaint_surface *surface, int width, int height) {
-    (void)surface;
-    return termpaint_terminal_new_surface(nullptr, width, height);
+    return termpaint_terminal_new_surface(surface->terminal, width, height);
 }
 
 void termpaint_surface_free(termpaint_surface *surface) {
@@ -1749,7 +1753,7 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal);
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
-    termpaintp_surface_init(&ret->primary);
+    termpaintp_surface_init(&ret->primary, ret);
     ret->primary.primary = true;
     // start collapsed
     termpaintp_collapse(&ret->primary);
@@ -3954,6 +3958,13 @@ void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *s
 }
 
 termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surface *surface) {
+    // Currently a fixed character classification table is used. But of course terminals differ
+    // in character classification. Thus require a surface pointer already to later be able to
+    // get to the terminal struct for details.
+    // Pretend that we actually use surface here
+    if (!surface) {
+        BUG("termpaint_text_measurement_new called without valid surface");
+    }
     termpaint_text_measurement *m = malloc(sizeof(termpaint_text_measurement));
     termpaint_text_measurement_reset(m);
     return m;
