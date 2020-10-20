@@ -41,14 +41,13 @@ void debug_log(termpaint_integration *integration, const char *data, int length)
     if (debug_used && !debug) return; // memory allocaton failure
     if (debug) {
         const int oldlen = strlen(debug);
-        char *new_debug = realloc(debug, oldlen + length + 1);
-        if (new_debug) {
-            debug = new_debug;
+        char* debug_old = debug;
+        debug = realloc(debug, oldlen + length + 1);
+        if (debug) {
             memcpy(debug + oldlen, data, length);
             debug[oldlen + length + 1] = 0;
         } else {
-            free(debug);
-            debug = 0;
+            free(debug_old);
         }
     } else {
         debug = strndup(data, length);
