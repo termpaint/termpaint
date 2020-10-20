@@ -443,8 +443,8 @@ TEST_CASE("rgb colors with quantize to 256 colors - grey, misc and grid points")
     }
 
     // exact palette grid values
-    for (int r_idx = 0; r_idx < grid.size(); r_idx++) for (int g_idx = 0; g_idx < grid.size(); g_idx++)
-      for (int b_idx = 0; b_idx < grid.size(); b_idx++) {
+    for (size_t r_idx = 0; r_idx < grid.size(); r_idx++) for (size_t g_idx = 0; g_idx < grid.size(); g_idx++)
+      for (size_t b_idx = 0; b_idx < grid.size(); b_idx++) {
         expected[{column, row}] = singleWideChar("y").withBg(std::to_string(16 + r_idx*36 + g_idx*6 + b_idx));
         if (++column == 80) {
             column = 0;
@@ -518,7 +518,7 @@ TEST_CASE("rgb colors with quantize to 256 colors - grid bounds") {
 
         auto sq = [](int x) { return x*x; };
         int best_metric = sq(r_center - r_val) + sq(g_center - g_val) + sq(b_center - b_val);
-        for (int grey_index = 0; grey_index < grey_ramp.size(); grey_index++) {
+        for (size_t grey_index = 0; grey_index < grey_ramp.size(); grey_index++) {
             const int grey_quantized = *(grey_ramp.begin() + grey_index);
             const int cur_metric = sq(grey_quantized - r_val) + sq(grey_quantized - g_val) + sq(grey_quantized - b_val);
             if (cur_metric < best_metric) {

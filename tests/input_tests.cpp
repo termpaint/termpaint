@@ -549,7 +549,7 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
         CAPTURE(sectionName);
         CAPTURE(rawInputHex);
         std::string rawInput;
-        for (int i=0; i < rawInputHex.size(); i+=2) {
+        for (size_t i=0; i < rawInputHex.size(); i+=2) {
             unsigned char ch;
             ch = (hexToInt(rawInputHex[i]) << 4) + hexToInt(rawInputHex[i+1]);
             rawInput.push_back(static_cast<char>(ch));
@@ -1292,7 +1292,7 @@ TEST_CASE("input: peek buffer") {
     termpaint_input *input_ctx = termpaint_input_new();
     wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
     std::string buffer;
-    for (ssize_t i = 0; i < sequence.size(); i++) {
+    for (size_t i = 0; i < sequence.size(); i++) {
         CAPTURE(i);
         REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == buffer.size());
         REQUIRE(std::string(termpaint_input_peek_buffer(input_ctx), buffer.size()) == buffer);

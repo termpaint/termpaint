@@ -34,7 +34,7 @@ static bool quit;
 
 static jarray prompts;
 static jarray recordedKeypresses;
-static int currentPrompt = 0;
+static size_t currentPrompt = 0;
 static int modIndex = 0;
 
 template <typename X>
@@ -128,7 +128,7 @@ void event_handler(void *user_data, termpaint_event *event) {
         std::string raw;
         const char *rawChars = lastRaw.back().data();
         const unsigned char *rawUChars = reinterpret_cast<const unsigned char *>(rawChars);
-        for (int i=0; i < lastRaw.back().size(); i++) {
+        for (size_t i=0; i < lastRaw.back().size(); i++) {
             char buf[3];
             snprintf(buf, 3, "%02x", rawUChars[i]);
             raw += buf;

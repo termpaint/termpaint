@@ -102,12 +102,13 @@ std::u32string toUtf32(std::u16string data) {
 
 
 template <typename T>
-int toInt(T x) {
-    const int result = static_cast<int>(x);
-    if (result != x) {
+int toInt(T x);
+
+int toInt(size_t x) {
+    if (x > std::numeric_limits<int>::max()) {
         throw std::runtime_error("out of range in conversion to int");
     }
-    return x;
+    return static_cast<int>(x);
 }
 
 template <typename T>
@@ -522,7 +523,7 @@ TEST_CASE( "Measurements for strings", "[measurement]") {
 
         ExpectedMeasures expected;
         for (const C& cluster: testCase.data) {
-            if (expected.codeunits + cluster.str.size() > len) break;
+            if (expected.codeunits + toInt(cluster.str.size()) > len) break;
             expected.addCluster(cluster);
         }
 
@@ -545,7 +546,7 @@ TEST_CASE( "Measurements for strings", "[measurement]") {
 
         ExpectedMeasures expected;
         for (const C& cluster: testCase.data) {
-            if (expected.codepoints + toUtf32(cluster.str).size() > codepointsLimit) break;
+            if (expected.codepoints + toInt(toUtf32(cluster.str).size()) > codepointsLimit) break;
             expected.addCluster(cluster);
         }
 
@@ -640,7 +641,7 @@ TEST_CASE( "Measurements for strings", "[measurement]") {
 
         ExpectedMeasures expected;
         for (const C& cluster: testCase.data) {
-            if (expected.codepoints + toUtf32(cluster.str).size() > codepointsLimit) break;
+            if (expected.codepoints + toInt(toUtf32(cluster.str).size()) > codepointsLimit) break;
             expected.addClusterUtf16(cluster);
         }
 
@@ -735,7 +736,7 @@ TEST_CASE( "Measurements for strings", "[measurement]") {
 
         ExpectedMeasures expected;
         for (const C& cluster: testCase.data) {
-            if (expected.codepoints + toUtf32(cluster.str).size() > codepointsLimit) break;
+            if (expected.codepoints + toInt(toUtf32(cluster.str).size()) > codepointsLimit) break;
             expected.addClusterUtf32(cluster);
         }
 

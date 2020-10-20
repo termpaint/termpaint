@@ -750,7 +750,7 @@ static bool termpaintp_input_parse_dec_1(const unsigned char *data, size_t lengt
 static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t length, int *a, int *b) {
     int val = 0;
     int state = 0;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         if (data[i] >= '0' && data[i] <= '9') {
             if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
                 return false;
@@ -777,7 +777,7 @@ static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t lengt
 static bool termpaintp_input_parse_dec_3(const unsigned char *data, size_t length, int *a, int *b, int *c) {
     int val = 0;
     int state = 0;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         if (data[i] >= '0' && data[i] <= '9') {
             if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
                 return false;
@@ -806,21 +806,21 @@ static bool termpaintp_input_parse_mb_3(const unsigned char *data, size_t length
     if (length < 3) { // three values -> at least 3 bytes
         return false;
     }
-    const int len_a = termpaintp_utf8_len(data[0]);
+    const size_t len_a = termpaintp_utf8_len(data[0]);
     if (len_a >= length // including first byte of b
             || !termpaintp_check_valid_sequence(data, len_a)) {
         return false;
     }
     *a = termpaintp_utf8_decode_from_utf8(data, len_a);
 
-    const int len_b = termpaintp_utf8_len(data[len_a]);
+    const size_t len_b = termpaintp_utf8_len(data[len_a]);
     if (len_a + len_b >= length // including first byte of c
             || !termpaintp_check_valid_sequence(data + len_a, len_b)) {
         return false;
     }
     *b = termpaintp_utf8_decode_from_utf8(data + len_a, len_b);
 
-    const int len_c = termpaintp_utf8_len(data[len_a + len_b]);
+    const size_t len_c = termpaintp_utf8_len(data[len_a + len_b]);
     if (len_a + len_b + len_c != length // don't allow trailing garbage
             || !termpaintp_check_valid_sequence(data + len_a + len_b, len_c)) {
         return false;
@@ -1083,7 +1083,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             char postfix_modifier = 0;
             char final = 0;
             bool ok = true;
-            for (int j = 2; j < length; j++) {
+            for (size_t j = 2; j < length; j++) {
                 if ('0' <= data[j] && data[j] <= ';') {
                     // mid part
                 } else if ('<' <= data[j] && data[j] <= '?') {

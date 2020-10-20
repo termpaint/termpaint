@@ -436,7 +436,7 @@ void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
 }
 
 _Bool termpaint_ttyrescue_update(termpaintx_ttyrescue *tpr, const char *data, int len) {
-    if (tpr->seg && len < sizeof(tpr->seg->seq1)) {
+    if (tpr->seg && len < (int)sizeof(tpr->seg->seq1)) {
         // active is only written from this process. It's atomic to get memory_order_seq_cst and
         // to avoid tearing
         int offset = atomic_load(&tpr->seg->active);

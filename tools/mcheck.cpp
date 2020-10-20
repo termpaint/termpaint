@@ -107,7 +107,7 @@ void update_interpretation(std::string filename) {
         }
         std::string rawInputHex = caseobj["raw"].get<std::string>();
         std::string rawInput;
-        for (int i=0; i < rawInputHex.size(); i+=2) {
+        for (size_t i=0; i < rawInputHex.size(); i+=2) {
             unsigned char ch;
             ch = (hexToInt(rawInputHex[i]) << 4) + hexToInt(rawInputHex[i+1]);
             rawInput.push_back(static_cast<char>(ch));

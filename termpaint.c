@@ -552,16 +552,18 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
     surface->height = height;
     _Static_assert(sizeof(int) <= sizeof(size_t), "int smaller than size_t");
     int bytes;
+    int cell_count;
     if (
         (width < 0) || (height < 0)
-     || termpaint_smul_overflow(width, height, &surface->cells_allocated)
-     || termpaint_smul_overflow(surface->cells_allocated, sizeof(cell), &bytes)) {
+     || termpaint_smul_overflow(width, height, &cell_count)
+     || termpaint_smul_overflow(cell_count, sizeof(cell), &bytes)) {
         // collapse and bail
         free(surface->cells);
         free(surface->cells_last_flush);
         termpaintp_collapse(surface);
         return;
     }
+    surface->cells_allocated = cell_count;
     free(surface->cells);
     free(surface->cells_last_flush);
     surface->cells_last_flush = nullptr;
@@ -794,7 +796,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
         unsigned char cluster_utf8[40];
         int cluster_width = 1;
         int input_bytes_used = 0;
-        int output_bytes_used = 0;
+        size_t output_bytes_used = 0;
 
         // ATTENTION keep this in sync with termpaint_text_measurement_feed_codepoint
         while (string[input_bytes_used]) {
@@ -2220,7 +2222,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                         if (pending_colum_move_digits + 3 < speculation_buffer_state + code_units) {
                             // the move sequence is shorter than moving by printing chars
                             speculation_buffer_state = -1;
-                        } else if (speculation_buffer_state + code_units < sizeof (speculation_buffer)) {
+                        } else if (speculation_buffer_state + code_units < (int)sizeof (speculation_buffer)) {
                             memcpy(speculation_buffer + speculation_buffer_state, (char*)text, code_units);
                         } else {
                             // speculation buffer to small

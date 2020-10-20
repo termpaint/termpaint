@@ -268,13 +268,13 @@ CapturedState capture() {
         ccell.y = y;
         ccell.data = text;
 
-        if (state.rows.size() <= y) {
+        if ((int)state.rows.size() <= y) {
             state.rows.resize(y + 1);
         }
 
         state.rows[y].cells.push_back(ccell);
     }
-    if (state.rows.size() != height) {
+    if ((int)state.rows.size() != height) {
         return CapturedState{};
     }
 

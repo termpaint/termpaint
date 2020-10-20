@@ -50,7 +50,7 @@ static int print_style(FILE* f, int style, const char* name, int flag) {
 
 static void print_string(FILE* f, const char* s_signed, size_t len) {
     const unsigned char* s = (const unsigned char*)s_signed;
-    for (int i = 0; i < len;) {
+    for (size_t i = 0; i < len;) {
         int l = termpaintp_utf8_len(s[i]);
         if (i + l > len) {
             break;
@@ -385,7 +385,7 @@ termpaint_surface *termpaint_image_load(termpaint_terminal *term, const char *na
             int actual_len;
             int actual_left, actual_right;
             const char *actual_text = termpaint_surface_peek_text(surface, x, y, &actual_len, &actual_left, &actual_right);
-            if (actual_text != text || actual_len != text.size() || actual_left != x || actual_right != x + width - 1) {
+            if (actual_text != text || actual_len != static_cast<int>(text.size()) || actual_left != x || actual_right != x + width - 1) {
                 ok = false;
             }
             if (fg != termpaint_surface_peek_fg_color(surface, x, y)
