@@ -19,7 +19,7 @@ static inline _Bool termpaint_smul_overflow(int a, int b, int* res) {
     return __builtin_smul_overflow(a, b, res);
 #else
     _Static_assert(sizeof(int) < sizeof(unsigned long long), "overflow protectiong not supported");
-    *res = (unsigned int)(a) * (unsigned int)(b);
+    *res = (unsigned int)a * (unsigned int)b;
     unsigned long long ores = (unsigned long long)a * (unsigned long long)b;
     return ores != (unsigned long long)*res;
 #endif
