@@ -343,6 +343,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
             int max = 0;
             int argn = 0;
             intptr_t argc_base = -1;
+            intptr_t argc_end = -1;
             enum { S_A1, S_PAREN1, S_COMM, S_SPACEX, S_ARGX } state = S_A1;
             while (1) {
                 if (idx+1 >= max) {
@@ -374,27 +375,40 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
                         if (argn == 48) { // arg_start
                             argc_base = buffer[idx] - '0';
                         }
+                        if (argn == 49) { // arg_end
+                            argc_end = buffer[idx] - '0';
+                        }
                     }
                 } else if (state == S_ARGX) {
                     if (buffer[idx] == ' ') {
                         state = S_SPACEX;
-                        if (argn == 48) {
+                        if (argn == 49) {
                             break;
                         }
                     } else {
                         if (argn == 48) { // arg_start
                             argc_base = argc_base * 10 + buffer[idx] - '0';
                         }
+                        if (argn == 49) { // arg_end
+                            argc_end = argc_end * 10 + buffer[idx] - '0';
+                        }
                     }
                 }
             }
             close(fd);
-            if (argc_base != -1) {
+            if (argc_base != -1 && argc_end != -1 && argc_end > argc_base) {
 #ifdef TERMPAINTP_VALGRIND
                 // Valgrind does not grok that this is supposed to work, use a cluebat
-                VALGRIND_MAKE_MEM_DEFINED(argc_base, 22);
+                VALGRIND_MAKE_MEM_DEFINED(argc_base, argc_end - argc_base);
 #endif
-                memcpy((void*)argc_base, "ttyrescue (embedded)", 21);
+                int datalen = 21;
+                // if datalen does not fit into the arg space, intentionally overwrite into
+                // the environment space to get the full name shown.
+                memcpy((void*)argc_base, "ttyrescue (embedded)", datalen);
+                // zero out the rest of the space, so ps doesn't show left over parts from old name
+                if (datalen <= argc_end - argc_base) {
+                    memset((char*)argc_base + datalen, 0, argc_end - argc_base - datalen);
+                }
             }
         }
 #endif
