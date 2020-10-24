@@ -45,7 +45,7 @@ void debug_log(termpaint_integration *integration, const char *data, int length)
         debug = realloc(debug, oldlen + length + 1);
         if (debug) {
             memcpy(debug + oldlen, data, length);
-            debug[oldlen + length + 1] = 0;
+            debug[oldlen + length] = 0;
         } else {
             free(debug_old);
         }
