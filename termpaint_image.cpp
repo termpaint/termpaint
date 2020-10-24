@@ -122,6 +122,10 @@ bool termpaint_image_save(termpaint_surface *surface, const char *name) {
                 ok = false;
             }
 
+            if (termpaint_surface_peek_softwrap_marker(surface, x, y)) {
+                fputs(", \"x-termpaint-softwrap\": true", f);
+            }
+
             const char* setup;
             const char* cleanup;
             bool optimize;
@@ -379,6 +383,10 @@ termpaint_surface *termpaint_image_load(termpaint_terminal *term, const char *na
         }
 
         termpaint_surface_write_with_attr(surface, x, y, text.data(), attr);
+
+        if (has<bool>(cell, "x-termpaint-softwrap") && get<bool>(cell, "x-termpaint-softwrap")) {
+            termpaint_surface_set_softwrap_marker(surface, x, y, true);
+        }
 
         {
             bool ok = true;
