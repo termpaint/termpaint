@@ -31,6 +31,7 @@ _tERMPAINT_PUBLIC void termpaint_input_expect_cursor_position_report(termpaint_i
 #define TERMPAINT_INPUT_EXPECT_LEGACY_MOUSE_MODE_1005 2
 _tERMPAINT_PUBLIC void termpaint_input_expect_legacy_mouse_reports(termpaint_input *ctx, int s);
 _tERMPAINT_PUBLIC void termpaint_input_handle_paste(termpaint_input *ctx, _Bool enable);
+_tERMPAINT_PUBLIC void termpaint_input_expect_apc_sequences(termpaint_input *ctx, _Bool enable);
 
 _tERMPAINT_PUBLIC const char* termpaint_input_peek_buffer(const termpaint_input *ctx);
 _tERMPAINT_PUBLIC int termpaint_input_peek_buffer_length(const termpaint_input *ctx);

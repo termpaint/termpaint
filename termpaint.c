@@ -2938,6 +2938,10 @@ void termpaint_terminal_handle_paste(termpaint_terminal *term, bool enabled) {
     termpaint_input_handle_paste(term->input, enabled);
 }
 
+void termpaint_terminal_expect_apc_input_sequences(termpaint_terminal *term, bool enabled) {
+    termpaint_input_expect_apc_sequences(term->input, enabled);
+}
+
 void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk) {
     termpaint_input_activate_quirk(term->input, quirk);
 }

@@ -32,6 +32,7 @@ bool focus_tracking = false;
 bool tagged_paste = false;
 bool raw_paste = false;
 bool legacy_mouse_support = false;
+bool apc_parsing = false;
 bool raw_command_mode = false;
 std::string raw_commmand_str;
 std::string terminal_info;
@@ -83,6 +84,9 @@ _Bool raw_filter(void *user_data, const char *data, unsigned length, _Bool overf
         } else if (event == "r") {
             raw_paste = !raw_paste;
             termpaint_terminal_handle_paste(terminal, !raw_paste);
+        } else if (event == "a") {
+            apc_parsing = !apc_parsing;
+            termpaint_terminal_expect_apc_input_sequences(terminal, apc_parsing);
         } else if (event == "x") {
             raw_commmand_str = "";
             raw_command_mode = true;
@@ -296,6 +300,7 @@ void render() {
         termpaint_surface_write_with_colors(surface, 10, y++, "| 6: toggle legacy mouse sup |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "| p: toggle tagged paste     |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "| r: toggle tagged paste raw |", rgb_black, rgb_greyCC);
+        termpaint_surface_write_with_colors(surface, 10, y++, "| a: toggle APC parsing      |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "| x: raw mode switch         |", rgb_black, rgb_greyCC);
         termpaint_surface_write_with_colors(surface, 10, y++, "+----------------------------+", rgb_black, rgb_greyCC);
     }

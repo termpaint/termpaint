@@ -104,6 +104,7 @@ _tERMPAINT_PUBLIC int termpaint_terminal_peek_input_buffer_length(const termpain
 _tERMPAINT_PUBLIC void termpaint_terminal_expect_cursor_position_report(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_expect_legacy_mouse_reports(termpaint_terminal *term, int s);
 _tERMPAINT_PUBLIC void termpaint_terminal_handle_paste(termpaint_terminal *term, _Bool enabled);
+_tERMPAINT_PUBLIC void termpaint_terminal_expect_apc_input_sequences(termpaint_terminal *term, _Bool enabled);
 _tERMPAINT_PUBLIC void termpaint_terminal_activate_input_quirk(termpaint_terminal *term, int quirk);
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_auto_detect(termpaint_terminal *terminal);

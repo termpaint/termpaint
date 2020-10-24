@@ -1741,6 +1741,10 @@ void termpaint_input_expect_legacy_mouse_reports(termpaint_input *ctx, int s) {
     }
 }
 
+void termpaint_input_expect_apc_sequences(termpaint_input *ctx, bool enable) {
+    ctx->expect_apc = enable;
+}
+
 static void termpaintp_input_prepend_quirk(termpaint_input *ctx, const key_mapping_entry *e) {
     // takes ownership of e.sequence;
     key_mapping_entry* new_quirks = calloc(sizeof(key_mapping_entry), ctx->quirks_len + 1);
