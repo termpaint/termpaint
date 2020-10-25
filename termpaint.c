@@ -3010,23 +3010,25 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
             char buff[100];
             sprintf(buff, "%d", event->color_slot_report.slot);
             termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
-            if (!entry) {
-                termpaintp_oom(term);
-            }
-            if (!entry->saved) {
-                entry->saved = (uchar*)strndup(event->color_slot_report.color,
-                                               event->color_slot_report.length);
-                termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033\\");
-                termpaintp_prepend_str(&term->restore_seq, entry->saved);
-                termpaintp_prepend_str(&term->restore_seq, (const uchar*)";");
-                termpaintp_prepend_str(&term->restore_seq, entry->base.text);
-                termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]");
-                int_restore_sequence_updated(term);
-                if (entry->requested && !entry->dirty) {
-                    entry->dirty = true;
-                    entry->next_dirty = term->colors_dirty;
-                    term->colors_dirty = entry;
-                    term->request_repaint = true;
+            if (entry) { // entry may be nullptr if not requested via termpaint and out of memory
+                if (!entry->saved) {
+                    entry->saved = (uchar*)strndup(event->color_slot_report.color,
+                                                   event->color_slot_report.length);
+                    if (!entry->saved) {
+                        termpaintp_oom(term);
+                    }
+                    termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033\\");
+                    termpaintp_prepend_str(&term->restore_seq, entry->saved);
+                    termpaintp_prepend_str(&term->restore_seq, (const uchar*)";");
+                    termpaintp_prepend_str(&term->restore_seq, entry->base.text);
+                    termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]");
+                    int_restore_sequence_updated(term);
+                    if (entry->requested && !entry->dirty) {
+                        entry->dirty = true;
+                        entry->next_dirty = term->colors_dirty;
+                        term->colors_dirty = entry;
+                        term->request_repaint = true;
+                    }
                 }
             }
         }
