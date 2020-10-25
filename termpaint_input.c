@@ -1460,6 +1460,10 @@ termpaint_input *termpaint_input_new() {
 }
 
 void termpaint_input_free(termpaint_input *ctx) {
+    if (!ctx) {
+        return;
+    }
+
     for (int i = 0; i < ctx->quirks_len; i++) {
         key_mapping_entry* entry = &ctx->quirks[i];
         free((void*)entry->sequence); // cast away const, quirks is always dynamically allocated.

@@ -1325,6 +1325,10 @@ termpaint_surface *termpaint_surface_new_surface_or_nullptr(termpaint_surface *s
 }
 
 void termpaint_surface_free(termpaint_surface *surface) {
+    if (!surface) {
+        return;
+    }
+
     // guard against freeing the primary surface
     if (surface->primary) {
         return;
@@ -2029,6 +2033,10 @@ void termpaint_terminal_glitch_on_out_of_memory(termpaint_terminal *term) {
 }
 
 void termpaint_terminal_free(termpaint_terminal *term) {
+    if (!term) {
+        return;
+    }
+
     termpaintp_str_destroy(&term->auto_detect_sec_device_attributes);
     termpaintp_str_destroy(&term->terminal_self_reported_name_version);
     termpaintp_surface_destroy(&term->primary);
@@ -2045,6 +2053,10 @@ void termpaint_terminal_free(termpaint_terminal *term) {
 }
 
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
+    if (!term) {
+        return;
+    }
+
     termpaint_integration *integration = term->integration;
 
     if (term->restore_seq.len) {
@@ -4143,6 +4155,10 @@ termpaint_attr *termpaint_attr_new(unsigned fg, unsigned bg) {
 }
 
 void termpaint_attr_free(termpaint_attr *attr) {
+    if (!attr) {
+        return;
+    }
+
     free(attr->patch_setup);
     free(attr->patch_cleanup);
     free(attr);
@@ -4282,6 +4298,10 @@ termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surfa
 }
 
 void termpaint_text_measurement_free(termpaint_text_measurement *m) {
+    if (!m) {
+        return;
+    }
+
     free(m);
 }
 
