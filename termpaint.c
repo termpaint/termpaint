@@ -261,6 +261,7 @@ typedef struct termpaint_terminal_ {
     termpaint_integration_private *integration_vtbl;
     termpaint_surface primary;
     termpaint_input *input;
+    bool force_full_repaint;
     bool data_pending_after_input_received : 1;
     bool request_repaint : 1;
     unsigned char *auto_detect_sec_device_attributes;
@@ -641,6 +642,14 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
     surface->cells = calloc(1, bytes);
     if (!surface->cells) {
         termpaintp_oom(surface->terminal);
+    }
+
+    if (surface->primary) {
+        surface->terminal->force_full_repaint = true;
+        surface->cells_last_flush = calloc(1, surface->cells_allocated * sizeof(cell));
+        if (!surface->cells_last_flush) {
+            termpaintp_oom(surface->terminal);
+        }
     }
 }
 
@@ -2192,13 +2201,7 @@ static inline void write_color_sgr_values(termpaint_integration *integration, te
 
 void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     termpaint_integration *integration = term->integration;
-    if (!term->primary.cells_last_flush) {
-        full_repaint = true;
-        term->primary.cells_last_flush = calloc(1, term->primary.cells_allocated * sizeof(cell));
-        if (!term->primary.cells_last_flush) {
-            termpaintp_oom(term);
-        }
-    }
+    full_repaint |= term->force_full_repaint;
     termpaintp_terminal_hide_cursor(term);
     int_puts(integration, "\e[H");
     char speculation_buffer[30];
