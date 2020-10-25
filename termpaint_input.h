@@ -19,6 +19,7 @@ typedef struct termpaint_input_ termpaint_input;
 
 // Usually termpaint_terminal's input integration should be used instead of raw termpaint_input
 _tERMPAINT_PUBLIC termpaint_input *termpaint_input_new(void);
+_tERMPAINT_PUBLIC termpaint_input *termpaint_input_new_or_nullptr(void);
 _tERMPAINT_PUBLIC void termpaint_input_free(termpaint_input *ctx);
 _tERMPAINT_PUBLIC void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
 _tERMPAINT_PUBLIC void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *user_data, termpaint_event* event), void *user_data);

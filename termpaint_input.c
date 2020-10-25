@@ -1434,9 +1434,12 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
     }
 }
 
-termpaint_input *termpaint_input_new() {
+termpaint_input *termpaint_input_new_or_nullptr() {
     termpaintp_input_selfcheck();
     termpaint_input *ctx = calloc(1, sizeof(termpaint_input));
+    if (!ctx) {
+        return nullptr;
+    }
     termpaintp_input_reset(ctx);
     ctx->esc_pending = false;
     ctx->raw_filter_cb = nullptr;
@@ -1446,6 +1449,14 @@ termpaint_input *termpaint_input_new() {
     ctx->handle_paste = true;
 
     return ctx;
+}
+
+termpaint_input *termpaint_input_new() {
+    termpaint_input *ret = termpaint_input_new_or_nullptr();
+    if (!ret) {
+        abort();
+    }
+    return ret;
 }
 
 void termpaint_input_free(termpaint_input *ctx) {
@@ -1748,6 +1759,9 @@ void termpaint_input_expect_apc_sequences(termpaint_input *ctx, bool enable) {
 static void termpaintp_input_prepend_quirk(termpaint_input *ctx, const key_mapping_entry *e) {
     // takes ownership of e.sequence;
     key_mapping_entry* new_quirks = calloc(sizeof(key_mapping_entry), ctx->quirks_len + 1);
+    if (!new_quirks) {
+        abort();
+    }
     new_quirks[0] = *e;
     if (ctx->quirks_len) {
         memcpy(new_quirks + 1, ctx->quirks, ctx->quirks_len * sizeof(*ctx->quirks));
@@ -1763,6 +1777,9 @@ void termpaint_input_activate_quirk(termpaint_input *ctx, int quirk) {
             key_mapping_entry e;
             e.atom = termpaint_input_backspace();
             e.sequence = strdup("\x08");
+            if (!e.sequence) {
+                abort();
+            }
             e.modifiers = 0;
             termpaintp_input_prepend_quirk(ctx, &e);
         }
@@ -1770,6 +1787,9 @@ void termpaint_input_activate_quirk(termpaint_input *ctx, int quirk) {
             key_mapping_entry e;
             e.atom = termpaint_input_backspace();
             e.sequence = strdup("\x7f");
+            if (!e.sequence) {
+                abort();
+            }
             e.modifiers = TERMPAINT_MOD_CTRL;
             termpaintp_input_prepend_quirk(ctx, &e);
         }
