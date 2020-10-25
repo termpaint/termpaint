@@ -478,6 +478,19 @@ static void termpaintp_str_w_e(termpaint_str *tps, unsigned len) {
     }
 }
 
+static bool termpaintp_str_w_e_mustcheck(termpaint_str *tps, unsigned len) {
+    if (tps->alloc <= len) {
+        unsigned char* data_new = malloc(len + 1);
+        if (!data_new) {
+            return false;
+        }
+        free(tps->data);
+        tps->alloc = len + 1;
+        tps->data = data_new;
+    }
+    return true;
+}
+
 static void termpaintp_str_realloc(termpaint_str *tps, unsigned len) {
     if (tps->alloc <= len) {
         tps->alloc = len + 1;
@@ -500,6 +513,16 @@ static void termpaintp_str_assign(termpaint_str *tps, const char *s) {
     termpaintp_str_w_e(tps, len);
     memcpy(tps->data, s, len + 1);
     tps->len = len;
+}
+
+static bool termpaintp_str_assign_mustcheck(termpaint_str *tps, const char *s) {
+    unsigned len = (unsigned)strlen(s);
+    if (!termpaintp_str_w_e_mustcheck(tps, len)) {
+        return false;
+    }
+    memcpy(tps->data, s, len + 1);
+    tps->len = len;
+    return true;
 }
 
 static void termpaintp_str_destroy(termpaint_str *tps) {
@@ -4703,7 +4726,7 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
     int_flush(integration);
 }
 
-void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, bool enabled) {
+bool termpaint_terminal_request_tagged_paste_mustcheck(termpaint_terminal *term, bool enabled) {
     if (enabled && !term->did_terminal_add_bracketedpaste_to_restore) {
         term->did_terminal_add_bracketedpaste_to_restore = true;
          termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033[?2004l");
@@ -4714,16 +4737,27 @@ void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, bool enab
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "bracketed paste");
     if (!sequences) {
-        termpaintp_oom(term);
+        return false;
     }
 
     if (enabled) {
-        termpaintp_str_assign(sequences, "\033[?2004h");
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?2004h")) {
+            return false;
+        }
     } else {
-        termpaintp_str_assign(sequences, "\033[?2004l");
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?2004l")) {
+            return false;
+        }
     }
     int_put_tps(integration, sequences);
     int_flush(integration);
+    return true;
+}
+
+void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, bool enabled) {
+    if (!termpaint_terminal_request_tagged_paste_mustcheck(term, enabled)) {
+        termpaintp_oom(term);
+    }
 }
 
 // --- tests
