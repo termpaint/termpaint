@@ -579,7 +579,7 @@ static void termpaintp_str_append_printable_n(termpaint_str *tps, const char *st
 #define TERMPAINTP_STR_SIZER_F(value) strlen(value)
 #define TERMPAINTP_STR_APPEND_F(tps, value, len) termpaintp_str_append_printable_n((tps), (value), (len))
 
-#define TERMPAINT_STR_ASSIGN3(tps, type1, value1, type2, value2, type3, value3)        \
+#define TERMPAINT_STR_ASSIGN3_MUSTCHECK(tps, type1, value1, type2, value2, type3, value3) \
     do {                                                                               \
         termpaint_str* tps_TMP_tps = (tps);                                            \
         TERMPAINTP_STR_STORE_##type1(tps_TMP_1, (value1));                             \
@@ -588,11 +588,12 @@ static void termpaintp_str_append_printable_n(termpaint_str *tps, const char *st
         unsigned tps_TMP_len1 = (unsigned)TERMPAINTP_STR_SIZER_##type1(tps_TMP_1);     \
         unsigned tps_TMP_len2 = (unsigned)TERMPAINTP_STR_SIZER_##type2(tps_TMP_2);     \
         unsigned tps_TMP_len3 = (unsigned)TERMPAINTP_STR_SIZER_##type3(tps_TMP_3);     \
-        termpaintp_str_w_e(tps_TMP_tps, tps_TMP_len1 + tps_TMP_len2 + tps_TMP_len3);   \
         tps_TMP_tps->len = 0;                                                          \
-        TERMPAINTP_STR_APPEND_##type1(tps_TMP_tps, tps_TMP_1, (tps_TMP_len1));         \
-        TERMPAINTP_STR_APPEND_##type2(tps_TMP_tps, tps_TMP_2, (tps_TMP_len2));         \
-        TERMPAINTP_STR_APPEND_##type3(tps_TMP_tps, tps_TMP_3, (tps_TMP_len3));         \
+        if (termpaintp_str_w_e_mustcheck(tps_TMP_tps, tps_TMP_len1 + tps_TMP_len2 + tps_TMP_len3)) {  \
+            TERMPAINTP_STR_APPEND_##type1(tps_TMP_tps, tps_TMP_1, (tps_TMP_len1));     \
+            TERMPAINTP_STR_APPEND_##type2(tps_TMP_tps, tps_TMP_2, (tps_TMP_len2));     \
+            TERMPAINTP_STR_APPEND_##type3(tps_TMP_tps, tps_TMP_3, (tps_TMP_len3));     \
+        }                                                                              \
     } while (0)                                                                        \
     /* end */
 
@@ -4598,10 +4599,10 @@ _Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const 
     return false;
 }
 
-void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, int mode) {
+bool termpaint_terminal_set_title_mustcheck(termpaint_terminal *term, const char *title, int mode) {
     if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
         if (!termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_TITLE_RESTORE)) {
-            return;
+            return true;
         }
     }
 
@@ -4616,18 +4617,28 @@ void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, i
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "title");
     if (!sequences) {
-        termpaintp_oom(term);
+        return false;
     }
 
-    TERMPAINT_STR_ASSIGN3(sequences, S, "\033]2;", F, title, S, "\033\\");
+    TERMPAINT_STR_ASSIGN3_MUSTCHECK(sequences, S, "\033]2;", F, title, S, "\033\\");
+    if (!sequences->len) {
+        return false;
+    }
     int_put_tps(integration, sequences);
     int_flush(integration);
+    return true;
 }
 
-void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *title, int mode) {
+void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, int mode) {
+    if (!termpaint_terminal_set_title_mustcheck(term, title, mode)) {
+        termpaintp_oom(term);
+    }
+}
+
+bool termpaint_terminal_set_icon_title_mustcheck(termpaint_terminal *term, const char *title, int mode) {
     if (mode != TERMPAINT_TITLE_MODE_PREFER_RESTORE) {
         if (!termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_TITLE_RESTORE)) {
-            return;
+            return true;
         }
     }
 
@@ -4642,12 +4653,22 @@ void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *tit
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "icon title");
     if (!sequences) {
-        termpaintp_oom(term);
+        return false;
     }
 
-    TERMPAINT_STR_ASSIGN3(sequences, S, "\033]1;", F, title, S, "\033\\");
+    TERMPAINT_STR_ASSIGN3_MUSTCHECK(sequences, S, "\033]1;", F, title, S, "\033\\");
+    if (!sequences->len) {
+        return false;
+    }
     int_put_tps(integration, sequences);
     int_flush(integration);
+    return true;
+}
+
+void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *title, int mode) {
+    if (!termpaint_terminal_set_icon_title_mustcheck(term, title, mode)) {
+        termpaintp_oom(term);
+    }
 }
 
 void termpaint_terminal_bell(termpaint_terminal *term) {

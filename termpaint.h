@@ -84,7 +84,9 @@ _tERMPAINT_PUBLIC void termpaint_terminal_reset_color(termpaint_terminal *term, 
 #define TERMPAINT_TITLE_MODE_PREFER_RESTORE 1
 
 _tERMPAINT_PUBLIC void termpaint_terminal_set_title(termpaint_terminal *term, const char* title, int mode);
+_tERMPAINT_PUBLIC _Bool termpaint_terminal_set_title_mustcheck(termpaint_terminal *term, const char* title, int mode);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char* title, int mode);
+_tERMPAINT_PUBLIC _Bool termpaint_terminal_set_icon_title_mustcheck(termpaint_terminal *term, const char* title, int mode);
 
 _tERMPAINT_PUBLIC void termpaint_terminal_bell(termpaint_terminal *term);
 
