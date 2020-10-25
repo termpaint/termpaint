@@ -364,6 +364,25 @@ static bool ustr_eq (const uchar *s1, const uchar *s2) {
 }
 
 
+static void int_debuglog_puts(termpaint_terminal *term, const char *str);
+
+static void termpaintp_oom(termpaint_terminal *term) {
+    int_debuglog_puts(term, "failed to allocate memory, aborting\n");
+    abort();
+}
+
+static void termpaintp_oom_int(termpaint_integration *integration) {
+    const char *msg = "failed to allocate memory, aborting\n";
+    if (integration->p->logging_func) {
+        integration->p->logging_func(integration, msg, strlen(msg));
+    }
+    abort();
+}
+
+static void termpaintp_oom_nolog(void) {
+    abort();
+}
+
 static int replace_unusable_codepoints(int codepoint) {
     if (codepoint < 32
        || (codepoint >= 0x7f && codepoint < 0xa0)) {
@@ -432,6 +451,9 @@ static void termpaintp_str_w_e(termpaint_str *tps, unsigned len) {
         free(tps->data);
         tps->alloc = len + 1;
         tps->data = malloc(tps->alloc);
+        if (!tps->data) {
+            termpaintp_oom_nolog();
+        }
     }
 }
 
@@ -439,6 +461,9 @@ static void termpaintp_str_realloc(termpaint_str *tps, unsigned len) {
     if (tps->alloc <= len) {
         tps->alloc = len + 1;
         tps->data = realloc(tps->data, tps->alloc);
+        if (!tps->data) {
+            termpaintp_oom_nolog();
+        }
     }
 }
 
@@ -526,6 +551,9 @@ _tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integra
                                                   void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
                                                   void (*flush)(struct termpaint_integration_ *integration)) {
     integration->p = calloc(1, sizeof(termpaint_integration_private));
+    if (!integration->p) {
+        termpaintp_oom_nolog();
+    }
     integration->p->free = free;
     integration->p->write = write;
     integration->p->flush = flush;
@@ -587,6 +615,9 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
     free(surface->cells_last_flush);
     surface->cells_last_flush = nullptr;
     surface->cells = calloc(1, bytes);
+    if (!surface->cells) {
+        termpaintp_oom(surface->terminal);
+    }
 }
 
 static inline cell* termpaintp_getcell(const termpaint_surface *surface, int x, int y) {
@@ -618,6 +649,9 @@ static void termpaintp_set_overflow_text(termpaint_surface *surface, cell *dst_c
     // hash_ensure needs to be done before touching text_len, because it can cause garbage collection which would
     // see an inconistant state if text_len is already set to zero.
     void* overflow_ptr = termpaintp_hash_ensure(&surface->overflow_text, data);
+    if (!overflow_ptr) {
+        termpaintp_oom(surface->terminal);
+    }
     dst_cell->text_len = 0;
     dst_cell->text_overflow = overflow_ptr;
 }
@@ -646,6 +680,9 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
 
     if (!surface->patches) {
         surface->patches = calloc(255, sizeof(termpaintp_patch));
+        if (!surface->patches) {
+            termpaintp_oom(surface->terminal);
+        }
     }
 
     uint32_t setup_hash = termpaintp_hash_fnv1a(setup);
@@ -709,7 +746,13 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
         surface->patches[free_slot].setup_hash = setup_hash;
         surface->patches[free_slot].cleanup_hash = cleanup_hash;
         surface->patches[free_slot].setup = ustrdup(setup);
+        if (!surface->patches[free_slot].setup) {
+            termpaintp_oom(surface->terminal);
+        }
         surface->patches[free_slot].cleanup = ustrdup(cleanup);
+        if (!surface->patches[free_slot].cleanup) {
+            termpaintp_oom(surface->terminal);
+        }
         return free_slot + 1;
     }
 
@@ -1152,6 +1195,9 @@ termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int 
         BUG("termpaint_terminal_new_surface with invalid terminal pointer");
     }
     termpaint_surface *ret = calloc(1, sizeof(termpaint_surface));
+    if (!ret) {
+        termpaintp_oom(term);
+    }
     termpaintp_surface_init(ret, term);
     termpaintp_collapse(ret);
     termpaintp_resize(ret, width, height);
@@ -1778,6 +1824,9 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal);
 
 termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
+    if (!ret) {
+        termpaintp_oom_int(integration);
+    }
     termpaintp_surface_init(&ret->primary, ret);
     ret->primary.primary = true;
     // start collapsed
@@ -1802,6 +1851,9 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->terminal_type_confidence = 0;
     ret->max_csi_parameters = 15;
     ret->input = termpaint_input_new();
+    if (!ret->input) {
+        termpaintp_oom_int(integration);
+    }
     termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
 
@@ -2085,6 +2137,9 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     if (!term->primary.cells_last_flush) {
         full_repaint = true;
         term->primary.cells_last_flush = calloc(1, term->primary.cells_allocated * sizeof(cell));
+        if (!term->primary.cells_last_flush) {
+            termpaintp_oom(term);
+        }
     }
     termpaintp_terminal_hide_cursor(term);
     int_puts(integration, "\e[H");
@@ -2496,6 +2551,9 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
     char buff[100];
     sprintf(buff, "%d", color_slot);
     termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
+    if (!entry) {
+        termpaintp_oom(term);
+    }
     sprintf(buff, "#%02x%02x%02x", r, g, b);
     if (entry->requested && ustrcmp(entry->requested, (uchar*)buff) == 0) {
         return;
@@ -2505,6 +2563,9 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
         // even requesting a color report does not allow to restore this, so just reset.
         // TODO: needs a sensible value for saved.
         entry->saved = (uchar*)strdup("");
+        if (!entry->saved) {
+            termpaintp_oom(term);
+        }
         termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]112\033\\");
         int_restore_sequence_updated(term);
     }
@@ -2526,12 +2587,18 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
     }
     free(entry->requested);
     entry->requested = (uchar*)strdup(buff);
+    if (!entry->requested) {
+        termpaintp_oom(term);
+    }
 }
 
 void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
     char buff[100];
     sprintf(buff, "%d", color_slot);
     termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
+    if (!entry) {
+        termpaintp_oom(term);
+    }
     if (entry->saved) {
         if (!entry->dirty) {
             entry->dirty = true;
@@ -2541,6 +2608,9 @@ void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
         free(entry->requested);
         if (color_slot != TERMPAINT_COLOR_SLOT_CURSOR) {
             entry->requested = ustrdup(entry->saved);
+            if (!entry->requested) {
+                termpaintp_oom(term);
+            }
         } else {
             entry->requested = nullptr;
         }
@@ -2841,6 +2911,9 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
             char buff[100];
             sprintf(buff, "%d", event->color_slot_report.slot);
             termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
+            if (!entry) {
+                termpaintp_oom(term);
+            }
             if (!entry->saved) {
                 entry->saved = (uchar*)strndup(event->color_slot_report.color,
                                                event->color_slot_report.length);
@@ -3095,6 +3168,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                 free(terminal->auto_detect_sec_device_attributes);
                 terminal->auto_detect_sec_device_attributes = malloc(event->raw.length + 1);
+                if (!terminal->auto_detect_sec_device_attributes) {
+                    termpaintp_oom(terminal);
+                }
                 memcpy(terminal->auto_detect_sec_device_attributes, event->raw.string, event->raw.length);
                 terminal->auto_detect_sec_device_attributes[event->raw.length] = 0;
                 if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
@@ -3403,6 +3479,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->ad_state = AD_SELF_REPORTING;
                 free(terminal->terminal_self_reported_name_version);
                 terminal->terminal_self_reported_name_version = strndup(event->raw.string, event->raw.length);
+                if (!terminal->terminal_self_reported_name_version) {
+                    termpaintp_oom(terminal);
+                }
                 if (termpaintp_string_prefix((const uchar*)"terminology ", (const uchar*)event->raw.string, event->raw.length)) {
                     terminal->terminal_type = TT_TERMINOLOGY;
                 }
@@ -3892,12 +3971,19 @@ void termpaint_terminal_unpause(termpaint_terminal *term) {
 }
 
 static termpaint_str* termpaintp_terminal_get_unpause_slot(termpaint_terminal *term, const char *name) {
-    return &((termpaint_unpause_snippet*)termpaintp_hash_ensure(&term->unpause_snippets,
-                                                                (const unsigned char*)name))->sequences;
+    termpaint_unpause_snippet *snippet = termpaintp_hash_ensure(&term->unpause_snippets,
+                                                                (const unsigned char*)name);
+    if (!snippet) {
+        return nullptr;
+    }
+    return &(snippet)->sequences;
 }
 
 termpaint_attr *termpaint_attr_new(unsigned fg, unsigned bg) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
+    if (!attr) {
+        termpaintp_oom_nolog();
+    }
     attr->fg_color = fg;
     attr->bg_color = bg;
     attr->deco_color = TERMPAINT_DEFAULT_COLOR;
@@ -3912,6 +3998,9 @@ void termpaint_attr_free(termpaint_attr *attr) {
 
 termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
+    if (!attr) {
+        termpaintp_oom_nolog();
+    }
     attr->fg_color = orig->fg_color;
     attr->bg_color = orig->bg_color;
     attr->deco_color = orig->deco_color;
@@ -3920,10 +4009,16 @@ termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
 
     if (orig->patch_setup) {
         attr->patch_setup = ustrdup(orig->patch_setup);
+        if (!attr->patch_setup) {
+            termpaintp_oom_nolog();
+        }
         attr->patch_optimize = orig->patch_optimize;
     }
     if (orig->patch_cleanup) {
         attr->patch_cleanup = ustrdup(orig->patch_cleanup);
+        if (!attr->patch_cleanup) {
+            termpaintp_oom_nolog();
+        }
         attr->patch_optimize = orig->patch_optimize;
     }
     return attr;
@@ -3981,7 +4076,13 @@ void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *s
     } else {
         attr->patch_optimize = optimize;
         attr->patch_setup = (uchar*)strdup(setup);
+        if (!attr->patch_setup) {
+            termpaintp_oom_nolog();
+        }
         attr->patch_cleanup = (uchar*)strdup(cleanup);
+        if (!attr->patch_cleanup) {
+            termpaintp_oom_nolog();
+        }
     }
 }
 
@@ -3994,6 +4095,9 @@ termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surfa
         BUG("termpaint_text_measurement_new called without valid surface");
     }
     termpaint_text_measurement *m = malloc(sizeof(termpaint_text_measurement));
+    if (!m) {
+        termpaintp_oom(surface->terminal);
+    }
     termpaint_text_measurement_reset(m);
     return m;
 }
@@ -4333,6 +4437,9 @@ void termpaint_terminal_set_title(termpaint_terminal *term, const char *title, i
     }
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "title");
+    if (!sequences) {
+        termpaintp_oom(term);
+    }
 
     TERMPAINT_STR_ASSIGN3(sequences, S, "\033]2;", F, title, S, "\033\\");
     int_put_tps(integration, sequences);
@@ -4356,6 +4463,9 @@ void termpaint_terminal_set_icon_title(termpaint_terminal *term, const char *tit
     }
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "icon title");
+    if (!sequences) {
+        termpaintp_oom(term);
+    }
 
     TERMPAINT_STR_ASSIGN3(sequences, S, "\033]1;", F, title, S, "\033\\");
     int_put_tps(integration, sequences);
@@ -4386,6 +4496,9 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
             int_puts(integration, DISABLE_MOUSE_SEQUENCE);
             int_flush(integration);
             termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "mouse");
+            if (!sequences) {
+                termpaintp_oom(term);
+            }
             termpaintp_str_assign(sequences, "");
         }
         return;
@@ -4396,6 +4509,9 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
     }
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "mouse");
+    if (!sequences) {
+        termpaintp_oom(term);
+    }
 
     if (mouse_mode == TERMPAINT_MOUSE_MODE_CLICKS) {
         termpaintp_str_assign(sequences, "\033[?1002l\033[?1003l\033[?1000h");
@@ -4419,6 +4535,9 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
     termpaint_integration *integration = term->integration;
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "focus report");
+    if (!sequences) {
+        termpaintp_oom(term);
+    }
 
     if (enabled) {
         termpaintp_str_assign(sequences, "\033[?1004h");
@@ -4439,6 +4558,9 @@ void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, bool enab
     termpaint_integration *integration = term->integration;
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "bracketed paste");
+    if (!sequences) {
+        termpaintp_oom(term);
+    }
 
     if (enabled) {
         termpaintp_str_assign(sequences, "\033[?2004h");
