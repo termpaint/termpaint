@@ -300,7 +300,7 @@ typedef struct termpaint_terminal_ {
     termpaint_hash colors;
     termpaint_color_entry *colors_dirty;
 
-    unsigned char *restore_seq;
+    termpaint_str restore_seq;
     auto_detect_state ad_state;
     // additional auto detect state machine temporary space
     int glitch_cursor_x;
@@ -405,18 +405,18 @@ static bool termpaintp_mem_ascii_case_insensitive_equals(const char *a, const ch
     return true;
 }
 
-static void termpaintp_prepend_str(unsigned char **s, const unsigned char* src) {
-    size_t s_len = 0;
-    if (*s) {
-        s_len = ustrlen(*s);
-    }
+static void termpaintp_str_realloc(termpaint_str *tps, unsigned len);
+
+static void termpaintp_prepend_str(termpaint_str *tps, const unsigned char* src) {
+    size_t old_len = tps->len;
     size_t src_len = ustrlen(src);
-    *s = realloc(*s, s_len + src_len + 1);
-    if (s_len) {
-        memmove(*s + src_len, *s, s_len);
+    termpaintp_str_realloc(tps, old_len + src_len);
+    if (old_len) {
+        memmove(tps->data + src_len, tps->data, old_len);
     }
-    (*s)[src_len + s_len] = 0;
-    memcpy(*s, src, src_len);
+    tps->data[src_len + old_len] = 0;
+    memcpy(tps->data, src, src_len);
+    tps->len = src_len + old_len;
 }
 
 static bool termpaintp_str_ends_with(const unsigned char* str, const unsigned char* postfix) {
@@ -1691,7 +1691,7 @@ static void int_awaiting_response(termpaint_integration *integration) {
 static void int_restore_sequence_updated(termpaint_terminal *term) {
     termpaint_integration_private *vtbl = term->integration_vtbl;
     if (vtbl->restore_sequence_updated) {
-        vtbl->restore_sequence_updated(term->integration, (char*)term->restore_seq, (int)ustrlen(term->restore_seq));
+        vtbl->restore_sequence_updated(term->integration, (char*)term->restore_seq.data, term->restore_seq.len);
     }
 }
 
@@ -1823,8 +1823,7 @@ void termpaint_terminal_free(termpaint_terminal *term) {
     free(term->terminal_self_reported_name_version);
     term->terminal_self_reported_name_version = nullptr;
     termpaintp_surface_destroy(&term->primary);
-    free(term->restore_seq);
-    term->restore_seq = nullptr;
+    termpaintp_str_destroy(&term->restore_seq);
     termpaint_input_free(term->input);
     term->input = nullptr;
     term->integration_vtbl->free(term->integration);
@@ -1839,8 +1838,8 @@ void termpaint_terminal_free(termpaint_terminal *term) {
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
 
-    if (term->restore_seq) {
-        int_uputs(integration, term->restore_seq);
+    if (term->restore_seq.len) {
+        int_write(integration, (const char*)term->restore_seq.data, term->restore_seq.len);
     }
     int_flush(integration);
 
@@ -3831,14 +3830,14 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
 }
 
 const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) {
-    return (const char*)(term->restore_seq ? term->restore_seq : (const uchar*)"");
+    return (const char*)(term->restore_seq.len ? term->restore_seq.data : (const uchar*)"");
 }
 
 void termpaint_terminal_pause(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
 
-    if (term->restore_seq) {
-        int_uputs(integration, term->restore_seq);
+    if (term->restore_seq.len) {
+        int_write(integration, (const char*)term->restore_seq.data, term->restore_seq.len);
     }
     int_flush(integration);
 }
