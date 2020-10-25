@@ -296,6 +296,8 @@ typedef struct termpaint_terminal_ {
     termpaint_str unpause_basic_setup;
     termpaint_hash unpause_snippets;
 
+    bool glitch_on_oom;
+
     int cursor_prev_data; // -1 -> no touched yet, restore not setup, -2 -> force resend sequence (e.g. atfer unpause)
 
     termpaint_hash colors;
@@ -366,6 +368,10 @@ static bool ustr_eq (const uchar *s1, const uchar *s2) {
 
 
 static void int_debuglog_puts(termpaint_terminal *term, const char *str);
+
+static void termpaintp_oom_log_only(termpaint_terminal *term) {
+    int_debuglog_puts(term, "failed to allocate memory, output will be incomplete\n");
+}
 
 static void termpaintp_oom(termpaint_terminal *term) {
     int_debuglog_puts(term, "failed to allocate memory, aborting\n");
@@ -694,7 +700,13 @@ static void termpaintp_set_overflow_text(termpaint_surface *surface, cell *dst_c
     // see an inconistant state if text_len is already set to zero.
     void* overflow_ptr = termpaintp_hash_ensure(&surface->overflow_text, data);
     if (!overflow_ptr) {
-        termpaintp_oom(surface->terminal);
+        if (!surface->terminal->glitch_on_oom) {
+            termpaintp_oom(surface->terminal);
+        } else {
+            termpaintp_oom_log_only(surface->terminal);
+            dst_cell->text_len = 1;
+            dst_cell->text[0] = '?';
+        }
     }
     dst_cell->text_len = 0;
     dst_cell->text_overflow = overflow_ptr;
@@ -725,7 +737,12 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
     if (!surface->patches) {
         surface->patches = calloc(255, sizeof(termpaintp_patch));
         if (!surface->patches) {
-            termpaintp_oom(surface->terminal);
+            if (!surface->terminal->glitch_on_oom) {
+                termpaintp_oom(surface->terminal);
+            } else {
+                termpaintp_oom_log_only(surface->terminal);
+                return 0;
+            }
         }
     }
 
@@ -786,17 +803,24 @@ static uint8_t termpaintp_surface_ensure_patch_idx(termpaint_surface *surface, b
     }
 
     if (free_slot != -1) {
+        unsigned char *setup_copy = ustrdup(setup);
+        unsigned char *cleanup_copy = ustrdup(cleanup);
+        if (!setup_copy || !cleanup_copy) {
+            if (!surface->terminal->glitch_on_oom) {
+                termpaintp_oom(surface->terminal);
+            } else {
+                free(setup_copy);
+                free(cleanup_copy);
+                termpaintp_oom_log_only(surface->terminal);
+                return 0;
+            }
+        }
         surface->patches[free_slot].optimize = optimize;
         surface->patches[free_slot].setup_hash = setup_hash;
         surface->patches[free_slot].cleanup_hash = cleanup_hash;
-        surface->patches[free_slot].setup = ustrdup(setup);
-        if (!surface->patches[free_slot].setup) {
-            termpaintp_oom(surface->terminal);
-        }
-        surface->patches[free_slot].cleanup = ustrdup(cleanup);
-        if (!surface->patches[free_slot].cleanup) {
-            termpaintp_oom(surface->terminal);
-        }
+        surface->patches[free_slot].setup = setup_copy;
+        surface->patches[free_slot].cleanup = cleanup_copy;
+
         return free_slot + 1;
     }
 
@@ -1974,6 +1998,10 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
         termpaintp_oom_int(integration);
     }
     return ret;
+}
+
+void termpaint_terminal_glitch_on_out_of_memory(termpaint_terminal *term) {
+    term->glitch_on_oom = true;
 }
 
 void termpaint_terminal_free(termpaint_terminal *term) {

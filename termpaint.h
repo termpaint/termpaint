@@ -147,6 +147,8 @@ _tERMPAINT_PUBLIC _Bool termpaint_terminal_should_use_truecolor(termpaint_termin
 _tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
 
+_tERMPAINT_PUBLIC void termpaint_terminal_glitch_on_out_of_memory(termpaint_terminal *term);
+
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(unsigned fg, unsigned bg);
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new_or_nullptr(unsigned fg, unsigned bg);
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone(const termpaint_attr* attr);
