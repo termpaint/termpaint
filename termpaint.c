@@ -264,7 +264,7 @@ typedef struct termpaint_terminal_ {
     bool force_full_repaint;
     bool data_pending_after_input_received : 1;
     bool request_repaint : 1;
-    unsigned char *auto_detect_sec_device_attributes;
+    termpaint_str auto_detect_sec_device_attributes;
 
     int terminal_type;
     int terminal_version;
@@ -1953,6 +1953,15 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
         return nullptr;
     }
 
+    if (!termpaintp_str_preallocate(&ret->auto_detect_sec_device_attributes, 64)) {
+        termpaintp_str_destroy(&ret->terminal_self_reported_name_version);
+        termpaintp_str_destroy(&ret->restore_seq);
+        termpaintp_str_destroy(&ret->unpause_basic_setup);
+        termpaint_input_free(ret->input);
+        free(ret);
+        return nullptr;
+    }
+
     termpaintp_prepend_str(&ret->restore_seq, (const uchar*)"\033[?25h\033[m");
     int_restore_sequence_updated(ret);
 
@@ -1968,8 +1977,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 }
 
 void termpaint_terminal_free(termpaint_terminal *term) {
-    free(term->auto_detect_sec_device_attributes);
-    term->auto_detect_sec_device_attributes = nullptr;
+    termpaintp_str_destroy(&term->auto_detect_sec_device_attributes);
     termpaintp_str_destroy(&term->terminal_self_reported_name_version);
     termpaintp_surface_destroy(&term->primary);
     termpaintp_str_destroy(&term->restore_seq);
@@ -2768,15 +2776,15 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
     } else if (term->terminal_type == TT_TOODUMB) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
     } else if (term->terminal_type == TT_BASE) {
-        if (!term->auto_detect_sec_device_attributes) {
+        if (!term->auto_detect_sec_device_attributes.len) {
             // This is primarily because of linux vc, see somment in TT_LINUX for details.
             // It's fairly easy for other terminals to work around by implementing ESC [ >c or ESC [ =c
             termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_EXTENDED_CHARSET);
         }
     } else if (term->terminal_type == TT_VTE) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
-        const unsigned char* data = term->auto_detect_sec_device_attributes;
-        if (data && ustrlen(data) > 11) {
+        if (term->auto_detect_sec_device_attributes.len > 11) {
+            const unsigned char* data = term->auto_detect_sec_device_attributes.data;
             bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
             bool vte_old = memcmp(data, "\033[>1;", 5) == 0;
             if (vte_gt0_54 || vte_old) {
@@ -2818,8 +2826,8 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
             termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         }
     } else if (term->terminal_type == TT_XTERM) {
-        const unsigned char* data = term->auto_detect_sec_device_attributes;
-        if (data && ustrlen(data) > 10) {
+        if (term->auto_detect_sec_device_attributes.len > 10) {
+            const unsigned char* data = term->auto_detect_sec_device_attributes.data;
             while (*data != ';' && *data != 0) {
                 ++data;
             }
@@ -2849,8 +2857,8 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // But that's true regardless of state of bracketed paste.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
     } else if (term->terminal_type == TT_SCREEN) {
-        const unsigned char* data = term->auto_detect_sec_device_attributes;
-        if (data && ustrlen(data) > 10 && memcmp(data, "\033[>83;", 6) == 0) {
+        const unsigned char* data = term->auto_detect_sec_device_attributes.data;
+        if (term->auto_detect_sec_device_attributes.len > 10 && memcmp(data, "\033[>83;", 6) == 0) {
             data += 6;
             int version = 0;
             while (termpaintp_char_ascii_num(*data)) {
@@ -2911,8 +2919,8 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE_BAR);
     } else if (term->terminal_type == TT_MINTTY) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
-        const unsigned char* data = term->auto_detect_sec_device_attributes;
-        if (data && ustrlen(data) > 10 && memcmp(data, "\033[>77;", 6) == 0) {
+        const unsigned char* data = term->auto_detect_sec_device_attributes.data;
+        if (term->auto_detect_sec_device_attributes.len > 10 && memcmp(data, "\033[>77;", 6) == 0) {
             data += 6;
             int version = 0;
             while (termpaintp_char_ascii_num(*data)) {
@@ -2927,10 +2935,10 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     } else if (term->terminal_type == TT_KITTY) {
-        if (term->auto_detect_sec_device_attributes
-                &&termpaintp_string_prefix((const uchar*)"\033[>1;", term->auto_detect_sec_device_attributes, ustrlen(term->auto_detect_sec_device_attributes))) {
+        if (term->auto_detect_sec_device_attributes.len > 5
+                && termpaintp_string_prefix((const uchar*)"\033[>1;", term->auto_detect_sec_device_attributes.data, term->auto_detect_sec_device_attributes.len)) {
             int val = 0;
-            for (const unsigned char *tmp = term->auto_detect_sec_device_attributes + 5; *tmp; tmp++) {
+            for (const unsigned char *tmp = term->auto_detect_sec_device_attributes.data + 5; *tmp; tmp++) {
                 if (termpaintp_char_ascii_num(*tmp)) {
                     val = val * 10 + (*tmp - '0');
                 } else if (*tmp == ';') {
@@ -3152,11 +3160,11 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
     bool might_be_kitty = false;
     bool might_be_iterm2 = false;
     bool might_be_mlterm = false;
-    if (terminal->auto_detect_sec_device_attributes) {
-        const int attr_len = ustrlen(terminal->auto_detect_sec_device_attributes);
-        if (termpaintp_string_prefix((const uchar*)"\033[>1;", terminal->auto_detect_sec_device_attributes, attr_len)) {
+    if (terminal->auto_detect_sec_device_attributes.len) {
+        const int attr_len = terminal->auto_detect_sec_device_attributes.len;
+        if (termpaintp_string_prefix((const uchar*)"\033[>1;", terminal->auto_detect_sec_device_attributes.data, attr_len)) {
             int val = 0;
-            for (const unsigned char *tmp = terminal->auto_detect_sec_device_attributes + 5; *tmp; tmp++) {
+            for (const unsigned char *tmp = terminal->auto_detect_sec_device_attributes.data + 5; *tmp; tmp++) {
                 if (termpaintp_char_ascii_num(*tmp)) {
                     val = val * 10 + (*tmp - '0');
                 } else if (*tmp == ';') {
@@ -3172,10 +3180,10 @@ static void termpaintp_terminal_auto_detect_prepare_self_reporting(termpaint_ter
 
         might_be_iterm2 = (!terminal->seen_dec_terminal_param
                            && attr_len == 10
-                           && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>0;95;0c", 10) == 0);
+                           && memcmp(terminal->auto_detect_sec_device_attributes.data, "\033[>0;95;0c", 10) == 0);
         might_be_mlterm = (terminal->seen_dec_terminal_param
                            && attr_len == 12
-                           && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>24;279;0c", 10) == 0);
+                           && memcmp(terminal->auto_detect_sec_device_attributes.data, "\033[>24;279;0c", 10) == 0);
     }
     if (might_be_kitty || might_be_iterm2 || might_be_mlterm) {
         int_puts(integration, "\033P+q544e\033\\");
@@ -3257,13 +3265,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
         case AD_BASIC_CURPOS_RECVED:
             if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
                 termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
-                free(terminal->auto_detect_sec_device_attributes);
-                terminal->auto_detect_sec_device_attributes = malloc(event->raw.length + 1);
-                if (!terminal->auto_detect_sec_device_attributes) {
-                    termpaintp_oom(terminal);
-                }
-                memcpy(terminal->auto_detect_sec_device_attributes, event->raw.string, event->raw.length);
-                terminal->auto_detect_sec_device_attributes[event->raw.length] = 0;
+                termpaintp_str_assign_n(&terminal->auto_detect_sec_device_attributes, event->raw.string, event->raw.length);
                 if (event->raw.length > 6 && memcmp("\033[>85;", event->raw.string, 6) == 0) {
                     // urxvt source says: first parameter is 'U' / 85 for urxvt (except for 7.[34])
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS);
@@ -3411,13 +3413,13 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         // xterm uses this since 336. But this could be something else too.
                         // Microsoft Terminal uses this as well.
                         terminal->terminal_type = TT_BASE;
-                        if (terminal->auto_detect_sec_device_attributes
-                                && ustr_eq(terminal->auto_detect_sec_device_attributes, (const uchar*)"\033[>0;10;1c")) {
+                        if (terminal->auto_detect_sec_device_attributes.len
+                                && ustr_eq(terminal->auto_detect_sec_device_attributes.data, (const uchar*)"\033[>0;10;1c")) {
                             terminal->terminal_type = TT_MSFT_TERMINAL;
                             terminal->terminal_type_confidence = 1;
                         } else {
-                            const unsigned char* data = terminal->auto_detect_sec_device_attributes;
-                            if (data && ustrlen(data) > 10) {
+                            if (terminal->auto_detect_sec_device_attributes.len > 10) {
+                                const unsigned char* data = terminal->auto_detect_sec_device_attributes.data;
                                 while (*data != ';' && *data != 0) {
                                     ++data;
                                 }
@@ -3444,16 +3446,15 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     terminal->ad_state = AD_FP1_REQ_TERMID_RECVED;
                 } else if (event->raw.length == 1 && event->raw.string[0] == '0') {
                     // xterm uses this between 280 and 335. But this could be something else too.
-                    if (terminal->auto_detect_sec_device_attributes
-                            && ustrlen(terminal->auto_detect_sec_device_attributes) == 12
-                            && memcmp(terminal->auto_detect_sec_device_attributes, "\033[>41;", 6) == 0
-                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes[6])
-                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes[7])
-                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes[8])
-                            && memcmp(terminal->auto_detect_sec_device_attributes + 9, ";0c", 3) == 0) {
-                        int version = (terminal->auto_detect_sec_device_attributes[6] - '0') * 100
-                                + (terminal->auto_detect_sec_device_attributes[7] - '0') * 10
-                                + terminal->auto_detect_sec_device_attributes[8] - '0';
+                    if (terminal->auto_detect_sec_device_attributes.len == 12
+                            && memcmp(terminal->auto_detect_sec_device_attributes.data, "\033[>41;", 6) == 0
+                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes.data[6])
+                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes.data[7])
+                            && termpaintp_char_ascii_num(terminal->auto_detect_sec_device_attributes.data[8])
+                            && memcmp(terminal->auto_detect_sec_device_attributes.data + 9, ";0c", 3) == 0) {
+                        int version = (terminal->auto_detect_sec_device_attributes.data[6] - '0') * 100
+                                + (terminal->auto_detect_sec_device_attributes.data[7] - '0') * 10
+                                + terminal->auto_detect_sec_device_attributes.data[8] - '0';
                         if (280 <= version && version <= 335) {
                             terminal->terminal_type = TT_XTERM;
                             terminal->terminal_type_confidence = 1;
@@ -3690,10 +3691,10 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 }
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 terminal->seen_dec_terminal_param = true;
-                if (terminal->auto_detect_sec_device_attributes
+                if (terminal->auto_detect_sec_device_attributes.len
                         && termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT)
                         && termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_CSI_EQUALS)
-                        && termpaintp_str_ends_with(terminal->auto_detect_sec_device_attributes, (const uchar*)";0c")) {
+                        && termpaintp_str_ends_with(terminal->auto_detect_sec_device_attributes.data, (const uchar*)";0c")) {
                     terminal->terminal_type = TT_XTERM;
                 }
                 return true;
@@ -3708,7 +3709,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_DECREQTPARM) {
                 terminal->seen_dec_terminal_param = true;
-                if (terminal->auto_detect_sec_device_attributes && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0
+                if (terminal->auto_detect_sec_device_attributes.len && event->raw.length == 4 && memcmp(event->raw.string, "\033[?x", 4) == 0
                         && terminal->glitch_cursor_y == -1) {
                     // this triggers on VTE < 0.54 which has fragile dictionary based parsing.
                     // The self reporting stage would cause misparsing, so skip it here.
@@ -3764,7 +3765,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                     return true;
                 }
             } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
-                if (terminal->auto_detect_sec_device_attributes) {
+                if (terminal->auto_detect_sec_device_attributes.len) {
                     terminal->terminal_type = TT_KONSOLE;
                 } else if (terminal->terminal_type_confidence == 0) {
                     terminal->terminal_type = TT_BASE;
