@@ -43,6 +43,10 @@ _tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integra
                                                   void (*free)(struct termpaint_integration_ *integration),
                                                   void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
                                                   void (*flush)(struct termpaint_integration_ *integration));
+_tERMPAINT_PUBLIC _Bool termpaint_integration_init_mustcheck(termpaint_integration *integration,
+                                                           void (*free)(struct termpaint_integration_ *integration),
+                                                           void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
+                                                           void (*flush)(struct termpaint_integration_ *integration));
 _tERMPAINT_PUBLIC void termpaint_integration_deinit(termpaint_integration *integration);
 _tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(struct termpaint_integration_ *integration));
 _tERMPAINT_PUBLIC void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(struct termpaint_integration_ *integration));
@@ -53,6 +57,7 @@ _tERMPAINT_PUBLIC void termpaint_integration_set_logging_func(termpaint_integrat
 // getters go here if need arises
 
 _tERMPAINT_PUBLIC termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration);
+_tERMPAINT_PUBLIC termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *integration);
 _tERMPAINT_PUBLIC void termpaint_terminal_free(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_free_with_restore(termpaint_terminal *term);
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term);
@@ -143,12 +148,15 @@ _tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
 
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(unsigned fg, unsigned bg);
+_tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new_or_nullptr(unsigned fg, unsigned bg);
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone(const termpaint_attr* attr);
+_tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_clone_or_nullptr(const termpaint_attr* attr);
 _tERMPAINT_PUBLIC void termpaint_attr_free(termpaint_attr* attr);
 _tERMPAINT_PUBLIC void termpaint_attr_set_fg(termpaint_attr* attr, unsigned fg);
 _tERMPAINT_PUBLIC void termpaint_attr_set_bg(termpaint_attr* attr, unsigned bg);
 _tERMPAINT_PUBLIC void termpaint_attr_set_deco(termpaint_attr* attr, unsigned deco_color);
 _tERMPAINT_PUBLIC void termpaint_attr_set_patch(termpaint_attr* attr, _Bool optimize, const char *setup, const char * cleanup);
+_tERMPAINT_PUBLIC _Bool termpaint_attr_set_patch_mustcheck(termpaint_attr* attr, _Bool optimize, const char *setup, const char * cleanup);
 #define TERMPAINT_DEFAULT_COLOR 0x0000000
 #define TERMPAINT_NAMED_COLOR 0x2100000
 
@@ -190,7 +198,9 @@ _tERMPAINT_PUBLIC void termpaint_attr_reset_style(termpaint_attr* attr);
 #define TERMPAINT_ERASED "\x7f"
 
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height);
+_tERMPAINT_PUBLIC termpaint_surface *termpaint_terminal_new_surface_or_nullptr(termpaint_terminal *term, int width, int height);
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_surface_new_surface(termpaint_surface *surface, int width, int height);
+_tERMPAINT_PUBLIC termpaint_surface *termpaint_surface_new_surface_or_nullptr(termpaint_surface *surface, int width, int height);
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_surface_duplicate(termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_surface_free(termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
@@ -235,6 +245,7 @@ _tERMPAINT_PUBLIC _Bool termpaint_surface_peek_softwrap_marker(const termpaint_s
 _tERMPAINT_PUBLIC _Bool termpaint_surface_same_contents(const termpaint_surface *surface1, const termpaint_surface *surface2);
 
 _tERMPAINT_PUBLIC termpaint_text_measurement* termpaint_text_measurement_new(const termpaint_surface *surface);
+_tERMPAINT_PUBLIC termpaint_text_measurement* termpaint_text_measurement_new_or_nullptr(const termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_free(termpaint_text_measurement *m);
 _tERMPAINT_PUBLIC void termpaint_text_measurement_reset(termpaint_text_measurement *m);
 

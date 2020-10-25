@@ -445,6 +445,20 @@ static bool termpaintp_str_ends_with(const unsigned char* str, const unsigned ch
     return memcmp(str + str_len - postfix_len, postfix, postfix_len) == 0;
 }
 
+static bool termpaintp_str_preallocate(termpaint_str *tps, unsigned len) {
+    if (tps->len || tps->data) {
+        BUG("preallocation only valid on unused tps");
+    }
+    tps->alloc = len + 1;
+    tps->data = malloc(tps->alloc);
+    if (!tps->data) {
+        tps->alloc = 0;
+        return false;
+    }
+    tps->data[0] = 0;
+    return true;
+}
+
 // make sure tps has len capacity. contents of *data is undefined after this
 static void termpaintp_str_w_e(termpaint_str *tps, unsigned len) {
     if (tps->alloc <= len) {
@@ -546,17 +560,27 @@ static void termpaintp_str_append_printable_n(termpaint_str *tps, const char *st
     /* end */
 
 
-_tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integration,
-                                                  void (*free)(struct termpaint_integration_ *integration),
-                                                  void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
-                                                  void (*flush)(struct termpaint_integration_ *integration)) {
+_tERMPAINT_PUBLIC bool termpaint_integration_init_mustcheck(termpaint_integration *integration,
+                                                           void (*free)(struct termpaint_integration_ *integration),
+                                                           void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
+                                                           void (*flush)(struct termpaint_integration_ *integration)) {
     integration->p = calloc(1, sizeof(termpaint_integration_private));
     if (!integration->p) {
-        termpaintp_oom_nolog();
+        return false;
     }
     integration->p->free = free;
     integration->p->write = write;
     integration->p->flush = flush;
+    return true;
+}
+
+_tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integration,
+                                                  void (*free)(struct termpaint_integration_ *integration),
+                                                  void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
+                                                  void (*flush)(struct termpaint_integration_ *integration)) {
+    if (!termpaint_integration_init_mustcheck(integration, free, write, flush)) {
+        termpaintp_oom_nolog();
+    }
 }
 
 _tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(struct termpaint_integration_ *integration)) {
@@ -1190,13 +1214,13 @@ static void termpaintp_surface_init(termpaint_surface *surface, termpaint_termin
     surface->terminal = term;
 }
 
-termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height) {
+termpaint_surface *termpaint_terminal_new_surface_or_nullptr(termpaint_terminal *term, int width, int height) {
     if (!term) {
         BUG("termpaint_terminal_new_surface with invalid terminal pointer");
     }
     termpaint_surface *ret = calloc(1, sizeof(termpaint_surface));
     if (!ret) {
-        termpaintp_oom(term);
+        return nullptr;
     }
     termpaintp_surface_init(ret, term);
     termpaintp_collapse(ret);
@@ -1204,8 +1228,20 @@ termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int 
     return ret;
 }
 
+termpaint_surface *termpaint_terminal_new_surface(termpaint_terminal *term, int width, int height) {
+    termpaint_surface *ret = termpaint_terminal_new_surface_or_nullptr(term, width, height);
+    if (!ret) {
+        termpaintp_oom(term);
+    }
+    return ret;
+}
+
 termpaint_surface *termpaint_surface_new_surface(termpaint_surface *surface, int width, int height) {
     return termpaint_terminal_new_surface(surface->terminal, width, height);
+}
+
+termpaint_surface *termpaint_surface_new_surface_or_nullptr(termpaint_surface *surface, int width, int height) {
+    return termpaint_terminal_new_surface_or_nullptr(surface->terminal, width, height);
 }
 
 void termpaint_surface_free(termpaint_surface *surface) {
@@ -1822,10 +1858,10 @@ static void termpaint_unpause_snippet_destroy(termpaint_unpause_snippet *entry) 
 
 static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal);
 
-termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
+termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *integration) {
     termpaint_terminal *ret = calloc(1, sizeof(termpaint_terminal));
     if (!ret) {
-        termpaintp_oom_int(integration);
+        return nullptr;
     }
     termpaintp_surface_init(&ret->primary, ret);
     ret->primary.primary = true;
@@ -1852,7 +1888,8 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->max_csi_parameters = 15;
     ret->input = termpaint_input_new();
     if (!ret->input) {
-        termpaintp_oom_int(integration);
+        free(ret);
+        return nullptr;
     }
     termpaint_input_set_event_cb(ret->input, termpaintp_input_event_callback, ret);
     termpaint_input_set_raw_filter_cb(ret->input, termpaintp_input_raw_filter_callback, ret);
@@ -1863,9 +1900,30 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     ret->unpause_snippets.item_size = sizeof (termpaint_unpause_snippet);
     ret->unpause_snippets.destroy_cb = (void (*)(termpaint_hash_item*))termpaint_unpause_snippet_destroy;
 
+    if (!termpaintp_str_preallocate(&ret->unpause_basic_setup, 64)) {
+        termpaint_input_free(ret->input);
+        free(ret);
+        return nullptr;
+    }
+
+    if (!termpaintp_str_preallocate(&ret->restore_seq, 256)) {
+        termpaintp_str_destroy(&ret->unpause_basic_setup);
+        termpaint_input_free(ret->input);
+        free(ret);
+        return nullptr;
+    }
+
     termpaintp_prepend_str(&ret->restore_seq, (const uchar*)"\033[?25h\033[m");
     int_restore_sequence_updated(ret);
 
+    return ret;
+}
+
+termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
+    termpaint_terminal *ret = termpaint_terminal_new_or_nullptr(integration);
+    if (!ret) {
+        termpaintp_oom_int(integration);
+    }
     return ret;
 }
 
@@ -3979,14 +4037,22 @@ static termpaint_str* termpaintp_terminal_get_unpause_slot(termpaint_terminal *t
     return &(snippet)->sequences;
 }
 
-termpaint_attr *termpaint_attr_new(unsigned fg, unsigned bg) {
+termpaint_attr *termpaint_attr_new_or_nullptr(unsigned fg, unsigned bg) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
     if (!attr) {
-        termpaintp_oom_nolog();
+        return nullptr;
     }
     attr->fg_color = fg;
     attr->bg_color = bg;
     attr->deco_color = TERMPAINT_DEFAULT_COLOR;
+    return attr;
+}
+
+termpaint_attr *termpaint_attr_new(unsigned fg, unsigned bg) {
+    termpaint_attr *attr = termpaint_attr_new_or_nullptr(fg, bg);
+    if (!attr) {
+        termpaintp_oom_nolog();
+    }
     return attr;
 }
 
@@ -3996,10 +4062,10 @@ void termpaint_attr_free(termpaint_attr *attr) {
     free(attr);
 }
 
-termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
+termpaint_attr *termpaint_attr_clone_or_nullptr(const termpaint_attr *orig) {
     termpaint_attr *attr = calloc(1, sizeof(termpaint_attr));
     if (!attr) {
-        termpaintp_oom_nolog();
+        return nullptr;
     }
     attr->fg_color = orig->fg_color;
     attr->bg_color = orig->bg_color;
@@ -4010,16 +4076,26 @@ termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
     if (orig->patch_setup) {
         attr->patch_setup = ustrdup(orig->patch_setup);
         if (!attr->patch_setup) {
-            termpaintp_oom_nolog();
+            termpaint_attr_free(attr);
+            return nullptr;
         }
         attr->patch_optimize = orig->patch_optimize;
     }
     if (orig->patch_cleanup) {
         attr->patch_cleanup = ustrdup(orig->patch_cleanup);
         if (!attr->patch_cleanup) {
-            termpaintp_oom_nolog();
+            termpaint_attr_free(attr);
+            return nullptr;
         }
         attr->patch_optimize = orig->patch_optimize;
+    }
+    return attr;
+}
+
+termpaint_attr *termpaint_attr_clone(const termpaint_attr *orig) {
+    termpaint_attr *attr = termpaint_attr_clone_or_nullptr(orig);
+    if (!attr) {
+        termpaintp_oom_nolog();
     }
     return attr;
 }
@@ -4066,7 +4142,7 @@ void termpaint_attr_reset_style(termpaint_attr *attr) {
     attr->flags = 0;
 }
 
-void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *setup, const char *cleanup) {
+bool termpaint_attr_set_patch_mustcheck(termpaint_attr *attr, bool optimize, const char *setup, const char *cleanup) {
     free(attr->patch_setup);
     attr->patch_setup = nullptr;
     free(attr->patch_cleanup);
@@ -4077,16 +4153,25 @@ void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *s
         attr->patch_optimize = optimize;
         attr->patch_setup = (uchar*)strdup(setup);
         if (!attr->patch_setup) {
-            termpaintp_oom_nolog();
+            termpaint_attr_set_patch(attr, false, nullptr, nullptr);
+            return false;
         }
         attr->patch_cleanup = (uchar*)strdup(cleanup);
         if (!attr->patch_cleanup) {
-            termpaintp_oom_nolog();
+            termpaint_attr_set_patch(attr, false, nullptr, nullptr);
+            return false;
         }
+    }
+    return true;
+}
+
+void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *setup, const char *cleanup) {
+    if (!termpaint_attr_set_patch_mustcheck(attr, optimize, setup, cleanup)) {
+        termpaintp_oom_nolog();
     }
 }
 
-termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surface *surface) {
+termpaint_text_measurement *termpaint_text_measurement_new_or_nullptr(const termpaint_surface *surface) {
     // Currently a fixed character classification table is used. But of course terminals differ
     // in character classification. Thus require a surface pointer already to later be able to
     // get to the terminal struct for details.
@@ -4096,9 +4181,17 @@ termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surfa
     }
     termpaint_text_measurement *m = malloc(sizeof(termpaint_text_measurement));
     if (!m) {
-        termpaintp_oom(surface->terminal);
+        return nullptr;
     }
     termpaint_text_measurement_reset(m);
+    return m;
+}
+
+termpaint_text_measurement *termpaint_text_measurement_new(const termpaint_surface *surface) {
+    termpaint_text_measurement *m = termpaint_text_measurement_new_or_nullptr(surface);
+    if (!m) {
+        termpaintp_oom(surface->terminal);
+    }
     return m;
 }
 
