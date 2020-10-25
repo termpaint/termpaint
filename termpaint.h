@@ -94,6 +94,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_bell(termpaint_terminal *term);
 #define TERMPAINT_MOUSE_MODE_MOVEMENT 3
 
 _tERMPAINT_PUBLIC void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode);
+_tERMPAINT_PUBLIC _Bool termpaint_terminal_set_mouse_mode_mustcheck(termpaint_terminal *term, int mouse_mode);
 
 _tERMPAINT_PUBLIC void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, _Bool enabled);
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_request_focus_change_reports_mustcheck(termpaint_terminal *term, _Bool enabled);

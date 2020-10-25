@@ -4658,7 +4658,7 @@ void termpaint_terminal_bell(termpaint_terminal *term) {
 
 #define DISABLE_MOUSE_SEQUENCE "\033[?1003l\033[?1002l\033[?1000l\033[?1006l\033[?1015l"
 
-void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode) {
+_Bool termpaint_terminal_set_mouse_mode_mustcheck(termpaint_terminal *term, int mouse_mode) {
     termpaint_integration *integration = term->integration;
 
     if (mouse_mode != TERMPAINT_MOUSE_MODE_OFF) {
@@ -4674,33 +4674,47 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
             int_puts(integration, DISABLE_MOUSE_SEQUENCE);
             int_flush(integration);
             termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "mouse");
-            if (!sequences) {
-                termpaintp_oom(term);
+            if (sequences) {
+                if (!termpaintp_str_assign_mustcheck(sequences, "")) {
+                     return false;
+                }
             }
-            termpaintp_str_assign(sequences, "");
         }
-        return;
+        return true;
     }
+    termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "mouse");
+    if (!sequences) {
+        return false;
+    }
+
+    if (mouse_mode == TERMPAINT_MOUSE_MODE_CLICKS) {
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?1002l\033[?1003l\033[?1000h")) {
+            return false;
+        }
+    } else if (mouse_mode == TERMPAINT_MOUSE_MODE_DRAG) {
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?1003l\033[?1000h\033[?1002h")) {
+            return false;
+        }
+    } else if (mouse_mode == TERMPAINT_MOUSE_MODE_MOVEMENT) {
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?1000h\033[?1002h\033[?1003h")) {
+            return false;
+        }
+    }
+
     if (!term->did_terminal_enable_mouse) {
         term->did_terminal_enable_mouse = true;
         int_puts(integration, "\033[?1015h\033[?1006h");
     }
 
-    termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "mouse");
-    if (!sequences) {
-        termpaintp_oom(term);
-    }
-
-    if (mouse_mode == TERMPAINT_MOUSE_MODE_CLICKS) {
-        termpaintp_str_assign(sequences, "\033[?1002l\033[?1003l\033[?1000h");
-    } else if (mouse_mode == TERMPAINT_MOUSE_MODE_DRAG) {
-        termpaintp_str_assign(sequences, "\033[?1003l\033[?1000h\033[?1002h");
-    } else if (mouse_mode == TERMPAINT_MOUSE_MODE_MOVEMENT) {
-        termpaintp_str_assign(sequences, "\033[?1000h\033[?1002h\033[?1003h");
-    }
-
     int_put_tps(integration, sequences);
     int_flush(integration);
+    return true;
+}
+
+void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode) {
+    if (!termpaint_terminal_set_mouse_mode_mustcheck(term, mouse_mode)) {
+        termpaintp_oom(term);
+    }
 }
 
 bool termpaint_terminal_request_focus_change_reports_mustcheck(termpaint_terminal *term, bool enabled) {
