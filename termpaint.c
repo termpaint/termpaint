@@ -269,7 +269,7 @@ typedef struct termpaint_terminal_ {
     int terminal_type;
     int terminal_version;
     int terminal_type_confidence;
-    char *terminal_self_reported_name_version;
+    termpaint_str terminal_self_reported_name_version;
     void (*event_cb)(void *, termpaint_event *);
     void *event_user_data;
     bool (*raw_input_filter_cb)(void *user_data, const char *data, unsigned length, bool overflow);
@@ -480,6 +480,13 @@ static void termpaintp_str_realloc(termpaint_str *tps, unsigned len) {
             termpaintp_oom_nolog();
         }
     }
+}
+
+static void termpaintp_str_assign_n(termpaint_str *tps, const char *s, unsigned len) {
+    termpaintp_str_w_e(tps, len);
+    memcpy(tps->data, s, len);
+    tps->data[len] = 0;
+    tps->len = len;
 }
 
 static void termpaintp_str_assign(termpaint_str *tps, const char *s) {
@@ -1938,6 +1945,14 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
         return nullptr;
     }
 
+    if (!termpaintp_str_preallocate(&ret->terminal_self_reported_name_version, 64)) {
+        termpaintp_str_destroy(&ret->restore_seq);
+        termpaintp_str_destroy(&ret->unpause_basic_setup);
+        termpaint_input_free(ret->input);
+        free(ret);
+        return nullptr;
+    }
+
     termpaintp_prepend_str(&ret->restore_seq, (const uchar*)"\033[?25h\033[m");
     int_restore_sequence_updated(ret);
 
@@ -1955,8 +1970,7 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
 void termpaint_terminal_free(termpaint_terminal *term) {
     free(term->auto_detect_sec_device_attributes);
     term->auto_detect_sec_device_attributes = nullptr;
-    free(term->terminal_self_reported_name_version);
-    term->terminal_self_reported_name_version = nullptr;
+    termpaintp_str_destroy(&term->terminal_self_reported_name_version);
     termpaintp_surface_destroy(&term->primary);
     termpaintp_str_destroy(&term->restore_seq);
     termpaint_input_free(term->input);
@@ -2879,8 +2893,8 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         // To get here terminology has to be at least 1.4 (first version to support DA3)
 
-        if (term->terminal_self_reported_name_version) {
-            char *version_part = strchr(term->terminal_self_reported_name_version, ' ');
+        if (term->terminal_self_reported_name_version.len) {
+            char *version_part = strchr((const char*)term->terminal_self_reported_name_version.data, ' ');
             if (version_part) {
                 term->terminal_version = termpaintp_parse_version(version_part + 1);
             }
@@ -3554,11 +3568,7 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 return false;
             } else if (event->type == TERMPAINT_EV_RAW_TERM_NAME) {
                 terminal->ad_state = AD_SELF_REPORTING;
-                free(terminal->terminal_self_reported_name_version);
-                terminal->terminal_self_reported_name_version = strndup(event->raw.string, event->raw.length);
-                if (!terminal->terminal_self_reported_name_version) {
-                    termpaintp_oom(terminal);
-                }
+                termpaintp_str_assign_n(&terminal->terminal_self_reported_name_version, event->raw.string, event->raw.length);
                 if (termpaintp_string_prefix((const uchar*)"terminology ", (const uchar*)event->raw.string, event->raw.length)) {
                     terminal->terminal_type = TT_TERMINOLOGY;
                 }
@@ -3934,7 +3944,9 @@ void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *termin
 }
 
 const char *termpaint_terminal_self_reported_name_and_version(const termpaint_terminal *terminal) {
-    return terminal->terminal_self_reported_name_version;
+    return terminal->terminal_self_reported_name_version.len ?
+                (const char*)terminal->terminal_self_reported_name_version.data
+              : nullptr;
 }
 
 static bool termpaintp_has_option(const char *options, const char *name) {
