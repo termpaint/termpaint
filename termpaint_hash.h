@@ -33,11 +33,16 @@ static uint32_t termpaintp_hash_fnv1a(const unsigned char* text) {
     return hash;
 }
 
-static void termpaintp_hash_grow(termpaint_hash* p) {
+static bool termpaintp_hash_grow(termpaint_hash* p) {
     int old_allocated = p->allocated;
     termpaint_hash_item** old_buckets = p->buckets;
     p->allocated *= 2;
     p->buckets = (termpaint_hash_item**)calloc(p->allocated, sizeof(*p->buckets));
+    if (!p->buckets) {
+        p->allocated = old_allocated;
+        p->buckets = old_buckets;
+        return false;
+    }
 
     for (int i = 0; i < old_allocated; i++) {
         termpaint_hash_item* item_it = old_buckets[i];
@@ -51,6 +56,7 @@ static void termpaintp_hash_grow(termpaint_hash* p) {
         }
     }
     free(old_buckets);
+    return true;
 }
 
 static int termpaintp_hash_gc(termpaint_hash* p) {
@@ -99,6 +105,10 @@ static void* termpaintp_hash_ensure(termpaint_hash* p, const unsigned char* text
     if (!p->allocated) {
         p->allocated = 32;
         p->buckets = (termpaint_hash_item**)calloc(p->allocated, sizeof(termpaint_hash_item*));
+        if (!p->buckets) {
+            p->allocated = 0;
+            return NULL;
+        }
     }
     uint32_t bucket = termpaintp_hash_fnv1a(text) % p->allocated;
 
@@ -114,26 +124,43 @@ static void* termpaintp_hash_ensure(termpaint_hash* p, const unsigned char* text
         }
         if (p->allocated / 2 <= p->count) {
             if (termpaintp_hash_gc(p) == 0) {
-                termpaintp_hash_grow(p);
+                if (!termpaintp_hash_grow(p)) {
+                    return NULL;
+                }
             }
             // either termpaintp_hash_gc or termpaintp_hash_grow have invalidated `prev` but now capacity is free
             return termpaintp_hash_ensure(p, text);
         } else {
-            p->count++;
-
             item = (termpaint_hash_item*)calloc(1, p->item_size);
+            if (!item) {
+                return NULL;
+            }
             item->text = (unsigned char*)strdup((const char*)text);
+            if (!item->text) {
+                free(item);
+                return NULL;
+            }
             prev->next = item;
+            p->count++;
             return item;
         }
     } else {
         if (p->allocated / 2 <= p->count && termpaintp_hash_gc(p) == 0) {
-            termpaintp_hash_grow(p);
+            if (!termpaintp_hash_grow(p)) {
+                return NULL;
+            }
             return termpaintp_hash_ensure(p, text);
         } else {
-            p->count++;
             termpaint_hash_item* item = (termpaint_hash_item*)calloc(1, p->item_size);
+            if (!item) {
+                return NULL;
+            }
             item->text = (unsigned char*)strdup((const char*)text);
+            if (!item->text) {
+                free(item);
+                return NULL;
+            }
+            p->count++;
             p->buckets[bucket] = item;
             return item;
         }
