@@ -617,7 +617,7 @@ static void termpaintp_collapse(termpaint_surface *surface) {
     surface->cells_last_flush = nullptr;
 }
 
-static void termpaintp_resize(termpaint_surface *surface, int width, int height) {
+static bool termpaintp_resize_mustcheck(termpaint_surface *surface, int width, int height) {
     // TODO move contents along?
 
     surface->width = width;
@@ -633,7 +633,7 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
         free(surface->cells);
         free(surface->cells_last_flush);
         termpaintp_collapse(surface);
-        return;
+        return true; // This is debatable, but the previous code did allow this and there are tests for this.
     }
     surface->cells_allocated = cell_count;
     free(surface->cells);
@@ -641,16 +641,20 @@ static void termpaintp_resize(termpaint_surface *surface, int width, int height)
     surface->cells_last_flush = nullptr;
     surface->cells = calloc(1, bytes);
     if (!surface->cells) {
-        termpaintp_oom(surface->terminal);
+        termpaintp_collapse(surface);
+        return false;
     }
 
     if (surface->primary) {
         surface->terminal->force_full_repaint = true;
         surface->cells_last_flush = calloc(1, surface->cells_allocated * sizeof(cell));
         if (!surface->cells_last_flush) {
-            termpaintp_oom(surface->terminal);
+            free(surface->cells);
+            termpaintp_collapse(surface);
+            return false;
         }
     }
+    return true;
 }
 
 static inline cell* termpaintp_getcell(const termpaint_surface *surface, int x, int y) {
@@ -1180,13 +1184,22 @@ void termpaint_surface_set_softwrap_marker(termpaint_surface *surface, int x, in
     }
 }
 
-void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
+bool termpaint_surface_resize_mustcheck(termpaint_surface *surface, int width, int height) {
     if (width < 0 || height < 0) {
         free(surface->cells);
         free(surface->cells_last_flush);
         termpaintp_collapse(surface);
     } else {
-        termpaintp_resize(surface, width, height);
+        if (!termpaintp_resize_mustcheck(surface, width, height)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void termpaint_surface_resize(termpaint_surface *surface, int width, int height) {
+    if (!termpaint_surface_resize_mustcheck(surface, width, height)) {
+        termpaintp_oom(surface->terminal);
     }
 }
 
@@ -1233,7 +1246,10 @@ termpaint_surface *termpaint_terminal_new_surface_or_nullptr(termpaint_terminal 
     }
     termpaintp_surface_init(ret, term);
     termpaintp_collapse(ret);
-    termpaintp_resize(ret, width, height);
+    if (!termpaintp_resize_mustcheck(ret, width, height)) {
+        termpaint_surface_free(ret);
+        return nullptr;
+    }
     return ret;
 }
 

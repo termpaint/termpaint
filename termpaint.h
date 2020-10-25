@@ -204,6 +204,7 @@ _tERMPAINT_PUBLIC termpaint_surface *termpaint_surface_new_surface_or_nullptr(te
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_surface_duplicate(termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_surface_free(termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_surface_resize(termpaint_surface *surface, int width, int height);
+_tERMPAINT_PUBLIC _Bool termpaint_surface_resize_mustcheck(termpaint_surface *surface, int width, int height);
 _tERMPAINT_PUBLIC int termpaint_surface_width(const termpaint_surface *surface);
 _tERMPAINT_PUBLIC int termpaint_surface_height(const termpaint_surface *surface);
 _tERMPAINT_PUBLIC int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint);
