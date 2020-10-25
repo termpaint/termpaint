@@ -4703,7 +4703,7 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
     int_flush(integration);
 }
 
-void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, bool enabled) {
+bool termpaint_terminal_request_focus_change_reports_mustcheck(termpaint_terminal *term, bool enabled) {
     if (enabled && !term->did_terminal_add_focusreporting_to_restore) {
         term->did_terminal_add_focusreporting_to_restore = true;
          termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033[?1004l");
@@ -4714,16 +4714,27 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
 
     termpaint_str* sequences = termpaintp_terminal_get_unpause_slot(term, "focus report");
     if (!sequences) {
-        termpaintp_oom(term);
+        return false;
     }
 
     if (enabled) {
-        termpaintp_str_assign(sequences, "\033[?1004h");
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?1004h")) {
+            return false;
+        }
     } else {
-        termpaintp_str_assign(sequences, "\033[?1004l");
+        if (!termpaintp_str_assign_mustcheck(sequences, "\033[?1004l")) {
+            return false;
+        }
     }
     int_put_tps(integration, sequences);
     int_flush(integration);
+    return true;
+}
+
+void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, bool enabled) {
+    if (!termpaint_terminal_request_focus_change_reports_mustcheck(term, enabled)) {
+        termpaintp_oom(term);
+    }
 }
 
 bool termpaint_terminal_request_tagged_paste_mustcheck(termpaint_terminal *term, bool enabled) {
