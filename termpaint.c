@@ -1292,9 +1292,6 @@ static void termpaintp_surface_init(termpaint_surface *surface, termpaint_termin
 }
 
 termpaint_surface *termpaint_terminal_new_surface_or_nullptr(termpaint_terminal *term, int width, int height) {
-    if (!term) {
-        BUG("termpaint_terminal_new_surface with invalid terminal pointer");
-    }
     termpaint_surface *ret = calloc(1, sizeof(termpaint_surface));
     if (!ret) {
         return nullptr;
@@ -1772,9 +1769,11 @@ bool termpaint_surface_same_contents(const termpaint_surface *surface1, const te
 
 
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
-    UNUSED(surface);
     // require surface here to allow for future implementation that uses terminal
     // specific information from terminal detection.
+    if (!surface) {
+        abort();
+    }
     return termpaintp_char_width(codepoint);
 }
 
