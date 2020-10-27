@@ -38,4 +38,10 @@ static inline _Bool termpaint_sadd_overflow(int a, int b, int* res) {
 
 #define UNUSED(x) (void)x
 
+#ifdef __GNUC__
+#define ATTRIBUTE_PRINTF __attribute__ ((format (printf, 2, 3)))
+#else
+#define ATTRIBUTE_PRINTF
+#endif
+
 #endif

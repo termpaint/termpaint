@@ -368,6 +368,7 @@ static bool ustr_eq (const uchar *s1, const uchar *s2) {
 
 
 static void int_debuglog_puts(termpaint_terminal *term, const char *str);
+static void int_debuglog_printf(termpaint_terminal *term, const char *fmt, ...) ATTRIBUTE_PRINTF;
 
 static void termpaintp_oom_log_only(termpaint_terminal *term) {
     int_debuglog_puts(term, "failed to allocate memory, output will be incomplete\n");
@@ -667,6 +668,7 @@ static bool termpaintp_resize_mustcheck(termpaint_surface *surface, int width, i
      || termpaint_smul_overflow(width, height, &cell_count)
      || termpaint_smul_overflow(cell_count, sizeof(cell), &bytes)) {
         // collapse and bail
+        int_debuglog_printf(surface->terminal, "surface resize: Invalid size %dx%d, collapsing surface.", width, height);
         free(surface->cells);
         free(surface->cells_last_flush);
         termpaintp_collapse(surface);
@@ -1328,6 +1330,7 @@ void termpaint_surface_free(termpaint_surface *surface) {
 
     // guard against freeing the primary surface
     if (surface->primary) {
+        int_debuglog_puts(surface->terminal, "surface_free: Attempt to free primary surface. This is a bug in your application");
         return;
     }
     termpaintp_surface_destroy(surface);
