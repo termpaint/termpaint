@@ -3064,7 +3064,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
 }
 
 void termpaint_terminal_auto_detect_apply_input_quirks(termpaint_terminal *terminal, bool backspace_is_x08) {
-    // For now apply backspace_is_x08 for all terminal types. The can be tuned to disregard this for
+    // For now apply backspace_is_x08 for all terminal types. This can be tuned to disregard this for
     // specific types when needed.
 
     // Note: terminology does not support ctrl-backspace in backspace_is_x08 mode, but does when !backspace_is_x08.
@@ -3396,7 +3396,6 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         && terminal->initial_cursor_y == event->cursor_position.y) {
                     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
                     terminal->ad_state = AD_BASIC_CURPOS_RECVED_NO_SEC_DEV_ATTRIB;
-
                     return true;
                 } else {
                     termpaint_terminal_disable_capability(terminal, TERMPAINT_CAPABILITY_CSI_GREATER);
