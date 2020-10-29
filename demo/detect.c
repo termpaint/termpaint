@@ -74,7 +74,7 @@ char *strdup_escaped(const char *tmp) {
 int main(int argc, char **argv) {
     (void)argc; (void)argv;
 
-    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+    termpaint_integration *integration = termpaintx_full_integration("+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 1;
