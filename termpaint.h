@@ -152,6 +152,10 @@ _tERMPAINT_PUBLIC _Bool termpaint_terminal_should_use_truecolor(termpaint_termin
 _tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
 
+#define TERMPAINT_LOG_AUTO_DETECT_TRACE (1 << 0)
+#define TERMPAINT_LOG_TRACE_RAW_INPUT (1 << 1)
+
+_tERMPAINT_PUBLIC void termpaint_terminal_set_log_mask(termpaint_terminal *term, unsigned mask);
 _tERMPAINT_PUBLIC void termpaint_terminal_glitch_on_out_of_memory(termpaint_terminal *term);
 
 _tERMPAINT_PUBLIC termpaint_attr* termpaint_attr_new(unsigned fg, unsigned bg);

@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
     termpaint_integration_set_logging_func(integration, debug_log);
 
     termpaint_terminal *terminal = termpaint_terminal_new(integration);
+    termpaint_terminal_set_log_mask(terminal, TERMPAINT_LOG_AUTO_DETECT_TRACE | TERMPAINT_LOG_TRACE_RAW_INPUT);
     termpaint_terminal_set_event_cb(terminal, null_callback, NULL);
     termpaintx_full_integration_set_terminal(integration, terminal);
     termpaint_terminal_auto_detect(terminal);

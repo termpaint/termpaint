@@ -297,6 +297,7 @@ typedef struct termpaint_terminal_ {
     termpaint_hash unpause_snippets;
 
     bool glitch_on_oom;
+    unsigned log_mask;
 
     int cursor_prev_data; // -1 -> no touched yet, restore not setup, -2 -> force resend sequence (e.g. atfer unpause)
 
@@ -2030,6 +2031,10 @@ termpaint_terminal *termpaint_terminal_new(termpaint_integration *integration) {
     return ret;
 }
 
+void termpaint_terminal_set_log_mask(termpaint_terminal *term, unsigned mask) {
+    term->log_mask = mask;
+}
+
 void termpaint_terminal_glitch_on_out_of_memory(termpaint_terminal *term) {
     term->glitch_on_oom = true;
 }
@@ -3135,6 +3140,13 @@ void termpaint_terminal_set_event_cb(termpaint_terminal *term, void (*cb)(void *
 }
 
 void termpaint_terminal_add_input_data(termpaint_terminal *term, const char *data, unsigned length) {
+    if (term->log_mask & TERMPAINT_LOG_TRACE_RAW_INPUT) {
+        int_debuglog_puts(term, "Input: ");
+        for (unsigned i = 0; i < length; i++) {
+            int_debuglog_printf(term, "%.2hhx", (unsigned char)data[i]);
+        }
+        int_debuglog_puts(term, "\n");
+    }
     termpaint_input_add_data(term->input, data, length);
     bool not_in_autodetect = (term->ad_state == AD_NONE || term->ad_state == AD_FINISHED);
 
@@ -3267,6 +3279,14 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
 
     if (event == nullptr) {
         terminal->ad_state = AD_INITIAL;
+    }
+
+    if (terminal->log_mask & TERMPAINT_LOG_AUTO_DETECT_TRACE) {
+        if (event) {
+            int_debuglog_printf(terminal, "AD: State=%d, Event-type=%d\n", terminal->ad_state, event->type);
+        } else {
+            int_debuglog_printf(terminal, "AD start: State=%d\n", terminal->ad_state);
+        }
     }
 
     switch (terminal->ad_state) {
