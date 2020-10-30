@@ -2810,6 +2810,9 @@ static int termpaintp_parse_version(char *s) {
         if (termpaintp_char_ascii_num(*s)) {
             tmp = tmp * 10 + *s - '0';
         } else if (*s == '.') {
+            if (tmp >= 1000) {
+                tmp = 999;
+            }
             if (place == 0) {
                 res += tmp * 1000000;
             } else if (place == 1) {
@@ -2822,6 +2825,48 @@ static int termpaintp_parse_version(char *s) {
         } else {
             break;
         }
+    }
+    if (tmp >= 1000) {
+        tmp = 999;
+    }
+    if (place == 0) {
+        res += tmp * 1000000;
+    } else if (place == 1) {
+        res += tmp * 1000;
+    } else if (place == 2) {
+        res += tmp;
+        return res;
+    }
+    return res;
+}
+
+static int termpaintp_parse_version_strict(char *s) {
+    int res = 0;
+    int place = 0;
+    int tmp = 0;
+    for (; *s; s++) {
+        if (termpaintp_char_ascii_num(*s)) {
+            tmp = tmp * 10 + *s - '0';
+        } else if (*s == '.') {
+            if (tmp >= 1000) {
+                tmp = 999;
+            }
+            if (place == 0) {
+                res += tmp * 1000000;
+            } else if (place == 1) {
+                res += tmp * 1000;
+            } else if (place == 2) {
+                break;
+            }
+            tmp = 0;
+            ++place;
+        } else {
+            tmp = 0;
+            break;
+        }
+    }
+    if (tmp >= 1000) {
+        tmp = 999;
     }
     if (place == 0) {
         res += tmp * 1000000;
@@ -3042,6 +3087,13 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
     } else if (term->terminal_type == TT_ITERM2) {
+        if (term->terminal_self_reported_name_version.len) {
+            char *version_part = strchr((const char*)term->terminal_self_reported_name_version.data, ' ');
+            if (version_part) {
+                term->terminal_version = termpaintp_parse_version_strict(version_part + 1);
+            }
+        }
+
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
     } else if (term->terminal_type == TT_MLTERM) {
@@ -3659,6 +3711,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 termpaintp_str_assign_n(&terminal->terminal_self_reported_name_version, event->raw.string, event->raw.length);
                 if (termpaintp_string_prefix((const uchar*)"terminology ", (const uchar*)event->raw.string, event->raw.length)) {
                     terminal->terminal_type = TT_TERMINOLOGY;
+                }
+                if (termpaintp_string_prefix((const uchar*)"iTerm2 ", (const uchar*)event->raw.string, event->raw.length)) {
+                    terminal->terminal_type = TT_ITERM2;
                 }
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_TERMINFO_QUERY_REPLY) {
