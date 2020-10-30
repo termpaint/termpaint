@@ -1814,32 +1814,6 @@ static void int_debuglog_printf(termpaint_terminal *term, const char *fmt, ...) 
     int_debuglog_puts(term, buff);
 }
 
-static void int_write_printable(termpaint_integration *integration, const unsigned char *str, int len) {
-    int input_bytes_used = 0;
-    while (input_bytes_used < len) {
-        int size = termpaintp_utf8_len(str[input_bytes_used]);
-
-        // check termpaintp_utf8_decode_from_utf8 precondition
-        if (input_bytes_used + size > len) {
-            // bogus, bail
-            return;
-        }
-        if (termpaintp_check_valid_sequence(str + input_bytes_used, size)) {
-            int codepoint = termpaintp_utf8_decode_from_utf8(str + input_bytes_used, size);
-            int new_codepoint = replace_unusable_codepoints(codepoint);
-            if (codepoint == new_codepoint) {
-                int_write(integration, (char*)str + input_bytes_used, size);
-            } else {
-                if (new_codepoint < 128) {
-                    char ch;
-                    ch = new_codepoint;
-                    int_write(integration, &ch, 1);
-                }
-            }
-        }
-        input_bytes_used += size;
-    }
-}
 
 static void int_put_num(termpaint_integration *integration, int num) {
     char buf[12];
