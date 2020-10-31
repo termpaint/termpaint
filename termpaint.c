@@ -2090,6 +2090,14 @@ inline bool termpaint_terminal_capable(const termpaint_terminal *terminal, int c
     return terminal->capabilities[capability];
 }
 
+static char* termpaintp_terminal_correct_string_terminator(const termpaint_terminal *terminal) {
+    if (termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_7BIT_ST)) {
+        return "\033\\";
+    } else {
+        return "\a";
+    }
+}
+
 static void termpaintp_update_cache_from_capabilities(termpaint_terminal *terminal) {
     terminal->cache_should_use_truecolor =
             termpaint_terminal_capable(terminal, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED)
@@ -2652,11 +2660,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 int_uputs(integration, entry->base.text);
                 int_puts(integration, ";");
                 int_uputs(integration, entry->requested.data);
-                if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
-                    int_puts(integration, "\033\\");
-                } else {
-                    int_puts(integration, "\a");
-                }
+                int_puts(integration, termpaintp_terminal_correct_string_terminator(term));
             } else {
                 int_uputs(integration, entry->restore.data);
             }
@@ -3147,11 +3151,7 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
                     termpaintp_str_append(&entry->restore, (const char*)entry->base.text);
                     termpaintp_str_append(&entry->restore, ";");
                     termpaintp_str_append_n(&entry->restore, event->color_slot_report.color, event->color_slot_report.length);
-                    if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
-                        termpaintp_str_append(&entry->restore, "\033\\");
-                    } else {
-                        termpaintp_str_append(&entry->restore, "\a");
-                    }
+                    termpaintp_str_append(&entry->restore, termpaintp_terminal_correct_string_terminator(term));
 
                     termpaintp_prepend_str(&term->restore_seq, entry->restore.data);
 
@@ -4189,11 +4189,7 @@ void termpaint_terminal_unpause(termpaint_terminal *term) {
                     int_uputs(integration, item_it->base.text);
                     int_puts(integration, ";");
                     int_uputs(integration, item_it->requested.data);
-                    if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
-                        int_puts(integration, "\033\\");
-                    } else {
-                        int_puts(integration, "\a");
-                    }
+                    int_puts(integration, termpaintp_terminal_correct_string_terminator(term));
                 } else {
                     int_uputs(integration, item_it->restore.data);
                 }
@@ -4727,7 +4723,9 @@ bool termpaint_terminal_set_title_mustcheck(termpaint_terminal *term, const char
         return false;
     }
 
-    TERMPAINT_STR_ASSIGN3_MUSTCHECK(sequences, S, "\033]2;", F, title, S, "\033\\");
+    TERMPAINT_STR_ASSIGN3_MUSTCHECK(sequences, S, "\033]2;",
+                                               F, title,
+                                               S, termpaintp_terminal_correct_string_terminator(term));
     if (!sequences->len) {
         return false;
     }
@@ -4763,7 +4761,9 @@ bool termpaint_terminal_set_icon_title_mustcheck(termpaint_terminal *term, const
         return false;
     }
 
-    TERMPAINT_STR_ASSIGN3_MUSTCHECK(sequences, S, "\033]1;", F, title, S, "\033\\");
+    TERMPAINT_STR_ASSIGN3_MUSTCHECK(sequences, S, "\033]1;",
+                                               F, title,
+                                               S, termpaintp_terminal_correct_string_terminator(term));
     if (!sequences->len) {
         return false;
     }
