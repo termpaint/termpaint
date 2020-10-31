@@ -223,20 +223,26 @@ typedef enum terminal_type_enum_ {
     TT_FULL,
 } terminal_type_enum;
 
-typedef struct termpaint_color_entry_ {
-    termpaint_hash_item base;
-    unsigned char *saved;
-    unsigned char *requested;
-    bool dirty;
-    bool save_initiated;
-    struct termpaint_color_entry_ *next_dirty;
-} termpaint_color_entry;
+enum termpaint_color_entry_save_state_t {
+    termpaint_save_state_new_entry = 0, // set via calloc
+    termpaint_save_state_ready,
+    termpaint_save_state_save_requested
+};
 
 typedef struct termpaint_str_ {
     unsigned len;
     unsigned alloc;
     unsigned char *data;
 } termpaint_str;
+
+typedef struct termpaint_color_entry_ {
+    termpaint_hash_item base;
+    termpaint_str restore;
+    termpaint_str requested;
+    bool dirty;
+    enum termpaint_color_entry_save_state_t save_state;
+    struct termpaint_color_entry_ *next_dirty;
+} termpaint_color_entry;
 
 typedef struct termpaint_unpause_snippet_ {
     termpaint_hash_item base;
@@ -1909,8 +1915,8 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
 static bool termpaintp_input_raw_filter_callback(void *user_data, const char *data, unsigned length, _Bool overflow);
 
 static void termpaint_color_entry_destroy(termpaint_color_entry *entry) {
-    free(entry->saved);
-    free(entry->requested);
+    termpaintp_str_destroy(&entry->restore);
+    termpaintp_str_destroy(&entry->requested);
 }
 
 static void termpaint_unpause_snippet_destroy(termpaint_unpause_snippet *entry) {
@@ -2639,21 +2645,20 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         term->colors_dirty = nullptr;
         while (entry) {
             termpaint_color_entry *next = entry->next_dirty;
+            entry->dirty = false;
             entry->next_dirty = nullptr;
-            if (entry->requested) {
+            if (entry->requested.len) {
                 int_puts(integration, "\033]");
                 int_uputs(integration, entry->base.text);
                 int_puts(integration, ";");
-                int_uputs(integration, entry->requested);
+                int_uputs(integration, entry->requested.data);
                 if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
                     int_puts(integration, "\033\\");
                 } else {
                     int_puts(integration, "\a");
                 }
             } else {
-                int_puts(integration, "\033]1");
-                int_uputs(integration, entry->base.text);
-                int_puts(integration, "\033\\");
+                int_uputs(integration, entry->restore.data);
             }
             entry = next;
         }
@@ -2691,7 +2696,15 @@ void termpaint_terminal_set_cursor_style(termpaint_terminal *term, int style, bo
     }
 }
 
-void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int b, int g) {
+void termpaintp_terminal_dirty_color_entry(termpaint_terminal *term, termpaint_color_entry *entry) {
+    if (!entry->dirty) {
+        entry->dirty = true;
+        entry->next_dirty = term->colors_dirty;
+        term->colors_dirty = entry;
+    }
+}
+
+void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int g, int b) {
     char buff[100];
     sprintf(buff, "%d", color_slot);
     termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
@@ -2699,66 +2712,54 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
         termpaintp_oom(term);
     }
     sprintf(buff, "#%02x%02x%02x", r, g, b);
-    if (entry->requested && ustrcmp(entry->requested, (uchar*)buff) == 0) {
+    if (entry->requested.len && ustrcmp(entry->requested.data, (uchar*)buff) == 0) {
         return;
     }
 
-    if (color_slot == TERMPAINT_COLOR_SLOT_CURSOR) {
-        // even requesting a color report does not allow to restore this, so just reset.
-        // TODO: needs a sensible value for saved.
-        entry->saved = (uchar*)strdup("");
-        if (!entry->saved) {
-            termpaintp_oom(term);
+    if (entry->save_state == termpaint_save_state_ready) {
+        termpaintp_terminal_dirty_color_entry(term, entry);
+    } else if (entry->save_state == termpaint_save_state_save_requested) {
+        // nothing to do, color should be dirty already and color query event will trigger further processing.
+    } else if (entry->save_state == termpaint_save_state_new_entry) {
+        entry->save_state = termpaint_save_state_save_requested;
+
+        if (color_slot == TERMPAINT_COLOR_SLOT_CURSOR) {
+            // even requesting a color report does not allow to restore this, so just reset.
+            // terminals tend to internally store more than just color (e.g. an automatic mode) but can't report those
+            termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]112\033\\");
+            int_restore_sequence_updated(term);
+            termpaintp_str_assign(&entry->restore, "\033]112\033\\");
+            entry->save_state = termpaint_save_state_ready;
+            termpaintp_terminal_dirty_color_entry(term, entry);
+        } else {
+            termpaint_integration *integration = term->integration;
+            int_puts(integration, "\033]");
+            int_put_num(integration, color_slot);
+            if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
+                int_puts(integration, ";?\033\\");
+            } else {
+                int_puts(integration, ";?\a");
+            }
+            int_awaiting_response(integration);
+            int_flush(integration);
         }
-        termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]112\033\\");
-        int_restore_sequence_updated(term);
     }
 
-    if (!entry->save_initiated && !entry->saved) {
-        termpaint_integration *integration = term->integration;
-        int_puts(integration, "\033]");
-        int_put_num(integration, color_slot);
-        int_puts(integration, ";?\033\\");
-        int_awaiting_response(integration);
-        int_flush(integration);
-        entry->save_initiated = true;
-    } else {
-        if (!entry->dirty) {
-            entry->dirty = true;
-            entry->next_dirty = term->colors_dirty;
-            term->colors_dirty = entry;
-        }
-    }
-    free(entry->requested);
-    entry->requested = (uchar*)strdup(buff);
-    if (!entry->requested) {
-        termpaintp_oom(term);
-    }
+    termpaintp_str_assign(&entry->requested, buff);
 }
 
 void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
     char buff[100];
     sprintf(buff, "%d", color_slot);
-    termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
+    termpaint_color_entry *entry = termpaintp_hash_get(&term->colors, (uchar*)buff);
     if (!entry) {
-        termpaintp_oom(term);
+        // not set, so no need to reset
+        return;
     }
-    if (entry->saved) {
-        if (!entry->dirty) {
-            entry->dirty = true;
-            entry->next_dirty = term->colors_dirty;
-            term->colors_dirty = entry;
-        }
-        free(entry->requested);
-        if (color_slot != TERMPAINT_COLOR_SLOT_CURSOR) {
-            entry->requested = ustrdup(entry->saved);
-            if (!entry->requested) {
-                termpaintp_oom(term);
-            }
-        } else {
-            entry->requested = nullptr;
-        }
+    if (entry->save_state == termpaint_save_state_ready) {
+        termpaintp_terminal_dirty_color_entry(term, entry);
     }
+    termpaintp_str_assign(&entry->requested, "");
 }
 
 static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, termpaint_event *event);
@@ -3108,23 +3109,27 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
             sprintf(buff, "%d", event->color_slot_report.slot);
             termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
             if (entry) { // entry may be nullptr if not requested via termpaint and out of memory
-                if (!entry->saved) {
-                    entry->saved = (uchar*)strndup(event->color_slot_report.color,
-                                                   event->color_slot_report.length);
-                    if (!entry->saved) {
-                        termpaintp_oom(term);
+                if (entry->save_state == termpaint_save_state_save_requested
+                        || entry->save_state == termpaint_save_state_new_entry) {
+                    entry->save_state = termpaint_save_state_ready;
+
+                    termpaintp_str_assign(&entry->restore, "\033]");
+                    termpaintp_str_append(&entry->restore, (const char*)entry->base.text);
+                    termpaintp_str_append(&entry->restore, ";");
+                    termpaintp_str_append_n(&entry->restore, event->color_slot_report.color, event->color_slot_report.length);
+                    if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
+                        termpaintp_str_append(&entry->restore, "\033\\");
+                    } else {
+                        termpaintp_str_append(&entry->restore, "\a");
                     }
-                    termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033\\");
-                    termpaintp_prepend_str(&term->restore_seq, entry->saved);
-                    termpaintp_prepend_str(&term->restore_seq, (const uchar*)";");
-                    termpaintp_prepend_str(&term->restore_seq, entry->base.text);
-                    termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]");
+
+                    termpaintp_prepend_str(&term->restore_seq, entry->restore.data);
+
                     int_restore_sequence_updated(term);
-                    if (entry->requested && !entry->dirty) {
-                        entry->dirty = true;
-                        entry->next_dirty = term->colors_dirty;
-                        term->colors_dirty = entry;
+
+                    if (entry->requested.len && !entry->dirty) {
                         term->request_repaint = true;
+                        termpaintp_terminal_dirty_color_entry(term, entry);
                     }
                 }
             }
@@ -4148,17 +4153,19 @@ void termpaint_terminal_unpause(termpaint_terminal *term) {
     for (int i = 0; i < term->colors.allocated; i++) {
         termpaint_color_entry* item_it = (termpaint_color_entry*)term->colors.buckets[i];
         while (item_it) {
-            if (item_it->saved) {
-                if (item_it->requested) {
+            if (item_it->save_state == termpaint_save_state_ready) {
+                if (item_it->requested.len) {
                     int_puts(integration, "\033]");
                     int_uputs(integration, item_it->base.text);
                     int_puts(integration, ";");
-                    int_uputs(integration, item_it->requested);
-                    int_puts(integration, "\033\\");
+                    int_uputs(integration, item_it->requested.data);
+                    if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
+                        int_puts(integration, "\033\\");
+                    } else {
+                        int_puts(integration, "\a");
+                    }
                 } else {
-                    int_puts(integration, "\033]1");
-                    int_uputs(integration, item_it->base.text);
-                    int_puts(integration, "\033\\");
+                    int_uputs(integration, item_it->restore.data);
                 }
             }
             item_it = (termpaint_color_entry*)item_it->base.next;
