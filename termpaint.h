@@ -79,7 +79,8 @@ _tERMPAINT_PUBLIC void termpaint_terminal_set_cursor_style(termpaint_terminal *t
 #define TERMPAINT_COLOR_SLOT_BACKGROUND 11
 #define TERMPAINT_COLOR_SLOT_CURSOR 12
 
-_tERMPAINT_PUBLIC void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int b, int g);
+_tERMPAINT_PUBLIC _Bool termpaint_terminal_set_color_mustcheck(termpaint_terminal *term, int color_slot, int r, int g, int b);
+_tERMPAINT_PUBLIC void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int g, int b);
 _tERMPAINT_PUBLIC void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot);
 
 #define TERMPAINT_TITLE_MODE_ENSURE_RESTORE 0

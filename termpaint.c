@@ -2704,23 +2704,36 @@ void termpaintp_terminal_dirty_color_entry(termpaint_terminal *term, termpaint_c
     }
 }
 
-void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int g, int b) {
-    char buff[100];
-    sprintf(buff, "%d", color_slot);
-    termpaint_color_entry *entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff);
-    if (!entry) {
-        termpaintp_oom(term);
-    }
-    sprintf(buff, "#%02x%02x%02x", r, g, b);
-    if (entry->requested.len && ustrcmp(entry->requested.data, (uchar*)buff) == 0) {
-        return;
-    }
+bool termpaint_terminal_set_color_mustcheck(termpaint_terminal *term, int color_slot, int r, int g, int b) {
+    char buff_slot[30];
+    char buff_color[20];
+    sprintf(buff_slot, "%d", color_slot);
+    sprintf(buff_color, "#%02x%02x%02x", r, g, b);
+    termpaint_color_entry *entry = termpaintp_hash_get(&term->colors, (uchar*)buff_slot);
 
-    if (entry->save_state == termpaint_save_state_ready) {
-        termpaintp_terminal_dirty_color_entry(term, entry);
-    } else if (entry->save_state == termpaint_save_state_save_requested) {
-        // nothing to do, color should be dirty already and color query event will trigger further processing.
-    } else if (entry->save_state == termpaint_save_state_new_entry) {
+    if (!entry) {
+        termpaint_str prealloc_requested = {};
+        termpaint_str prealloc_restore = {};
+
+        if (!termpaintp_str_preallocate(&prealloc_restore, 32)) {
+            return false;
+        }
+
+        if (!termpaintp_str_preallocate(&prealloc_requested, 7)) {
+            termpaintp_str_destroy(&prealloc_restore);
+            return false;
+        }
+
+        entry = termpaintp_hash_ensure(&term->colors, (uchar*)buff_slot);
+        if (!entry) {
+            termpaintp_str_destroy(&prealloc_restore);
+            termpaintp_str_destroy(&prealloc_requested);
+            return false;
+        }
+
+        entry->restore = prealloc_restore; /*move ownership*/
+        entry->requested = prealloc_requested; /*move ownership*/
+
         entry->save_state = termpaint_save_state_save_requested;
 
         if (color_slot == TERMPAINT_COLOR_SLOT_CURSOR) {
@@ -2745,7 +2758,24 @@ void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int 
         }
     }
 
-    termpaintp_str_assign(&entry->requested, buff);
+    if (entry->requested.len && ustrcmp(entry->requested.data, (uchar*)buff_color) == 0) {
+        return true;
+    }
+
+    if (entry->save_state == termpaint_save_state_ready) {
+        termpaintp_terminal_dirty_color_entry(term, entry);
+    } else if (entry->save_state == termpaint_save_state_save_requested) {
+        // nothing to do, color should be dirty already and color query event will trigger further processing.
+    }
+
+    termpaintp_str_assign(&entry->requested, buff_color);
+    return true;
+}
+
+void termpaint_terminal_set_color(termpaint_terminal *term, int color_slot, int r, int g, int b) {
+    if (!termpaint_terminal_set_color_mustcheck(term, color_slot, r, g, b)) {
+        termpaintp_oom(term);
+    }
 }
 
 void termpaint_terminal_reset_color(termpaint_terminal *term, int color_slot) {
