@@ -23,8 +23,9 @@ TEST_CASE("hash: Add strings") {
     for (int i = 0; i < 128; i++) {
         std::string str = "test";
         str += std::to_string(i + 1);
-        termpaintp_hash_ensure(hash, u8p(str.data()));
+        void *item = termpaintp_hash_ensure(hash, u8p(str.data()));
         REQUIRE(hash->count == i + 1);
+        CHECK(item == termpaintp_hash_get(hash, u8p(str.data())));
     }
 
     termpaintp_hash_destroy(hash);

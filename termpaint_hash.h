@@ -167,6 +167,24 @@ static void* termpaintp_hash_ensure(termpaint_hash* p, const unsigned char* text
     }
 }
 
+static void* termpaintp_hash_get(termpaint_hash* p, const unsigned char* text) {
+    if (!p->allocated) {
+        return NULL;
+    }
+    uint32_t bucket = termpaintp_hash_fnv1a(text) % p->allocated;
+
+    if (p->buckets[bucket]) {
+        termpaint_hash_item* item = p->buckets[bucket];
+        while (item) {
+            if (strcmp((const char*)text, (char*)item->text) == 0) {
+                return item;
+            }
+            item = item->next;
+        }
+    }
+    return NULL;
+}
+
 static void termpaintp_hash_destroy(termpaint_hash* p) {
     for (int i = 0; i < p->allocated; i++) {
         termpaint_hash_item* item = p->buckets[i];
