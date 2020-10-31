@@ -1467,6 +1467,9 @@ void termpaint_input_free(termpaint_input *ctx) {
     for (int i = 0; i < ctx->quirks_len; i++) {
         key_mapping_entry* entry = &ctx->quirks[i];
         free((void*)entry->sequence); // cast away const, quirks is always dynamically allocated.
+        if (entry->modifiers & MOD_PRINT) {
+            free((void*)entry->atom); // cast away const, quirks is always dynamically allocated.
+        }
     }
     free(ctx->quirks);
     free(ctx);
@@ -1795,6 +1798,39 @@ void termpaint_input_activate_quirk(termpaint_input *ctx, int quirk) {
                 abort();
             }
             e.modifiers = TERMPAINT_MOD_CTRL;
+            termpaintp_input_prepend_quirk(ctx, &e);
+        }
+    } else if (quirk == TERMPAINT_INPUT_QUIRK_C1_FOR_CTRL_SHIFT) {
+        {
+            key_mapping_entry e;
+            e.atom = termpaint_input_space();
+            e.sequence = strdup("\xc2\x80");
+            if (!e.sequence) {
+                abort();
+            }
+            e.modifiers = TERMPAINT_MOD_CTRL | TERMPAINT_MOD_SHIFT;
+            termpaintp_input_prepend_quirk(ctx, &e);
+        }
+        for (int i = 0; i < 26; i++) {
+            key_mapping_entry e;
+            unsigned char *atom = malloc(2);
+            if (!atom) {
+                abort();
+            }
+            unsigned char *sequence = malloc(3);
+            if (!sequence) {
+                abort();
+            }
+
+            atom[0] = 'A' + i;
+            atom[1] = 0;
+
+            termpaintp_encode_to_utf8(0x81 + i, sequence);
+            sequence[2] = 0;
+
+            e.atom = (char*)atom;
+            e.sequence = (char*)sequence;
+            e.modifiers = TERMPAINT_MOD_CTRL | TERMPAINT_MOD_SHIFT | MOD_PRINT;
             termpaintp_input_prepend_quirk(ctx, &e);
         }
     }

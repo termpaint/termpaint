@@ -3133,6 +3133,9 @@ void termpaint_terminal_auto_detect_apply_input_quirks(termpaint_terminal *termi
     if (backspace_is_x08) {
         termpaint_input_activate_quirk(terminal->input, TERMPAINT_INPUT_QUIRK_BACKSPACE_X08_AND_X7F_SWAPPED);
     }
+    if (terminal->terminal_type == TT_MINTTY) {
+        termpaint_input_activate_quirk(terminal->input, TERMPAINT_INPUT_QUIRK_C1_FOR_CTRL_SHIFT);
+    }
 }
 
 static void termpaintp_input_event_callback(void *user_data, termpaint_event *event) {

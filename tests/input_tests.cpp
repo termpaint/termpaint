@@ -695,6 +695,75 @@ TEST_CASE("input: quirk: backspace 0x08/0x7f swapped") {
     termpaint_input_free(input_ctx);
 }
 
+TEST_CASE("input: quirk: c1 for shift-ctrl") {
+    struct TestCase { std::string rawInput; std::string ch; };
+
+    const auto testCase = GENERATE(
+                TestCase{u8"\u0080", " "},
+                TestCase{u8"\u0081", "A"},
+                TestCase{u8"\u0082", "B"},
+                TestCase{u8"\u0083", "C"},
+                TestCase{u8"\u0084", "D"},
+                TestCase{u8"\u0085", "E"},
+                TestCase{u8"\u0086", "F"},
+                TestCase{u8"\u0087", "G"},
+                TestCase{u8"\u0088", "H"},
+                TestCase{u8"\u0089", "I"},
+                TestCase{u8"\u008a", "J"},
+                TestCase{u8"\u008b", "K"},
+                TestCase{u8"\u008c", "L"},
+                TestCase{u8"\u008d", "M"},
+                TestCase{u8"\u008e", "N"},
+                TestCase{u8"\u008f", "O"},
+                TestCase{u8"\u0090", "P"},
+                TestCase{u8"\u0091", "Q"},
+                TestCase{u8"\u0092", "R"},
+                TestCase{u8"\u0093", "S"},
+                TestCase{u8"\u0094", "T"},
+                TestCase{u8"\u0095", "U"},
+                TestCase{u8"\u0096", "V"},
+                TestCase{u8"\u0097", "W"},
+                TestCase{u8"\u0098", "X"},
+                TestCase{u8"\u0099", "Y"},
+                TestCase{u8"\u009a", "Z"}
+    );
+
+    std::string rawInput = testCase.rawInput;
+
+    CAPTURE(testCase.ch);
+
+    enum { START, GOT_EVENT } state = START;
+
+    std::function<void(termpaint_event* event)> event_callback
+            = [&] (termpaint_event* event) -> void {
+        if (state == GOT_EVENT) {
+            FAIL("more events than expected");
+        } else if (state == START) {
+            if (testCase.ch == " ") {
+                REQUIRE(event->type == TERMPAINT_EV_KEY);
+                CHECK(event->key.modifier == (TERMPAINT_MOD_CTRL | TERMPAINT_MOD_SHIFT));
+                CHECK(std::string(event->key.atom) == termpaint_input_space());
+            } else {
+                REQUIRE(event->type == TERMPAINT_EV_CHAR);
+                CHECK(event->c.modifier == (TERMPAINT_MOD_CTRL | TERMPAINT_MOD_SHIFT));
+                CHECK(std::string(event->key.atom) == testCase.ch);
+            }
+            state = GOT_EVENT;
+        } else {
+            FAIL("unexpected state " << state);
+        }
+    };
+
+    termpaint_input *input_ctx = termpaint_input_new();
+    termpaint_input_activate_quirk(input_ctx, TERMPAINT_INPUT_QUIRK_C1_FOR_CTRL_SHIFT);
+    wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
+    std::string input;
+    termpaint_input_add_data(input_ctx, rawInput.data(), rawInput.size());
+    REQUIRE(state == GOT_EVENT);
+    REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
+    termpaint_input_free(input_ctx);
+}
+
 TEST_CASE("input: events using raw") {
     struct TestCase { const std::string sequence; int type; const std::string contents; };
     const auto testCase = GENERATE(
