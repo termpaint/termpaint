@@ -1128,8 +1128,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
 
                 if (mod > 0) {
-                    if (codepoint > 0 && codepoint <= 0x7FFFFFFF) {
-                        // TODO exclude C0 space, C1 space and 0x7f
+                    if (codepoint >= 32 && codepoint <= 0x7FFFFFFF
+                            && !(codepoint >= 0x80 && codepoint <= 0xa0)
+                            && codepoint != 0x7f) {
                         event.type = TERMPAINT_EV_CHAR;
                         event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
                         event.c.string = (char*)buffer;
