@@ -905,69 +905,6 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.key.modifier = matched_entry->modifiers;
             }
         }
-        // the nice xterm extensions:
-        // \e[27;<mod>;<char>~
-        // \e[<char>;<mod>u  (resource only selectable variant)
-        if (!event.type && (
-                    (length >= 9 && memcmp(data, "\e[27;", 5) == 0 && data[length-1] == '~')
-                 || (length >= 6 && data[0] == '\e' && data[1] == '[' && data[length-1] == 'u'))) {
-            // TODO \e[<mod>;<char>u
-            // Note: CSI parsing here needs to reject sequences with prefix or postfix modifiers
-            unsigned i;
-            if (data[length-1] == 'u') {
-                i = 2;
-            } else {
-                // ~ variant
-                i = 5;
-            }
-            int p = 0;
-            int state = 0;
-            int first = -1;
-            int mod, codepoint;
-            for (; i < length-1; i++) {
-                if (data[i] >= '0' && data[i] <= '9') {
-                    if (!termpaintp_input_checked_append_digit(&p, 10, data[i] - '0')) {
-                        state = -1;
-                        break;
-                    }
-                } else if (state == 0 && data[i] == ';') {
-                    first = p;
-                    p = 0;
-                    state = 1;
-                } else {
-                    state = -1;
-                    break;
-                }
-            }
-            if (data[length-1] == 'u') {
-                mod = p;
-                codepoint = first;
-            } else {
-                // ~ variant
-                mod = first;
-                codepoint = p;
-            }
-
-            if (state == 1 && mod > 0) {
-                if (codepoint > 0 && codepoint <= 0x7FFFFFFF) {
-                    // TODO exclude C0 space, C1 space and 0x7f
-                    event.type = TERMPAINT_EV_CHAR;
-                    event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
-                    event.c.string = (char*)buffer;
-                    event.c.modifier = 0;
-                    mod = mod - 1;
-                    if (mod & 1) {
-                        event.c.modifier |= MOD_SHIFT;
-                    }
-                    if (mod & 2) {
-                        event.c.modifier |= MOD_ALT;
-                    }
-                    if (mod & 4) {
-                        event.c.modifier |= MOD_CTRL;
-                    }
-                }
-            }
-        }
         if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
             // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
@@ -1172,6 +1109,44 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
             }
 
+            // the nice key modifier extensions:
+            // \e[27;<mod>;<char>~
+            // \e[<char>;<mod>u
+            if (!event.type && !has_sub_args
+                    && ((sequence_id == SEQ('~', 0, 0) && arg_count >= 3 && args[0] == 27)
+                        || (sequence_id == SEQ('u', 0, 0) && arg_count >= 2))) {
+                // see further down for other CSI ~ sequences
+                int mod, codepoint;
+
+                if (sequence_id == SEQ('u', 0, 0)) {
+                    codepoint = args[0];
+                    mod = args[1];
+                } else {
+                    // ~ variant
+                    mod = args[1];
+                    codepoint = args[2];
+                }
+
+                if (mod > 0) {
+                    if (codepoint > 0 && codepoint <= 0x7FFFFFFF) {
+                        // TODO exclude C0 space, C1 space and 0x7f
+                        event.type = TERMPAINT_EV_CHAR;
+                        event.c.length = termpaintp_encode_to_utf8(codepoint, buffer);
+                        event.c.string = (char*)buffer;
+                        event.c.modifier = 0;
+                        mod = mod - 1;
+                        if (mod & 1) {
+                            event.c.modifier |= MOD_SHIFT;
+                        }
+                        if (mod & 2) {
+                            event.c.modifier |= MOD_ALT;
+                        }
+                        if (mod & 4) {
+                            event.c.modifier |= MOD_CTRL;
+                        }
+                    }
+                }
+            }
 
             if ((!event.type || ctx->expect_cursor_position_report > 0)
                     && length > 5 && (sequence_id == SEQ('R', 0, 0) || sequence_id == SEQ('R', '?', 0))) {
@@ -1199,7 +1174,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.misc.length = strlen(event.misc.atom);
             }
 
-            if (!event.type && sequence_id == SEQ('~', 0, 0)) {
+            if (!event.type && sequence_id == SEQ('~', 0, 0)) { // see above for CSI 27;<mod>;<char>~
                 if (arg_count >= 1 && !has_sub_args) {
                     int num = args[0];
                     if (num == 200) {
