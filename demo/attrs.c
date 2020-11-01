@@ -55,24 +55,10 @@ bool init(void) {
     event_current->next = NULL;
     event_current->string = NULL;
 
-    integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
-    if (!integration) {
-        puts("Could not init!");
-        return 0;
-    }
-
-    terminal = termpaint_terminal_new(integration);
-    termpaint_terminal_set_event_cb(terminal, event_callback, NULL);
-    termpaintx_full_integration_set_terminal(integration, terminal);
+    integration = termpaintx_full_integration_setup_terminal_fullscreen("+kbdsigint +kbdsigtstp",
+                                                                        event_callback, NULL,
+                                                                        &terminal);
     surface = termpaint_terminal_get_surface(terminal);
-    termpaint_terminal_auto_detect(terminal);
-    termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
-                                           "Terminal auto detection is taking unusually long, press space to abort.");
-    termpaintx_full_integration_apply_input_quirks(integration);
-    int width, height;
-    termpaintx_full_integration_terminal_size(integration, &width, &height);
-    termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-    termpaintx_full_integration_ttyrescue_start(integration);
 
     return 1;
 }
