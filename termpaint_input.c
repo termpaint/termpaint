@@ -1112,9 +1112,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             // the nice key modifier extensions:
             // \e[27;<mod>;<char>~
             // \e[<char>;<mod>u
-            if (!event.type && !has_sub_args
+            if (!event.type
                     && ((sequence_id == SEQ('~', 0, 0) && arg_count >= 3 && args[0] == 27)
-                        || (sequence_id == SEQ('u', 0, 0) && arg_count >= 2))) {
+                        || (sequence_id == SEQ('u', 0, 0) && arg_count >= 2 && !has_sub_args))) {
                 // see further down for other CSI ~ sequences
                 int mod, codepoint;
 
