@@ -444,6 +444,32 @@ bool termpaintx_full_integration_ttyrescue_start(termpaint_integration *integrat
 }
 
 
+termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(const char *options,
+                                                                             void (*event_handler)(void *, termpaint_event *),
+                                                                             void *event_handler_user_data,
+                                                                             termpaint_terminal **terminal_out) {
+    termpaint_integration *integration = termpaintx_full_integration(options);
+    if (!integration) {
+        const char* error = "Error: Terminal not available!";
+        write(1, error, strlen(error));
+        return nullptr;
+    }
+
+    termpaint_terminal *terminal = termpaint_terminal_new(integration);
+    termpaintx_full_integration_set_terminal(integration, terminal);
+    termpaint_terminal_set_event_cb(terminal, event_handler, event_handler_user_data);
+    termpaint_terminal_auto_detect(terminal);
+    termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
+                                           "Terminal auto detection is taking unusually long, press space to abort.");
+    termpaintx_full_integration_apply_input_quirks(integration);
+    int width, height;
+    termpaintx_full_integration_terminal_size(integration, &width, &height);
+    termpaint_terminal_setup_fullscreen(terminal, width, height, options);
+    termpaintx_full_integration_ttyrescue_start(integration);
+    *terminal_out = terminal;
+    return integration;
+}
+
 static void termpaintx_dummy_log(struct termpaint_integration_ *integration, char *data, int length) {
     (void)integration;
     (void)data;

@@ -15,6 +15,8 @@ _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration(const char 
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options);
 
+_tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(const char *options, void (*event_handler)(void *, termpaint_event *), void *event_handler_user_data, termpaint_terminal **terminal_out);
+
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integration);
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, const char* message);
 _tERMPAINT_PUBLIC void termpaintx_full_integration_apply_input_quirks(termpaint_integration *integration);
