@@ -729,79 +729,6 @@ static bool termpaintp_input_checked_append_digit(int *to_update, int base, int 
     return true;
 }
 
-static bool termpaintp_input_parse_dec_1(const unsigned char *data, size_t length, int *a) {
-    int val = 0;
-    for (size_t i = 0; i < length; i++) {
-        if (data[i] >= '0' && data[i] <= '9') {
-            if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
-                return false;
-            }
-        } else if (data[i] == ';') {
-            *a = val;
-            return true;
-        } else {
-            return false;
-        }
-    }
-    *a = val;
-    return true;
-}
-
-static bool termpaintp_input_parse_dec_2(const unsigned char *data, size_t length, int *a, int *b) {
-    int val = 0;
-    int state = 0;
-    for (size_t i = 0; i < length; i++) {
-        if (data[i] >= '0' && data[i] <= '9') {
-            if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
-                return false;
-            }
-        } else if (state == 0 && data[i] == ';') {
-            *a = val;
-            val = 0;
-            state = 1;
-        } else if (state == 1 && data[i] == ';') {
-            *b = val;
-            return true;
-        } else {
-            return false;
-        }
-    }
-    if (state == 1) {
-        *b = val;
-        return true;
-    }
-
-    return false;
-}
-
-static bool termpaintp_input_parse_dec_3(const unsigned char *data, size_t length, int *a, int *b, int *c) {
-    int val = 0;
-    int state = 0;
-    for (size_t i = 0; i < length; i++) {
-        if (data[i] >= '0' && data[i] <= '9') {
-            if (!termpaintp_input_checked_append_digit(&val, 10, data[i] - '0')) {
-                return false;
-            }
-        } else if (state == 0 && data[i] == ';') {
-            *a = val;
-            val = 0;
-            state = 1;
-        } else if (state == 1 && data[i] == ';') {
-            *b = val;
-            val = 0;
-            state = 2;
-        } else {
-            return false;
-        }
-    }
-    if (state == 2) {
-        *c = val;
-        return true;
-    }
-
-    return false;
-}
-
 static bool termpaintp_input_parse_mb_3(const unsigned char *data, size_t length, int *a, int *b, int *c) {
     if (length < 3) { // three values -> at least 3 bytes
         return false;
@@ -1082,10 +1009,62 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             char prefix_modifier = 0;
             char postfix_modifier = 0;
             char final = 0;
+
+            const int default_arg = -1;
+            int args[10] = {};
+            bool has_sub_args = false;
+            const int max_args = sizeof(args) / sizeof(*args);
+            int arg_count = 0;
+
+            enum state_t {
+                S_initial, S_main_param, S_sub_param, S_ignore
+            } state = S_initial;
+
             bool ok = true;
             for (size_t j = 2; j < length; j++) {
-                if ('0' <= data[j] && data[j] <= ';') {
-                    // mid part
+                if ('0' <= data[j] && data[j] <= '9') {
+                    if (state == S_initial) {
+                        if (arg_count >= max_args) {
+                            state = S_ignore;
+                        } else {
+                            state = S_main_param;
+                            ++arg_count;
+                        }
+                    }
+                    if (state == S_main_param) {
+                        if (!termpaintp_input_checked_append_digit(&args[arg_count - 1], 10, data[j] - '0')) {
+                            // parameter out of range
+                            state = S_ignore;
+                            ok = false;
+                        }
+                    }
+                } else if (':' == data[j]) {
+                    has_sub_args = true;
+                    if (state == S_initial) {
+                        if (arg_count >= max_args) {
+                            state = S_ignore;
+                        } else {
+                            ++arg_count;
+                            args[arg_count - 1] = default_arg;
+                            state = S_sub_param;
+                        }
+                    } else if (state == S_main_param) {
+                        state = S_sub_param;
+                    }
+                } else if (data[j] == ';') {
+                    if (state == S_initial) {
+                        if (arg_count >= max_args) {
+                            state = S_ignore;
+                        } else {
+                            ++arg_count;
+                            args[arg_count - 1] = default_arg;
+                            state = S_initial;
+                        }
+                    } else if (state == S_main_param) {
+                        state = S_initial;
+                    } else if (state == S_sub_param) {
+                        state = S_initial;
+                    }
                 } else if ('<' <= data[j] && data[j] <= '?') {
                     // prefix modifier
                     if (j == 2) {
@@ -1125,6 +1104,11 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 }
             }
 
+            if (state == S_initial && arg_count > 0 && arg_count < max_args) {
+                ++arg_count;
+                args[arg_count - 1] = default_arg;
+            }
+
 #define SEQ(f, pre, post) (((pre) << 16) | ((post) << 8) | (f))
             int32_t sequence_id = ok ? SEQ(final, prefix_modifier, postfix_modifier) : 0;
 
@@ -1158,43 +1142,52 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
 
             if (!event.type && sequence_id == SEQ('M', 0, 0) && length > 7) {
                 // urxvt mouse mode 1015
-                int x, y, btn;
-                if (termpaintp_input_parse_dec_3(data + 2, length - 3, &btn, &x, &y)
-                        && btn >= ' ' && x > 0 && y > 0) {
-                    event.type = TERMPAINT_EV_MOUSE;
-                    event.mouse.raw_btn_and_flags = btn - ' ';
-                    event.mouse.x = x - 1;
-                    event.mouse.y = y - 1;
-                    termpaintp_input_translate_mouse_flags(&event, 0);
+                if (arg_count == 3 && !has_sub_args) {
+                    int btn = args[0];
+                    int x = args[1];
+                    int y = args[2];
+                    if (btn >= ' ' && x > 0 && y > 0) {
+                        event.type = TERMPAINT_EV_MOUSE;
+                        event.mouse.raw_btn_and_flags = btn - ' ';
+                        event.mouse.x = x - 1;
+                        event.mouse.y = y - 1;
+                        termpaintp_input_translate_mouse_flags(&event, 0);
+                    }
                 }
             }
 
             if (!event.type && length > 8 && (sequence_id == SEQ('M', '<', 0) || sequence_id == SEQ('m', '<', 0))) {
                 // mouse mode 1006
-                int x, y, btn;
-                if (termpaintp_input_parse_dec_3(data + 3, length - 4, &btn, &x, &y)
-                        && x > 0 && y > 0) {
-                    event.type = TERMPAINT_EV_MOUSE;
-                    event.mouse.raw_btn_and_flags = btn;
-                    event.mouse.x = x - 1;
-                    event.mouse.y = y - 1;
-                    termpaintp_input_translate_mouse_flags(&event, data[length - 1] == 'm' ? 1 : 2);
+                if (arg_count == 3 && !has_sub_args) {
+                    int btn = (args[0] != default_arg ? args[0] : 0);
+                    int x = args[1];
+                    int y = args[2];
+                    if (x > 0 && y > 0) {
+                        event.type = TERMPAINT_EV_MOUSE;
+                        event.mouse.raw_btn_and_flags = btn;
+                        event.mouse.x = x - 1;
+                        event.mouse.y = y - 1;
+                        termpaintp_input_translate_mouse_flags(&event, data[length - 1] == 'm' ? 1 : 2);
+                    }
                 }
             }
 
 
             if ((!event.type || ctx->expect_cursor_position_report > 0)
                     && length > 5 && (sequence_id == SEQ('R', 0, 0) || sequence_id == SEQ('R', '?', 0))) {
-                int x, y;
-                if (termpaintp_input_parse_dec_2(data + params_start, params_len, &y, &x)
-                        && x > 0 && y > 0) {
-                    event.type = TERMPAINT_EV_CURSOR_POSITION;
-                    event.cursor_position.x = x - 1;
-                    event.cursor_position.y = y - 1;
-                    if (prefix_modifier == 0) {
-                        ctx->expect_cursor_position_report -= 1;
+                if (arg_count >= 2 && !has_sub_args) {
+                    int y = args[0];
+                    int x = args[1];
+
+                    if (x > 0 && y > 0) {
+                        event.type = TERMPAINT_EV_CURSOR_POSITION;
+                        event.cursor_position.x = x - 1;
+                        event.cursor_position.y = y - 1;
+                        if (prefix_modifier == 0) {
+                            ctx->expect_cursor_position_report -= 1;
+                        }
+                        event.cursor_position.safe = prefix_modifier == '?';
                     }
-                    event.cursor_position.safe = prefix_modifier == '?';
                 }
             }
 
@@ -1207,8 +1200,8 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
 
             if (!event.type && sequence_id == SEQ('~', 0, 0)) {
-                int num;
-                if (termpaintp_input_parse_dec_1(data + params_start, params_len, &num)) {
+                if (arg_count >= 1 && !has_sub_args) {
+                    int num = args[0];
                     if (num == 200) {
                         if (ctx->handle_paste) {
                             ctx->in_paste = true;
@@ -1244,8 +1237,9 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             if (!event.type) {
                 if (length > 5 &&
                         (sequence_id == SEQ('y', 0, '$') || sequence_id == SEQ('y', '?', '$'))) {
-                    int mode, status;
-                    if (termpaintp_input_parse_dec_2(data + params_start, params_len, &mode, &status)) {
+                    if (arg_count >= 2 && !has_sub_args) {
+                        int mode = (args[0] != default_arg ? args[0] : 0);
+                        int status = (args[1] != default_arg ? args[1] : 0);
                         event.type = TERMPAINT_EV_MODE_REPORT;
                         event.mode.number = mode;
                         event.mode.kind = (prefix_modifier == '?') ? 1 : 0;
