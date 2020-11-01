@@ -2,8 +2,6 @@
 #include "termpaintx.h"
 
 #ifdef USE_TK_DEBUGLOG
-#include <fcntl.h>
-#include <unistd.h>
 #include <spawn.h>
 #endif
 
