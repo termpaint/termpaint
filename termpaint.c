@@ -2046,6 +2046,10 @@ void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
 
     termpaint_integration *integration = term->integration;
 
+    if (term->primary.height && term->primary.height) {
+        termpaint_terminal_set_cursor(term, 0, term->primary.height - 1);
+    }
+
     if (term->restore_seq.len) {
         int_write(integration, (const char*)term->restore_seq.data, term->restore_seq.len);
     }
