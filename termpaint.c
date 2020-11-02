@@ -2704,7 +2704,7 @@ void termpaint_terminal_set_cursor_style(termpaint_terminal *term, int style, bo
     }
 }
 
-void termpaintp_terminal_dirty_color_entry(termpaint_terminal *term, termpaint_color_entry *entry) {
+static void termpaintp_terminal_dirty_color_entry(termpaint_terminal *term, termpaint_color_entry *entry) {
     if (!entry->dirty) {
         entry->dirty = true;
         entry->next_dirty = term->colors_dirty;
