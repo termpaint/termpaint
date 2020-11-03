@@ -48,6 +48,7 @@ import_whitelist_x = [
     'open', 'open64',
     'poll',
     'read',
+    'sigaction',
     'sigfillset',
     'tcgetattr',
     'tcsetattr',

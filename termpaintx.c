@@ -33,6 +33,58 @@
 
 #define FDPTR(var) ((termpaint_integration_fd*)var)
 
+typedef struct termpaint_integration_fd_ {
+    termpaint_integration base;
+    char *options;
+    int fd;
+    bool auto_close;
+    struct termios original_terminal_attributes;
+    bool callback_requested;
+    bool awaiting_response;
+    bool poll_sigwinch;
+    termpaint_terminal *terminal;
+    termpaintx_ttyrescue *rescue;
+} termpaint_integration_fd;
+
+static bool sigwinch_set;
+static int sigwinch_pipe[2];
+
+static void termpaintx_sig_winch_pipe_handler(int sig, siginfo_t *info, void *ucontext) {
+    (void)sig; (void)info; (void)ucontext;
+    char dummy = ' ';
+    (void)!write(sigwinch_pipe[1], &dummy, 1); // nothing much we can do, signal just gets lost then...
+}
+
+static void termpaintp_setup_winch(void) {
+    if (!sigwinch_set) {
+        bool ok = true;
+#ifdef __linux__
+        ok &= (pipe2(sigwinch_pipe, O_CLOEXEC | O_NONBLOCK) == 0);
+#else
+        ok &= (pipe(sigwinch_pipe) == 0);
+        ok &= (fcntl(sigwinch_pipe[0], F_SETFD, FD_CLOEXEC) == 0);
+        ok &= (fcntl(sigwinch_pipe[1], F_SETFD, FD_CLOEXEC) == 0);
+        ok &= (fcntl(sigwinch_pipe[0], F_SETFL, O_NONBLOCK) == 0);
+        ok &= (fcntl(sigwinch_pipe[1], F_SETFL, O_NONBLOCK) == 0);
+#endif
+        if (!ok) {
+            return;
+        }
+        struct sigaction act;
+        if (sigfillset(&act.sa_mask) != 0) {
+            return;
+        }
+        act.sa_flags = SA_RESTART | SA_SIGINFO;
+        act.sa_sigaction = &termpaintx_sig_winch_pipe_handler;
+
+        if (sigaction(SIGWINCH, &act, NULL) != 0) {
+            return;
+        }
+
+        sigwinch_set = true;
+    }
+}
+
 static bool termpaintp_is_file_rw(int fd) {
     int ret = fcntl(fd, F_GETFL);
     return ret != -1 && (ret & O_ACCMODE) == O_RDWR;
@@ -73,7 +125,10 @@ termpaint_integration *termpaintx_full_integration(const char *options) {
         }
     }
 
-    return termpaintx_full_integration_from_fd(fd, auto_close, options);
+    termpaint_integration *ret = termpaintx_full_integration_from_fd(fd, auto_close, options);
+    termpaintp_setup_winch();
+    FDPTR(ret)->poll_sigwinch = true;
+    return ret;
 }
 
 
@@ -83,20 +138,12 @@ termpaint_integration *termpaintx_full_integration_from_controlling_terminal(con
     if (fd == -1) {
         return nullptr;
     }
-    return termpaintx_full_integration_from_fd(fd, true, options);
+    termpaint_integration *ret = termpaintx_full_integration_from_fd(fd, true, options);
+    termpaintp_setup_winch();
+    FDPTR(ret)->poll_sigwinch = true;
+    return ret;
 }
 
-typedef struct termpaint_integration_fd_ {
-    termpaint_integration base;
-    char *options;
-    int fd;
-    bool auto_close;
-    struct termios original_terminal_attributes;
-    bool callback_requested;
-    bool awaiting_response;
-    termpaint_terminal *terminal;
-    termpaintx_ttyrescue *rescue;
-} termpaint_integration_fd;
 
 static void fd_free(termpaint_integration* integration) {
     termpaint_integration_fd* fd_data = FDPTR(integration);
@@ -313,10 +360,44 @@ void termpaintx_full_integration_set_terminal(termpaint_integration *integration
     t->terminal = terminal;
 }
 
+static void termpaintp_handle_self_pipe(termpaint_integration_fd *t, struct pollfd *pfd) {
+    if (pfd->revents == POLLIN) {
+        // drain signaling pipe
+        char buff[1000];
+        int ret = read(sigwinch_pipe[0], buff, 999);
+        if (ret != EINTR && ret != EAGAIN && ret != EWOULDBLOCK) {
+            // something broken, don't try again
+            sigwinch_set = false;
+        }
+        int width, height;
+        termpaintx_full_integration_terminal_size(&t->base, &width, &height);
+        termpaint_surface* surface = termpaint_terminal_get_surface(t->terminal);
+        termpaint_surface_resize(surface, width, height);
+    } else {
+        // something broken, don't try again
+        sigwinch_set = false;
+    }
+}
+
 bool termpaintx_full_integration_do_iteration(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
 
     char buff[1000];
+    if (t->poll_sigwinch && sigwinch_set) {
+        struct pollfd info[2];
+        info[0].fd = t->fd;
+        info[0].events = POLLIN;
+        info[1].fd = sigwinch_pipe[0];
+        info[1].events = POLLIN;
+        int ret = poll(info, 2, -1);
+        if (ret < 0 && errno == EINTR) {
+            return true;
+        }
+        if (ret > 0 && info[1].revents != 0) {
+            termpaintp_handle_self_pipe(t, &info[1]);
+            return true;
+        }
+    }
     int amount = (int)read(t->fd, buff, 999);
     if (amount < 0) {
         return false;
@@ -355,10 +436,31 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
 
     int ret;
     {
-        struct pollfd info;
-        info.fd = t->fd;
-        info.events = POLLIN;
-        ret = poll(&info, 1, *milliseconds);
+        int count = 1;
+        struct pollfd info[2];
+        info[0].fd = t->fd;
+        info[0].events = POLLIN;
+        if (t->poll_sigwinch && sigwinch_set) {
+            info[1].fd = sigwinch_pipe[0];
+            info[1].events = POLLIN;
+            ++count;
+        }
+        ret = poll(info, count, *milliseconds);
+        if (ret < 0 && errno == EINTR) {
+            struct timespec now;
+            clock_gettime(CLOCK_REALTIME, &now);
+            *milliseconds -= ((now.tv_sec - start_time.tv_sec) * 1000
+                       + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000);
+            return true;
+        }
+        if (count >= 2 && ret > 0 && info[1].revents != 0) {
+            termpaintp_handle_self_pipe(t, &info[1]);
+            struct timespec now;
+            clock_gettime(CLOCK_REALTIME, &now);
+            *milliseconds -= ((now.tv_sec - start_time.tv_sec) * 1000
+                       + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000);
+            return true;
+        }
     }
     if (ret == 1) {
         int amount = (int)read(t->fd, buff, 999);
@@ -451,7 +553,7 @@ termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(con
     termpaint_integration *integration = termpaintx_full_integration(options);
     if (!integration) {
         const char* error = "Error: Terminal not available!";
-        write(1, error, strlen(error));
+        (void)!write(1, error, strlen(error)); // already printing an error message
         return nullptr;
     }
 
