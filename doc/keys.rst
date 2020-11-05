@@ -53,5 +53,4 @@ Keys
    termpaint_input_f10                  f10
    termpaint_input_f11                  f11
    termpaint_input_f12                  f12
-   termpaint_input_i_resync             i_resync
    ==================================   =======

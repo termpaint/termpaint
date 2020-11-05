@@ -27,8 +27,6 @@ static const char ATOM_ ## name[] = value; \
 const char *termpaint_input_ ## name (void) { return ATOM_ ## name; }
 
 
-DEF_ATOM(i_resync, "i_resync")
-
 // Naming based on W3C uievents-code spec
 DEF_ATOM(enter, "Enter")
 DEF_ATOM(space, "Space")
@@ -87,6 +85,8 @@ DEF_ATOM(focus_out, "FocusOut")
 
 DEF_ATOM(paste_begin, "pasteBegin")
 DEF_ATOM(paste_end, "pasteEnd")
+
+DEF_ATOM(i_resync, "i_resync")
 
 
 #define MOD_CTRL TERMPAINT_MOD_CTRL
@@ -637,7 +637,6 @@ static const key_mapping_entry key_mapping_table[] = {
     XTERM_MODS("\e[27;", ";8~", ATOM_backspace), // modifiy other keys mode
     XTERM_MODS("\e[8;", "u", ATOM_backspace), // modifiy other keys mode
 
-    { "\e[0n", ATOM_i_resync, 0 },
     { 0, 0, 0 }
 };
 
@@ -905,6 +904,12 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.key.modifier = matched_entry->modifiers;
             }
         }
+        if (length == 4 && data[0] == '\e' && data[1] == '[' && data[2] == '0' && data[3] == 'n') {
+            event.type = TERMPAINT_EV_MISC;
+            event.misc.atom = ATOM_i_resync;
+            event.misc.length = strlen(ATOM_i_resync);
+        }
+
         if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
             // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;

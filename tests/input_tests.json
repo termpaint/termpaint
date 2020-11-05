@@ -2562,13 +2562,6 @@
         "type": "char"
     },
     {
-        "key": "i_resync",
-        "keyId": "i_resync.",
-        "mod": "   ",
-        "raw": "1b5b306e",
-        "type": "key"
-    },
-    {
         "chars": "d",
         "keyId": "d.A",
         "mod": " A ",

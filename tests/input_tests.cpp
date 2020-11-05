@@ -610,7 +610,7 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
                 REQUIRE(expectedMod == actualModifier);
                 state = GOT_EVENT;
             } else if (state == GOT_EVENT) {
-                bool wasSync = event->type == TERMPAINT_EV_KEY && event->key.atom == termpaint_input_i_resync();
+                bool wasSync = event->type == TERMPAINT_EV_MISC && event->misc.atom == termpaint_input_i_resync();
                 REQUIRE(wasSync);
                 state = GOT_SYNC;
             } else {
@@ -1267,8 +1267,8 @@ TEST_CASE("input: retriggering") {
             }
             state = GOT_EVENT;
         } else if (state == GOT_EVENT) {
-            REQUIRE(event->type == TERMPAINT_EV_KEY);
-            CHECK(event->key.atom == termpaint_input_i_resync());
+            REQUIRE(event->type == TERMPAINT_EV_MISC);
+            CHECK(event->misc.atom == termpaint_input_i_resync());
             state = GOT_RESYNC;
         } else {
             FAIL("unexpected state " << state);
@@ -1351,8 +1351,8 @@ TEST_CASE("input: peek buffer") {
         if (state == GOT_KEY) {
             FAIL("more events than expected");
         } else if (state == START) {
-            REQUIRE(event->type == TERMPAINT_EV_KEY);
-            REQUIRE(event->key.atom == termpaint_input_i_resync());
+            REQUIRE(event->type == TERMPAINT_EV_MISC);
+            REQUIRE(event->misc.atom == termpaint_input_i_resync());
             state = GOT_KEY;
         } else {
             FAIL("unexpected state " << state);
