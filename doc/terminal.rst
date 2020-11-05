@@ -189,6 +189,4 @@ Functions
   Fills ``buffer`` with null terminaled string with debugging details about the detected terminal type.
   The buffer pointed to by ``buffer`` needs to be at least ``buffer_length`` bytes long.
 
-.. c:function:: void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y)
 
-  deprecated

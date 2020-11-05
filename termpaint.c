@@ -1848,7 +1848,7 @@ static void int_flush(termpaint_integration *integration) {
     integration->p->flush(integration);
 }
 
-void termpaint_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
+static void termpaintp_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
     termpaint_integration *integration = term->integration;
     int_puts(integration, "\e[");
     int_put_num(integration, y+1);
@@ -2047,7 +2047,7 @@ void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
 
     if (term->primary.height && term->primary.height) {
-        termpaint_terminal_set_cursor(term, 0, term->primary.height - 1);
+        termpaintp_terminal_set_cursor(term, 0, term->primary.height - 1);
     }
 
     if (term->restore_seq.len) {
@@ -2636,7 +2636,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     }
 
     if (term->cursor_x != -1 && term->cursor_y != -1) {
-        termpaint_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
+        termpaintp_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
     } else {
         if (pending_colum_move) {
             int_puts(integration, "\e[");
