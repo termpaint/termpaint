@@ -2355,7 +2355,8 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             if (softwrap == sw_no) {
                 for (int x = term->primary.width - 1; x >= 0; x--) {
                     cell* c = termpaintp_getcell(&term->primary, x, y);
-                    if ((c->text_len == 0 && c->text_overflow == nullptr)) {
+                    if ((c->text_len == 0 && c->text_overflow == nullptr)
+                            && (c->flags & CELL_ATTR_INVERSE) == 0) {
                         first_noncopy_space = x;
                     } else {
                         break;
