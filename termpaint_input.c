@@ -83,8 +83,8 @@ DEF_ATOM(f12, "F12")
 DEF_ATOM(focus_in, "FocusIn")
 DEF_ATOM(focus_out, "FocusOut")
 
-DEF_ATOM(paste_begin, "pasteBegin")
-DEF_ATOM(paste_end, "pasteEnd")
+DEF_ATOM(paste_begin, "PasteBegin")
+DEF_ATOM(paste_end, "PasteEnd")
 
 DEF_ATOM(i_resync, "i_resync")
 
