@@ -63,7 +63,6 @@ _tERMPAINT_PUBLIC void termpaint_terminal_free_with_restore(termpaint_terminal *
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_flush(termpaint_terminal *term, _Bool full_repaint);
 _tERMPAINT_PUBLIC const char *termpaint_terminal_restore_sequence(const termpaint_terminal *term);
-_tERMPAINT_PUBLIC void termpaint_terminal_reset_attributes(const termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_cursor_position(termpaint_terminal *term, int x, int y);
 _tERMPAINT_PUBLIC void termpaint_terminal_set_cursor_visible(termpaint_terminal *term, _Bool visible);
 

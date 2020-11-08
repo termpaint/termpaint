@@ -2675,12 +2675,6 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     int_flush(integration);
 }
 
-void termpaint_terminal_reset_attributes(const termpaint_terminal *term) {
-    termpaint_integration *integration = term->integration;
-    int_puts(integration, "\e[0m");
-}
-
-
 void termpaint_terminal_set_cursor_position(termpaint_terminal *term, int x, int y) {
     term->cursor_x = x;
     term->cursor_y = y;

@@ -84,10 +84,6 @@ Functions
 
   TODO: Discuss restrictions with regard to termpaint_terminal_free_with_restore
 
-.. c:function:: void termpaint_terminal_reset_attributes(const termpaint_terminal *term)
-
-  TODO
-
 .. c:function:: void termpaint_terminal_set_cursor_position(termpaint_terminal *term, int x, int y)
 
   Sets the text cursor position for the terminal object ``term``. The cursor is moved to this position

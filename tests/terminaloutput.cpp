@@ -207,25 +207,6 @@ TEST_CASE("restore - no fullscreen") {
 }
 
 
-TEST_CASE("reset attributes") {
-    SimpleFullscreen t;
-    uattr_ptr attr;
-    attr.reset(termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE));
-    termpaint_attr_set_style(attr.get(), TERMPAINT_STYLE_BOLD);
-
-    termpaint_surface_clear_with_attr(t.surface, attr);
-    termpaint_terminal_flush(t.terminal, false);
-
-    termpaint_terminal_reset_attributes(t.terminal);
-
-    CapturedState s = capture();
-
-    CHECK(s.sgrState.style == 0);
-    CHECK(s.sgrState.fg == std::string());
-    CHECK(s.sgrState.bg == std::string());
-    CHECK(s.sgrState.deco == std::string());
-}
-
 TEST_CASE("simple text") {
     SimpleFullscreen t;
     termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
