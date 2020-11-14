@@ -4643,7 +4643,7 @@ _Bool termpaint_text_measurement_feed_utf16(termpaint_text_measurement *m, const
     return false;
 }
 
-_Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const uint8_t *code_units, int length, _Bool final) {
+_Bool termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const char *code_units, int length, _Bool final) {
     if (m->decoder_state != TMD_INITIAL && m->decoder_state != TMD_PARTIAL_UTF8) {
         // This is bogus usage, but just paper over it
         m->decoder_state = TMD_INITIAL;

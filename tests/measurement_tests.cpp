@@ -272,7 +272,7 @@ Result measureOneCluster(const std::vector<std::string>& partition) {
         const std::string &part = partition[i];
         const bool last = i == partition.size() - 1;
         result.limitReached = termpaint_text_measurement_feed_utf8(tm.get(),
-                                                                   reinterpret_cast<const uint8_t*>(part.data()),
+                                                                   part.data(),
                                                                    toInt(part.length()),
                                                                    last);
         if (!last) {
@@ -391,7 +391,7 @@ Result measureTest(const std::vector<std::string>& partition, int limCodepoints,
         const std::string &part = partition[i];
         const bool last = i == partition.size() - 1;
         result.limitReached = termpaint_text_measurement_feed_utf8(tm.get(),
-                                                                   reinterpret_cast<const uint8_t*>(part.data()),
+                                                                   part.data(),
                                                                    toInt(part.length()),
                                                                    last);
 
@@ -819,7 +819,7 @@ TEST_CASE( "Continue measurements for strings", "[measurement]") {
             expectedCodeunits += segment.str.size();
             termpaint_text_measurement_set_limit_width(tm.get(), limWidth);
             bool limitReached = termpaint_text_measurement_feed_utf8(tm.get(),
-                                                                     reinterpret_cast<const uint8_t*>(all.data()) + previousRef,
+                                                                     all.data() + previousRef,
                                                                      toInt(all.length()) - previousRef,
                                                                      true);
             int codeunits = termpaint_text_measurement_last_ref(tm.get());

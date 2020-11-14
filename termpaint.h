@@ -284,7 +284,7 @@ _tERMPAINT_PUBLIC void termpaint_text_measurement_set_limit_ref(termpaint_text_m
 _tERMPAINT_PUBLIC int termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust);
 _tERMPAINT_PUBLIC _Bool /* reached limit */ termpaint_text_measurement_feed_utf32(termpaint_text_measurement *m, const uint32_t *chars, int length, _Bool final);
 _tERMPAINT_PUBLIC _Bool /* reached limit */ termpaint_text_measurement_feed_utf16(termpaint_text_measurement *m, const uint16_t *code_units, int length, _Bool final);
-_tERMPAINT_PUBLIC _Bool /* reached limit */ termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const uint8_t *code_units, int length, _Bool final);
+_tERMPAINT_PUBLIC _Bool /* reached limit */ termpaint_text_measurement_feed_utf8(termpaint_text_measurement *m, const char *code_units, int length, _Bool final);
 
 #ifdef __cplusplus
 }
