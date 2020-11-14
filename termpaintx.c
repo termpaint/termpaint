@@ -316,7 +316,7 @@ termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_cl
     return (termpaint_integration*)ret;
 }
 
-bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integration) {
+void termpaintx_full_integration_wait_for_ready(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
     while (termpaint_terminal_auto_detect_state(t->terminal) == termpaint_auto_detect_running) {
         if (!termpaintx_full_integration_do_iteration(integration)) {
@@ -324,10 +324,9 @@ bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integrati
             break;
         }
     }
-    return false;
 }
 
-bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, const char* message) {
+void termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, const char* message) {
     termpaint_integration_fd *t = FDPTR(integration);
     while (termpaint_terminal_auto_detect_state(t->terminal) == termpaint_auto_detect_running) {
         if (milliseconds > 0) {
@@ -345,7 +344,6 @@ bool termpaintx_full_integration_wait_for_ready_with_message(termpaint_integrati
             }
         }
     }
-    return false;
 }
 
 bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height) {
