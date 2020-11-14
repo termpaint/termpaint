@@ -178,7 +178,7 @@ static void fd_free(termpaint_integration* integration) {
     }
 
     if (fd_data->rescue) {
-        termpaint_ttyrescue_stop(fd_data->rescue);
+        termpaintx_ttyrescue_stop(fd_data->rescue);
         fd_data->rescue = nullptr;
     }
 
@@ -529,17 +529,17 @@ void termpaintx_full_integration_apply_input_quirks(termpaint_integration *integ
 static void fd_restore_sequence_updated(struct termpaint_integration_ *integration, const char *data, int length) {
     termpaint_integration_fd *t = FDPTR(integration);
     if (t->rescue) {
-        termpaint_ttyrescue_update(t->rescue, data, length);
+        termpaintx_ttyrescue_update(t->rescue, data, length);
     }
 }
 
 bool termpaintx_full_integration_ttyrescue_start(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
     if (t->rescue || !t->terminal) return false;
-    t->rescue = termpaint_ttyrescue_start(t->fd, termpaint_terminal_restore_sequence(t->terminal));
+    t->rescue = termpaintx_ttyrescue_start_or_nullptr(t->fd, termpaint_terminal_restore_sequence(t->terminal));
     if (t->rescue) {
         termpaint_integration_set_restore_sequence_updated(integration, fd_restore_sequence_updated);
-        termpaint_ttyrescue_set_restore_termios(t->rescue, &t->original_terminal_attributes);
+        termpaintx_ttyrescue_set_restore_termios(t->rescue, &t->original_terminal_attributes);
         return true;
     }
     return false;

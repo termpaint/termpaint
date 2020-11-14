@@ -7,9 +7,6 @@
 extern "C" {
 #endif
 
-struct termpaint_ttyrescue_;
-typedef struct termpaint_ttyrescue_ termpaintx_ttyrescue;
-
 _tERMPAINT_PUBLIC _Bool termpaintx_full_integration_available(void);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration(const char *options);
 _tERMPAINT_PUBLIC termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options);

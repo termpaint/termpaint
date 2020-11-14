@@ -81,7 +81,7 @@ _Static_assert(sizeof(struct termpaint_ipcseg) < SEGLEN, "termpaint_ipcseg does 
 
 int termpaintp_rescue_embedded(struct termpaint_ipcseg* ctlseg);
 
-struct termpaint_ttyrescue_ {
+struct termpaintx_ttyrescue_ {
     int fd;
     struct termpaint_ipcseg* seg;
     bool using_mmap;
@@ -117,7 +117,7 @@ static char* termpaintp_asprintf(const char *fmt, ...) {
     return ret;
 }
 
-termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_seq) {
+termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const char *restore_seq) {
     termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
     ret->using_mmap = 0;
     int pipe[2];
@@ -211,7 +211,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
         return nullptr;
     }
 
-    termpaint_ttyrescue_update(ret, restore_seq, strlen(restore_seq));
+    termpaintx_ttyrescue_update(ret, restore_seq, strlen(restore_seq));
 
     pid_t pid = fork();
     if (pid < 0) {
@@ -428,7 +428,7 @@ termpaintx_ttyrescue *termpaint_ttyrescue_start(int tty_fd, const char *restore_
     }
 }
 
-void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
+void termpaintx_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
     if (!tpr) {
         return;
     }
@@ -449,7 +449,7 @@ void termpaint_ttyrescue_stop(termpaintx_ttyrescue *tpr) {
     free(tpr);
 }
 
-_Bool termpaint_ttyrescue_update(termpaintx_ttyrescue *tpr, const char *data, int len) {
+_Bool termpaintx_ttyrescue_update(termpaintx_ttyrescue *tpr, const char *data, int len) {
     if (tpr->seg && len < (int)sizeof(tpr->seg->seq1)) {
         // active is only written from this process. It's atomic to get memory_order_seq_cst and
         // to avoid tearing
@@ -468,7 +468,7 @@ _Bool termpaint_ttyrescue_update(termpaintx_ttyrescue *tpr, const char *data, in
     return 0;
 }
 
-bool termpaint_ttyrescue_set_restore_termios(termpaintx_ttyrescue *tpr, const struct termios *original_terminal_attributes) {
+bool termpaintx_ttyrescue_set_restore_termios(termpaintx_ttyrescue *tpr, const struct termios *original_terminal_attributes) {
     if (tpr->seg) {
         tpr->seg->termios_iflag = original_terminal_attributes->c_iflag;
         tpr->seg->termios_oflag = original_terminal_attributes->c_oflag;
