@@ -40,19 +40,19 @@ typedef struct termpaint_integration_ {
 } termpaint_integration;
 
 _tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integration,
-                                                  void (*free)(struct termpaint_integration_ *integration),
-                                                  void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
-                                                  void (*flush)(struct termpaint_integration_ *integration));
+                                                  void (*free)(termpaint_integration *integration),
+                                                  void (*write)(termpaint_integration *integration, const char *data, int length),
+                                                  void (*flush)(termpaint_integration *integration));
 _tERMPAINT_PUBLIC _Bool termpaint_integration_init_mustcheck(termpaint_integration *integration,
-                                                           void (*free)(struct termpaint_integration_ *integration),
-                                                           void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
-                                                           void (*flush)(struct termpaint_integration_ *integration));
+                                                             void (*free)(termpaint_integration *integration),
+                                                             void (*write)(termpaint_integration *integration, const char *data, int length),
+                                                             void (*flush)(termpaint_integration *integration));
 _tERMPAINT_PUBLIC void termpaint_integration_deinit(termpaint_integration *integration);
-_tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(struct termpaint_integration_ *integration));
-_tERMPAINT_PUBLIC void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(struct termpaint_integration_ *integration));
-_tERMPAINT_PUBLIC void termpaint_integration_set_awaiting_response(termpaint_integration *integration, void (*awaiting_response)(struct termpaint_integration_ *integration));
-_tERMPAINT_PUBLIC void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length));
-_tERMPAINT_PUBLIC void termpaint_integration_set_logging_func(termpaint_integration *integration, void (*logging_func)(struct termpaint_integration_ *integration, const char *data, int length));
+_tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(termpaint_integration *integration));
+_tERMPAINT_PUBLIC void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(termpaint_integration *integration));
+_tERMPAINT_PUBLIC void termpaint_integration_set_awaiting_response(termpaint_integration *integration, void (*awaiting_response)(termpaint_integration *integration));
+_tERMPAINT_PUBLIC void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(termpaint_integration *integration, const char *data, int length));
+_tERMPAINT_PUBLIC void termpaint_integration_set_logging_func(termpaint_integration *integration, void (*logging_func)(termpaint_integration *integration, const char *data, int length));
 
 // getters go here if need arises
 

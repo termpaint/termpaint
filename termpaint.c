@@ -606,10 +606,11 @@ static void termpaintp_str_append_printable_n(termpaint_str *tps, const char *st
     /* end */
 
 
-_tERMPAINT_PUBLIC bool termpaint_integration_init_mustcheck(termpaint_integration *integration,
-                                                           void (*free)(struct termpaint_integration_ *integration),
-                                                           void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
-                                                           void (*flush)(struct termpaint_integration_ *integration)) {
+bool termpaint_integration_init_mustcheck(termpaint_integration *integration,
+                                          void (*free)(termpaint_integration *integration),
+                                          void (*write)(termpaint_integration *integration, const char *data, int length),
+                                          void (*flush)(termpaint_integration *integration)) {
+
     integration->p = calloc(1, sizeof(termpaint_integration_private));
     if (!integration->p) {
         return false;
@@ -621,27 +622,27 @@ _tERMPAINT_PUBLIC bool termpaint_integration_init_mustcheck(termpaint_integratio
 }
 
 _tERMPAINT_PUBLIC void termpaint_integration_init(termpaint_integration *integration,
-                                                  void (*free)(struct termpaint_integration_ *integration),
-                                                  void (*write)(struct termpaint_integration_ *integration, const char *data, int length),
-                                                  void (*flush)(struct termpaint_integration_ *integration)) {
+                                                  void (*free)(termpaint_integration *integration),
+                                                  void (*write)(termpaint_integration *integration, const char *data, int length),
+                                                  void (*flush)(termpaint_integration *integration)) {
     if (!termpaint_integration_init_mustcheck(integration, free, write, flush)) {
         termpaintp_oom_nolog();
     }
 }
 
-_tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(struct termpaint_integration_ *integration)) {
+_tERMPAINT_PUBLIC void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(termpaint_integration *integration)) {
     integration->p->is_bad = is_bad;
 }
 
-_tERMPAINT_PUBLIC void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(struct termpaint_integration_ *integration)) {
+_tERMPAINT_PUBLIC void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(termpaint_integration *integration)) {
     integration->p->request_callback = request_callback;
 }
 
-_tERMPAINT_PUBLIC void termpaint_integration_set_awaiting_response(termpaint_integration *integration, void (*awaiting_response)(struct termpaint_integration_ *integration)) {
+_tERMPAINT_PUBLIC void termpaint_integration_set_awaiting_response(termpaint_integration *integration, void (*awaiting_response)(termpaint_integration *integration)) {
     integration->p->awaiting_response = awaiting_response;
 }
 
-_tERMPAINT_PUBLIC void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(struct termpaint_integration_ *integration, const char *data, int length)) {
+_tERMPAINT_PUBLIC void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(termpaint_integration *integration, const char *data, int length)) {
     integration->p->restore_sequence_updated = restore_sequence_updated;
 }
 
