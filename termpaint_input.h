@@ -23,7 +23,7 @@ _tERMPAINT_PUBLIC termpaint_input *termpaint_input_new_or_nullptr(void);
 _tERMPAINT_PUBLIC void termpaint_input_free(termpaint_input *ctx);
 _tERMPAINT_PUBLIC void termpaint_input_set_raw_filter_cb(termpaint_input *ctx, _Bool (*cb)(void *user_data, const char *data, unsigned length, _Bool overflow), void *user_data);
 _tERMPAINT_PUBLIC void termpaint_input_set_event_cb(termpaint_input *ctx, void (*cb)(void *user_data, termpaint_event* event), void *user_data);
-_tERMPAINT_PUBLIC _Bool termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned length);
+_tERMPAINT_PUBLIC void termpaint_input_add_data(termpaint_input *ctx, const char *data, unsigned length);
 
 _tERMPAINT_PUBLIC void termpaint_input_expect_cursor_position_report(termpaint_input *ctx);
 

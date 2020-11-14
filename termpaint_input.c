@@ -1491,7 +1491,7 @@ static bool termpaintp_input_legacy_mouse_bytes_finished(termpaint_input *ctx) {
     }
 }
 
-bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned length) {
+void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned length) {
     const unsigned char *data = (const unsigned char*)data_s;
 
     for (unsigned i = 0; i < length; i++) {
@@ -1703,7 +1703,6 @@ bool termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
             --i; // process this char again
         }
     }
-    return false;
 }
 
 
