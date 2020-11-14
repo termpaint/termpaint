@@ -398,7 +398,11 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     }
     int amount = (int)read(t->fd, buff, 999);
     if (amount < 0) {
-        return false;
+        if (errno != EINTR && errno != EWOULDBLOCK) {
+            return false;
+        } else {
+            return true;
+        }
     }
     t->awaiting_response = false;
     termpaint_terminal_add_input_data(t->terminal, buff, amount);
@@ -412,7 +416,11 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
         if (ret == 1) {
             int amount = (int)read(t->fd, buff, 999);
             if (amount < 0) {
-                return false;
+                if (errno != EINTR && errno != EWOULDBLOCK) {
+                    return false;
+                } else {
+                    return true;
+                }
             }
             t->awaiting_response = false;
             termpaint_terminal_add_input_data(t->terminal, buff, amount);
@@ -463,7 +471,11 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
     if (ret == 1) {
         int amount = (int)read(t->fd, buff, 999);
         if (amount < 0) {
-            return false;
+            if (errno != EINTR && errno != EWOULDBLOCK) {
+                return false;
+            } else {
+                return true;
+            }
         }
         t->awaiting_response = false;
         termpaint_terminal_add_input_data(t->terminal, buff, amount);
@@ -485,7 +497,11 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
             if (ret == 1) {
                 int amount = (int)read(t->fd, buff, 999);
                 if (amount < 0) {
-                    return false;
+                    if (errno != EINTR && errno != EWOULDBLOCK) {
+                        return false;
+                    } else {
+                        return true;
+                    }
                 }
                 t->awaiting_response = false;
                 termpaint_terminal_add_input_data(t->terminal, buff, amount);
