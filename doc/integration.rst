@@ -3,58 +3,34 @@ Integration
 
 .. c:type:: termpaint_integration
 
-The core termpaint library does not come with integration into the operating systems input/output channels. It's desiged
-to be integrated into synchronous or asynchronous program designs.
+The core termpaint library does not come with integration into the operating system's input/output channels. It's designed
+to be integrated into synchronous or asynchronous program designs by a pluggable integration abstraction.
 
-There are auxillary functions in the termpaintx_* namespace that have some common code that can be used for integrations.
+There are auxiliary functions in the termpaintx_* namespace that have some common code that can be used for integrations.
 But this code is fairly limited, so if more capabilities are needed feel free to copy this code into your project.
 
-The integration consists of 3 major parts: terminal to termpaint communication, termpaint to terminal communication and
-terminal interface setup.
+To use the simple premade integration see the :doc:`termpaintx addon<termpaintx>`.
 
-Termpaint uses a struct with callbacks for calling integration code when needed. The :c:type:`termpaint_integration`
-structure contains the following callbacks:
+A user supplied integration consists of 3 major parts: terminal to termpaint communication, termpaint to terminal
+communication and terminal interface setup.
 
-  .. c:function:: void (*write)(struct termpaint_integration *integration, char *data, int length)
+Termpaint uses a semi-opaque struct which contains callbacks for calling the application provided integration code when
+needed. The :c:type:`termpaint_integration` structure can be used as part of a struct in the application provided
+integration code. It must be initialized by calling :c:func:`termpaint_integration_init()` with the mandatory
+callbacks. Additional optional callbacks can then be set with additional functions.
 
-    This callback is called by termpaint to write bytes to the terminal. The application needs to implement this function
-    so that ``length`` bytes of data starting at ``data`` are passed to the terminal. The data may be buffered. Termpaint
-    will call the ``flush`` callback when the buffered data needs to be transmitted to the terminal.
+When the integration is no longer needed the allocated resources have
+to be freed by calling :c:func:`termpaint_integration_deinit`, possibly from the integrations ``free`` callback.
 
-  .. c:function:: void (*flush)(struct termpaint_integration *integration)
-
-    This callback will be called when the data written using the ``write`` callback needs to be transmitted to the
-    terminal.
-
-  .. c:function:: void (*request_callback)(struct termpaint_integration *integration)
-
-    This callback is optional. With terminal input there are often cases where sequences might be finished or just the
-    start of a longer sequence. In this case termpaint forces to terminal to output additional data so it can make the
-    decision what interpretation is right. If this callback is set it allows the application to delay these commands for
-    a short while to wait for additional bytes from the terminal.
-
-    If this callback is implemented the application needs to remember that this callback was called and after a short
-    delay (while processing terminal input in the usual way) call :c:func:`termpaint_terminal_callback` on the terminal.
-    If this callback is invoked multiple times before the application calls :c:func:`termpaint_terminal_callback` one
-    call is sufficent.
-
-  .. c:function:: void (*free)(struct termpaint_integration *integration)
-
-    This callback is invoked when the terminal using this integration is deallocated. This function has to be provided,
-    but may be just a empty function if the memory of the integration is managed externally.
-
-  .. c:function:: _Bool (*is_bad)(struct termpaint_integration *integration)
-
-    This callback should return true, as long as the connection to the terminal is functional.
-
-A pointer to the :c:type:`termpaint_integration` is passed to :c:func:`termpaint_terminal_new` when creating the terminal
-object.
+The integration is connected to a terminal object by passing a pointer to its :c:type:`termpaint_integration` struct to
+:c:func:`termpaint_terminal_new` when creating the terminal object.
 
 Input bytes from the terminal to termpaint need to be passed to :c:func:`termpaint_terminal_add_input_data`. If enough
 bytes have accumulated to identify a input sequence termpaint will call the event callback set by the application using
-:c:func:`termpaint_terminal_set_event_cb` with the interpreted :doc:`event <events>`.
+:c:func:`termpaint_terminal_set_event_cb` with the interpreted :doc:`event <events>`. The integration needs to take
+care, that :c:func:`termpaint_terminal_add_input_data` is not called recursively from the callbacks set on the terminal.
 
-Some platforms have kernel level terminal processing that needs to be configured for termpaint to work. On \*nix like
+Some platforms have kernel level terminal processing that needs to be configured for termpaint to work. On \*nix-like
 platforms the kernel tty interface can be setup with :c:func:`termpaintx_fd_set_termios`. For details see the
 implementation of that function. In general the terminal interface should be set to disable all kernel interpretation
 and transformation features. If keyboard signal handling (ctrl-c, etc) is needed it can be left enabled. But in that
@@ -64,129 +40,128 @@ that would be incompatible with kernel signal generation.
 In addition to the kernel interface the terminal needs to be setup using configuration sequences. For this
 :c:func:`termpaint_terminal_setup_fullscreen` needs to be called with the size of the terminal.
 
-The terminal object works better with terminal specific setup which can enabled by doing a terminal auto-detection before
-calling :c:func:`termpaint_terminal_setup_fullscreen`. The terminal auto-detection can be started using
-:c:func:`termpaint_terminal_auto_detect`. This will initiate bidirectional communication to the terminal. The application
-can proceed with the setup when the detection is finished.
 
-For applications prefering synchronous integration the application should call
-:c:func:`termpaint_terminal_auto_detect_state` after each additional input from the terminal. If this function returns
-``termpaint_auto_detect_done`` the detection is finished.
 
-For applications prefering asynchronous integration the application needs to wait for an event of type
-:c:macro:`TERMPAINT_EV_AUTO_DETECT_FINISHED` before proceeding with terminal setup.
+All callbacks of the integration receive a pointer to the integration struct as the first parameter. If the integration
+just uses global variables the pointer can be ignored. If the integration itself uses a struct with data members the
+recommended setup is to begin the custom struct with :c:type:`termpaint_integration`::
 
-In either case the application needs to set an event callback before starting auto-detection.
-
-When the application terminates it needs to restore both terminal configuration as well as the kernel level terminal
-setup back to it's previous values. The first part should be done by calling
-:c:func:`termpaint_terminal_free_with_restore`. The second part should be done by using operating system specific calls
-to save the kernel settings before changing those and then restoring them after restoring the terminal setup.
-
-For simple synchronous applications termpaintx contains a functional integration. This integration does not support
-timed events or additional communication devices or connections.
-
-An example using this integration looks like this::
-
-  termpaint_integration *integration = termpaintx_full_integration("+kbdsigint +kbdsigtstp");
-  termpaint_terminal *terminal = termpaint_terminal_new(integration);
-  termpaint_terminal_set_event_cb(terminal, event_callback, NULL);
-  termpaintx_full_integration_set_terminal(integration, terminal);
-  termpaint_terminal_auto_detect(terminal);
-  termpaintx_full_integration_wait_for_ready(integration);
-  termpaintx_full_integration_apply_input_quirks(integration);
-  int width, height;
-  termpaintx_full_integration_terminal_size(integration, &width, &height);
-  termpaint_terminal_setup_fullscreen(terminal, width, height, "+kbdsig");
-
-  // use terminal here
-
-  while (!quit) {
-      if (!termpaint_full_integration_do_iteration(integration)) {
-          // some kind of error
-          break;
-      }
-      // either do work here or from the event_callback.
+  struct custom_integration {
+      termpaint_integration base;
+      // additional members go here.
   }
 
-  termpaint_terminal_free_with_restore(terminal);
+Then the callbacks can just cast their first argument to a pointer to the custom struct.
 
-TODO document termpaint_ttyrescue
+On \*nix-like operating systems the integration should arrange for proper cleanup if the application is suddenly
+terminated (e.g. a crash). The traditional way is to install signal handlers for various fatal signals and do
+the cleanup before terminating the application. All functions in termpaint are unsafe for use in signal handlers, so
+it's the job of the integration to save all needed information before the signal happens. There are two major parts of
+state to restore. The first is the kernel terminal layer configuration, which can simply be saved before changing it to
+the needed values for termpaint. The second is the state of the terminal itself that needs to be restored by outputting
+a sequence of characters to the terminal. This sequence can change as different features are used, thus the integration
+should set a callback via :c:func:`termpaint_integration_set_restore_sequence_updated` and save a copy of that data in
+a place where the signal handler can safely access it.
 
-termpaintx
-----------
+An alternative without installing signal handlers is to use a auxiliary watchdog process to restore the terminal state.
+The :doc:`termpaintx addon<termpaintx>` contains functions for such an watchdog process.
+See :c:func:`termpaintx_ttyrescue_start_or_nullptr` for details.
 
-termpaintx offers a very simple premade integration and a few functions that might be useful for custom integrations.
+Another signal handler is needed to detect terminal size changes. \*nix-like systems raise an ``SIGWINCH`` signal if the
+terminal size changes. This signal is best handled asynchronously (e.g. by using an event loop's signal support or using
+a self pipe). Outside of signal context the integration can retrieve the new terminal size using the ``TIOCGWINSZ``
+ioctl and resize the terminals primary surface to match using :c:func:`termpaint_surface_resize`.
 
-termpaintx is has operating system specific dependencies and might not be available for all compilation environments.
+Functions
+---------
 
-The free callback of this integration frees the memory used, thus termpaint_terminal_new takes ownership of the
-integration.
+See :ref:`safety` for general rules for calling functions in termpaint.
 
-.. c:function:: _Bool termpaintx_full_integration_available()
+.. c:function:: void termpaint_integration_init(termpaint_integration *integration, void (*free)(termpaint_integration *integration), void (*write)(termpaint_integration *integration, const char *data, int length), void (*flush)(termpaint_integration *integration))
 
-  Checks if the program is connected to a terminal. (using `isatty(3) <http://man7.org/linux/man-pages/man3/isatty.3.html>`__)
+  This function initializes a ``termpaint_integration`` structure and sets the 3 mandatory callback functions.
+  All of the callbacks must be set to a non-NULL value.
 
-  This function checks if :c:func:`termpaintx_full_integration` will likely succeed.
+  The callbacks are
 
-.. c:function:: termpaint_integration *termpaintx_full_integration(const char *options)
+  ``void (*write)(termpaint_integration *integration, char *data, int length)``
 
-  creates an integration object with the given options. It tries stdin, stdout, stderr and the processes controling
-  terminal.
+    This callback is called by termpaint to write bytes to the terminal. The application needs to implement this function
+    so that ``length`` bytes of data starting at ``data`` are passed to the terminal. The data should be buffered for
+    best performance. Termpaint will call the ``flush`` callback when the buffered data needs to be transmitted to
+    the terminal.
 
-  ``options`` is a space separated list of options.
+  ``void (*flush)(termpaint_integration *integration)``
 
-  Supported options:
+    This callback will be called when the data written using the ``write`` callback needs to be transmitted to the
+    terminal.
 
-    ``+kbdsigint``
+  ``void (*free)(termpaint_integration *integration)``
 
-      Do not disable kernel keyboard interrupt handling (usually Ctrl-C)
+    This callback is invoked when the terminal using this integration is deallocated. This function has to be provided,
+    but may be just a empty function if the memory of the integration is managed externally.
 
-    ``+kbdsigquit``
+.. c:function:: void termpaint_integration_deinit(termpaint_integration *integration)
 
-      Do not disable kernel keyboard quit handling (usually Ctrl-\)
+  This function frees resources internally held by a initialized ``termpaint_integration`` structure. It must be called
+  exactly once for each ``termpaint_integration`` structure initialized by :c:func:`termpaint_integration_init`.
 
-    ``+kbdsigtstp``
+.. c:function:: void termpaint_integration_set_request_callback(termpaint_integration *integration, void (*request_callback)(termpaint_integration *integration))
 
-      Do not disable kernel keyboard suspend handling (usually Ctrl-Z)
+  Sets the optional callback ``request_callback``:
 
-.. c:function:: termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options)
+  ``void (*request_callback)(termpaint_integration *integration)``
 
-  creates an integration object with the given options. It tries the processes controlling terminal.
+    With terminal input there are often cases where sequences might be finished or just the
+    start of a longer sequence. In this case termpaint forces to terminal to output additional data so it can make the
+    decision what interpretation is correct. If this callback is set it allows termpaint to delay these commands
+    for a short while to wait for additional bytes from the terminal.
 
-.. c:function:: termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options)
+    If this callback is implemented the application needs to remember that this callback was called and after a short
+    delay (while processing terminal input in the usual way) call :c:func:`termpaint_terminal_callback` on the terminal.
+    If this callback is invoked multiple times before the application calls :c:func:`termpaint_terminal_callback` one
+    call is sufficient.
 
-  creates an integration object with the given options. It uses file descriptor ``fd``. If ``auto_close`` is true, the
-  file descriptor will be closed when the integration is deallocated.
+    See also :ref:`resync`.
 
-.. c:function:: _Bool termpaintx_full_integration_wait_for_ready(termpaint_integration *integration)
+.. c:function:: void termpaint_integration_set_restore_sequence_updated(termpaint_integration *integration, void (*restore_sequence_updated)(termpaint_integration *integration, const char *data, int length))
 
-  Waits for the auto-detection to be finished. It internally calls :c:func:`termpaint_full_integration_do_iteration`
-  while waiting.
+  Sets the optional callback ``restore_sequence_updated``:
 
-.. c:function:: void termpaintx_full_integration_apply_input_quirks(termpaint_integration *integration)
+  ``void (*restore_sequence_updated)(termpaint_integration *integration, const char *data, int length)``
 
-  Setup input handling based on the auto detection result and tty parameters.
+    This callback is invoked every time the sequence to reset the terminal changes. This allows to cache a current value
+    to be used in crash recovery or suspend signal handlers where :c:func:`termpaint_terminal_restore_sequence` can not
+    be used.
 
-  Needs to be called after auto detection is finished.
+    The restore sequence can change over time as additional terminal configuration is requested (e.g. mouse modes,
+    set title or global color changes).
 
-  It internally calls :c:func:`termpaint_terminal_auto_detect_apply_input_quirks`
+.. c:function:: void termpaint_integration_set_is_bad(termpaint_integration *integration, _Bool (*is_bad)(termpaint_integration *integration))
 
-.. c:function:: void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal)
+  Sets the optional callback ``is_bad``:
 
-  Sets the terminal object to be managed by this integration object. This needs to be called before using
-  :c:func:`termpaint_full_integration_do_iteration`
+  ``_Bool (*is_bad)(termpaint_integration *integration)``
 
-.. c:function:: _Bool termpaintx_full_integration_do_iteration(termpaint_integration *integration)
+    This callback should return false, as long as the connection to the terminal is functional.
 
-  Waits for input from the terminal and passes it to the connected terminal object.
+.. c:function:: void termpaint_integration_set_awaiting_response(termpaint_integration *integration, void (*awaiting_response)(termpaint_integration *integration))
 
-.. c:function:: _Bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height)
+  Sets the optional callback ``awaiting_response``:
 
-  Stores the current terminal size into ``width`` and ``height``. This function relies on the terminal size cached in
-  the kernel.
+  ``void (*awaiting_response)(termpaint_integration *integration)``
 
-.. c:function:: _Bool termpaintx_fd_set_termios(int fd, const char *options)
+    This callback is invoked when termpaint sends queries to the terminal. This can be used to decide if the integration
+    should wait for a little while when restoring the terminal while reading and discarding input to avoid leaving
+    responses to these queries in flight that might confuse the next application accessing the terminal.
 
-  This function can be used to get the kernel terminal setup without using the full integration. Accepts the same
-  options as :c:func:`termpaintx_full_integration`
+.. c:function:: void termpaint_integration_set_logging_func(termpaint_integration *integration, void (*logging_func)(termpaint_integration *integration, const char *data, int length))
+
+  Sets the optional callback ``logging_func``:
+
+  ``void (*logging_func)(termpaint_integration *integration, const char *data, int length)``
+
+    This callback receives logging messages. Some error messages are always
+    logged if this callback is specified. Additional messages can be enabled
+    by :c:func:`termpaint_terminal_set_log_mask`.
+

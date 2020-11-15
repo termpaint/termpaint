@@ -1,3 +1,5 @@
+.. _sec_attributes:
+
 Attributes
 ==========
 
@@ -14,47 +16,82 @@ Colors
 Terminal colors are a bit complicated for historical reasons. Even if colors seem the same they are all distinct and
 terminals can (and do) act differently depending on how the color was exactly selected.
 
+.. _default-colors:
+
+Default colors
+..............
+
 The most basic color is :c:macro:`TERMPAINT_DEFAULT_COLOR`. It's the terminals default color. This color acts differently
 when used as foreground, background or decoration color. For foreground and background it's the respective default color.
-For decoration color the default color is FIXME.
+For decoration color the default color means that the terminal will use the foreground color of that particular cell.
+
+.. _named-colors:
+
+Named colors
+............
 
 Next there is the set of named colors. The first 8 named colors are also often called ANSI colors. These colors are
-refered to as :c:macro:`TERMPAINT_NAMED_COLOR` + color number. The first 8 colors are supported by almost all color
+have constants like ``TERMPAINT_COLOR_RED`` and can also be  referred to as :c:macro:`TERMPAINT_NAMED_COLOR` + color
+number. The first 8 colors are supported by almost all color
 terminals. The following 8 colors are still very widely supported. The named colors have names like "red", but terminal
-implementations often allow reconfiguring these colors from easy accessable settings dialogs. Expect named colors to
-have differnt concrete color values for many users.
+implementations often allow reconfiguring these colors from easy accessible settings dialogs. Expect named colors to
+have different concrete color values for many users.
+
+.. container:: hidden-references
+
+  .. c:macro:: TERMPAINT_COLOR_BLACK
+  .. c:macro:: TERMPAINT_COLOR_RED
+  .. c:macro:: TERMPAINT_COLOR_GREEN
+  .. c:macro:: TERMPAINT_COLOR_YELLOW
+  .. c:macro:: TERMPAINT_COLOR_BLUE
+  .. c:macro:: TERMPAINT_COLOR_MAGENTA
+  .. c:macro:: TERMPAINT_COLOR_CYAN
+  .. c:macro:: TERMPAINT_COLOR_LIGHT_GREY
+  .. c:macro:: TERMPAINT_COLOR_DARK_GREY
+  .. c:macro:: TERMPAINT_COLOR_BRIGHT_RED
+  .. c:macro:: TERMPAINT_COLOR_BRIGHT_GREEN
+  .. c:macro:: TERMPAINT_COLOR_BRIGHT_YELLOW
+  .. c:macro:: TERMPAINT_COLOR_BRIGHT_BLUE
+  .. c:macro:: TERMPAINT_COLOR_BRIGHT_MAGENTA
+  .. c:macro:: TERMPAINT_COLOR_BRIGHT_CYAN
+  .. c:macro:: TERMPAINT_COLOR_WHITE
 
 .. table:: Named Colors
   :align: left
 
-  ======  ====
-  Number  Name
-  ======  ====
-  0       black
-  1       red
-  2       green
-  3       yellow
-  4       blue
-  5       magenta
-  6       cyan
-  7       "white" (on terminals supporting 16 colors this is light gray)
-  8       dark gray
-  9       bright red
-  10      bright green
-  11      bright yellow
-  12      bright blue
-  13      bright magenta
-  14      bright cyan
-  15      bright white
-  ======  ====
+  ======  ==============================  ====
+  Number  Constant                        Name
+  ======  ==============================  ====
+  0       TERMPAINT_COLOR_BLACK           black
+  1       TERMPAINT_COLOR_RED             red
+  2       TERMPAINT_COLOR_GREEN           green
+  3       TERMPAINT_COLOR_YELLOW          yellow
+  4       TERMPAINT_COLOR_BLUE            blue
+  5       TERMPAINT_COLOR_MAGENTA         magenta
+  6       TERMPAINT_COLOR_CYAN            cyan
+  7       TERMPAINT_COLOR_LIGHT_GREY      "white" (on terminals supporting 16 colors this is light gray)
+  8       TERMPAINT_COLOR_DARK_GREY       dark gray
+  9       TERMPAINT_COLOR_BRIGHT_RED      bright red
+  10      TERMPAINT_COLOR_BRIGHT_GREEN    bright green
+  11      TERMPAINT_COLOR_BRIGHT_YELLOW   bright yellow
+  12      TERMPAINT_COLOR_BRIGHT_BLUE     bright blue
+  13      TERMPAINT_COLOR_BRIGHT_MAGENTA  bright magenta
+  14      TERMPAINT_COLOR_BRIGHT_CYAN     bright cyan
+  15      TERMPAINT_COLOR_WHITE           bright white
+  ======  ==============================  ====
+
+.. _indexed-colors:
+
+Indexed colors
+..............
 
 The next color space is :c:macro:`TERMPAINT_INDEXED_COLOR`. This is a indexed color space. For most terminals it has
 256 colors. Some terminals only implement 88 colors though. Per convention the first 16 colors (0-15) are the same as
 the named colors. Some terminals handle these differently in combination with the :c:macro:`TERMPAINT_STYLE_BOLD`
-style. For terminals supporting 256 colors in the default palette the rest of the indecies are devided in a 6x6x6 color
-cube and a 23 step gray ramp (indicies 232-255). The defaults are The color cube uses intensity levels of
+style. For terminals supporting 256 colors in the default palette the rest of the indices are divided in a 6x6x6 color
+cube and a 23 step gray ramp (indices 232-255). The defaults are the color cube uses intensity levels of
 [0, 95, 135, 175, 215, 255] and calculates the components as red is (index-16) / 36, green is (index-16) / 6) % 6 and
-blue (index-16) % 6. The grey ramp uses the intensity levels of
+blue (index-16) % 6. The gray ramp uses the intensity levels of
 [8, 18, 28, 38, 48, 58, 68, 78, 88, 98, 108, 118, 128, 138, 148, 158, 168, 178, 188, 198, 208, 218, 228, 238]. Of course
 the index colors are redefinable so users might have a changed palette active.
 
@@ -63,12 +100,26 @@ the needed control sequences.
 
 .. image:: color256.png
 
+.. _rgb-colors:
+
+RGB colors
+..........
+
 The last color space is :c:macro:`TERMPAINT_RGB_COLOR`. This is a direct color space which does not allow redefining
 colors. A color is specified by red, green and blue intensities in the range 0 to 255. For example
 ``TERMPAINT_RGB_COLOR(255, 128, 64)``
 
 For some terminal implementations using direct rgb colors leads to garbled display because not all terminals support
-parsing the needed control sequences.
+parsing the needed control sequences. Termpaint automatically translates RGB colors to indexed colors using the default
+palette when terminal capability detection yields that the terminal can not handle them. This detection is not always
+exact and can be switched to a more conservative mode by disabling the capability ``TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED``.
+In the opposite direction promising the capability ``TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED`` disables translation to
+index colors.
+
+.. c:macro:: TERMPAINT_RGB_COLOR_OFFSET(red, green, blue)
+
+    A macro that returns a rgb color composed of the given values for red, green and blue. The value range
+    is 0 to 255 for each color component
 
 Styles
 ------
@@ -80,7 +131,7 @@ Styles can be enabled and disabled by using the :c:func:`termpaint_attr_set_styl
 :c:func:`termpaint_attr_unset_style()` functions. These functions take one or more of the style macros combined with
 bitwise or (``|``).
 
-Attribute support varies with terminal implemation.
+Attribute support varies with terminal implementation.
 
 .. table:: Available styles
   :align: left
@@ -101,6 +152,8 @@ Attribute support varies with terminal implemation.
 
 Functions
 ---------
+
+See :ref:`safety` for general rules for calling functions in termpaint.
 
 .. c:macro:: TERMPAINT_DEFAULT_COLOR
 
@@ -127,7 +180,7 @@ Functions
 
 .. c:function:: termpaint_attr* termpaint_attr_clone(termpaint_attr* attr)
 
-  Creates a new attributes object with the same settings are the attributes object passed in ``attr``.
+  Creates a new attributes object with the same settings as the attributes object passed in ``attr``.
 
   The application has to free this with :c:func:`termpaint_attr_free`.
 
@@ -163,7 +216,7 @@ Functions
 
 .. c:macro:: TERMPAINT_STYLE_OVERLINE
 
-  Style the text with a overline. `(limited support in terminal implemenations) <https://terminalguide.netlify.com/attr/53/>`__
+  Style the text with a overline. `(limited support in terminal implementations) <https://terminalguide.netlify.com/attr/53/>`__
 
 .. c:macro:: TERMPAINT_STYLE_INVERSE
 
@@ -181,13 +234,13 @@ Functions
 
 .. c:macro:: TERMPAINT_STYLE_UNDERLINE_DBL
 
-  Style the text with a double underline. `(limited support in terminal implemenations) <https://terminalguide.netlify.com/attr/21/>`__
+  Style the text with a double underline. `(limited support in terminal implementations) <https://terminalguide.netlify.com/attr/21/>`__
 
   If supported by the terminal emulator the underline uses the decoration color.
 
 .. c:macro:: TERMPAINT_STYLE_UNDERLINE_CURLY
 
-  Style the text with a curly underline. `(limited support in terminal implemenations) <https://terminalguide.netlify.com/attr/4-3/>`__
+  Style the text with a curly underline. `(limited support in terminal implementations) <https://terminalguide.netlify.com/attr/4-3/>`__
 
   If supported by the terminal emulator the underline uses the decoration color.
 

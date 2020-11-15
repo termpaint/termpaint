@@ -1,1 +1,12 @@
-dt { text-indent: -120px; margin-left: 120px; }
+dl.macro dt { text-indent: -120px; margin-left: 120px; }
+dl.function dt { text-indent: -120px; margin-left: 120px; }
+dl.type dt { text-indent: -120px; margin-left: 120px; }
+
+.hidden-references {
+    visibility:hidden;
+    height: 0px;
+}
+
+div .hidden-references + p {
+    margin-top: 0px;
+}
