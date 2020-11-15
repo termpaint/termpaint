@@ -1,6 +1,7 @@
 #define NEW_WIDTH(num, width) ((num << 2) | (((unsigned)width) & 3))
 
 #include "charclassification.inc"
+#include "charclassification_konsole_2018.inc"
 
 #undef NEW_WIDTH
 
@@ -12,6 +13,11 @@ typedef struct termpaintp_width_ {
 const termpaintp_width termpaintp_char_width_default = {
     .termpaint_char_width_offsets = termpaint_char_width_offsets_default,
     .termpaint_char_width_data = termpaint_char_width_data_default
+};
+
+const termpaintp_width termpaintp_char_width_konsole2018 = {
+    .termpaint_char_width_offsets = termpaint_char_width_offsets_konsole_2018,
+    .termpaint_char_width_data = termpaint_char_width_data_konsole_2018
 };
 
 static int termpaintp_char_width(const termpaintp_width *table, int ch) {

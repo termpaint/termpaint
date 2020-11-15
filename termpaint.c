@@ -3010,6 +3010,9 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         // we don't have the konsole version.
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_7BIT_ST);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
+
+        // konsole maps some ordinary non spacing characters to width 1, unbreak output by using a specific width table.
+        term->char_width_table = &termpaintp_char_width_konsole2018;
     } else if (term->terminal_type == TT_URXVT) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
         // XXX: urxvt 9.19 seems to crash on bracketed paste, so don't set it
