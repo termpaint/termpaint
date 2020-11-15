@@ -206,3 +206,8 @@ test('testtermpaint_terminaloutput', executable('testtermpaint_terminaloutput',
   link_with: [main_lib],
   dependencies: dependency('threads'),
   cpp_args: ['-fno-inline', silence_warnings]))
+
+# doc snippets
+executable('doc-getting-started', 'doc/getting-started.c', link_with: [main_lib])
+executable('doc-sync-event-handling', 'doc/sync-event-handling.c', link_with: [main_lib])
+executable('doc-callback-event-handling', 'doc/callback-event-handling.c', link_with: [main_lib])
