@@ -1,4 +1,4 @@
-static const uint16_t termpaint_char_width_offsets[0x45] = {
+static const uint16_t termpaint_char_width_offsets_default[0x45] = {
     0,
     450,
     453,
@@ -70,7 +70,7 @@ static const uint16_t termpaint_char_width_offsets[0x45] = {
     928,
 };
 
-static const uint16_t termpaint_char_width_data[] = {
+static const uint16_t termpaint_char_width_data_default[] = {
     // U+000000,
     NEW_WIDTH(0x0000, 1), // U+000000
     NEW_WIDTH(0x0300, 0), // U+000300

@@ -4,11 +4,24 @@
 
 #undef NEW_WIDTH
 
-static int termpaintp_char_width(int ch) {
+typedef struct termpaintp_width_ {
+    const uint16_t* termpaint_char_width_offsets;
+    const uint16_t* termpaint_char_width_data;
+} termpaintp_width;
+
+const termpaintp_width termpaintp_char_width_default = {
+    .termpaint_char_width_offsets = termpaint_char_width_offsets_default,
+    .termpaint_char_width_data = termpaint_char_width_data_default
+};
+
+static int termpaintp_char_width(const termpaintp_width *table, int ch) {
     if (ch >= 0x10ffff) {
         // outside of unicode, assume narrow
         return 1;
     }
+
+    const uint16_t* termpaint_char_width_offsets = table->termpaint_char_width_offsets;
+    const uint16_t* termpaint_char_width_data = table->termpaint_char_width_data;
 
     int low = termpaint_char_width_offsets[ch >> 14];
     int high = termpaint_char_width_offsets[(ch >> 14) + 1] - 1;

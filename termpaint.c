@@ -273,6 +273,7 @@ typedef struct termpaint_terminal_ {
     termpaint_str auto_detect_sec_device_attributes;
 
     int terminal_type;
+    const termpaintp_width *char_width_table;
     int terminal_version;
     int terminal_type_confidence;
     termpaint_str terminal_self_reported_name_version;
@@ -334,6 +335,8 @@ typedef enum termpaint_text_measurement_decoder_state_ {
 } termpaint_text_measurement_decoder_state;
 
 struct termpaint_text_measurement_ {
+    termpaint_terminal *terminal;
+
     int pending_codepoints;
     int pending_clusters;
     int pending_width;
@@ -946,6 +949,7 @@ static void termpaintp_surface_attr_apply(termpaint_surface *surface, cell *cell
 }
 
 void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string_s, termpaint_attr const *attr, int clip_x0, int clip_x1) {
+    const termpaintp_width *char_width_table = surface->terminal->char_width_table;
     const unsigned char *string = (const unsigned char *)string_s;
     if (y < 0) return;
     if (clip_x0 < 0) clip_x0 = 0;
@@ -984,7 +988,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             if (codepoint != '\x7f' || output_bytes_used != 0) {
                 codepoint = replace_unusable_codepoints(codepoint);
 
-                int width = termpaintp_char_width(codepoint);
+                int width = termpaintp_char_width(char_width_table, codepoint);
 
                 if (!output_bytes_used) {
                     if (width == 0) {
@@ -1131,8 +1135,9 @@ void termpaint_surface_clear_rect_with_attr(termpaint_surface *surface, int x, i
 }
 
 void termpaint_surface_clear_rect_with_attr_char(termpaint_surface *surface, int x, int y, int width, int height, const termpaint_attr *attr, int codepoint) {
+    const termpaintp_width *char_width_table = surface->terminal->char_width_table;
     int codepointSanitized = replace_unusable_codepoints(codepoint);
-    int codepointWidth = termpaintp_char_width(codepoint);
+    int codepointWidth = termpaintp_char_width(char_width_table, codepoint);
     if (codepoint == '\x7f' || codepointWidth != 1) {
         termpaint_surface_clear_rect_with_attr(surface, x, y, width, height, attr);
     } else {
@@ -1154,8 +1159,9 @@ void termpaint_surface_clear_rect(termpaint_surface *surface, int x, int y, int 
 }
 
 void termpaint_surface_clear_rect_with_char(termpaint_surface *surface, int x, int y, int width, int height, int fg, int bg, int codepoint) {
+    const termpaintp_width *char_width_table = surface->terminal->char_width_table;
     int codepointSanitized = replace_unusable_codepoints(codepoint);
-    int codepointWidth = termpaintp_char_width(codepoint);
+    int codepointWidth = termpaintp_char_width(char_width_table, codepoint);
     if (codepoint == '\x7f' || codepointWidth != 1) {
         termpaint_surface_clear_rect(surface, x, y, width, height, fg, bg);
     } else {
@@ -1780,12 +1786,8 @@ bool termpaint_surface_same_contents(const termpaint_surface *surface1, const te
 
 
 int termpaint_surface_char_width(const termpaint_surface *surface, int codepoint) {
-    // require surface here to allow for future implementation that uses terminal
-    // specific information from terminal detection.
-    if (!surface) {
-        abort();
-    }
-    return termpaintp_char_width(codepoint);
+    const termpaintp_width *char_width_table = surface->terminal->char_width_table;
+    return termpaintp_char_width(char_width_table, codepoint);
 }
 
 static void int_puts(termpaint_integration *integration, const char *str) {
@@ -1950,6 +1952,7 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
     ret->ad_state = AD_NONE;
     ret->initial_cursor_x = -1;
     ret->initial_cursor_y = -1;
+    ret->char_width_table = &termpaintp_char_width_default;
     termpaintp_terminal_reset_capabilites(ret);
     ret->terminal_type = TT_UNKNOWN;
     ret->terminal_type_confidence = 0;
@@ -4360,10 +4363,7 @@ void termpaint_attr_set_patch(termpaint_attr *attr, bool optimize, const char *s
 }
 
 termpaint_text_measurement *termpaint_text_measurement_new_or_nullptr(const termpaint_surface *surface) {
-    // Currently a fixed character classification table is used. But of course terminals differ
-    // in character classification. Thus require a surface pointer already to later be able to
-    // get to the terminal struct for details.
-    // Pretend that we actually use surface here
+    // Make sure to fail early when a nullptr is passed, as this function only copies the pointer.
     if (!surface) {
         BUG("termpaint_text_measurement_new called without valid surface");
     }
@@ -4371,6 +4371,7 @@ termpaint_text_measurement *termpaint_text_measurement_new_or_nullptr(const term
     if (!m) {
         return nullptr;
     }
+    m->terminal = surface->terminal;
     termpaint_text_measurement_reset(m);
     return m;
 }
@@ -4522,9 +4523,10 @@ static void termpaintp_text_measurement_undo(termpaint_text_measurement *m) {
 }
 
 int termpaint_text_measurement_feed_codepoint(termpaint_text_measurement *m, int ch, int ref_adjust) {
+    const termpaintp_width *char_width_table = m->terminal->char_width_table;
     // ATTENTION keep this in sync with actual write to surface
     int ch_sanitized = replace_unusable_codepoints(ch);
-    int width = termpaintp_char_width(ch_sanitized);
+    int width = termpaintp_char_width(char_width_table, ch_sanitized);
     if (width == 0) {
         if (m->state == TM_INITIAL) {
             // Assume this will be input in this way into write which will supply it with U+00a0 as base.
