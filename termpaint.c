@@ -935,7 +935,7 @@ static void termpaintp_surface_vanish_char(termpaint_surface *surface, int x, in
             }
             cell = termpaintp_getcell(surface, i + j, y);
         }
-        i += j;
+        i += expansion;
     }
 }
 

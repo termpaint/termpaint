@@ -315,6 +315,19 @@ TEST_CASE("vanish chars") {
     });
 }
 
+TEST_CASE("vanish chars - misaligned wide") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 3, 3, "あえ", TERMPAINT_COLOR_RED, TERMPAINT_COLOR_GREEN);
+
+    termpaint_surface_write_with_colors(f.surface, 4, 3, "ア", TERMPAINT_COLOR_YELLOW, TERMPAINT_COLOR_BLUE);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 3, 3 }, singleWideChar(" ").withBg(TERMPAINT_COLOR_GREEN).withFg(TERMPAINT_COLOR_RED)},
+        {{ 4, 3 }, doubleWideChar("ア").withBg(TERMPAINT_COLOR_BLUE).withFg(TERMPAINT_COLOR_YELLOW)},
+        {{ 6, 3 }, singleWideChar(" ").withBg(TERMPAINT_COLOR_GREEN).withFg(TERMPAINT_COLOR_RED)},
+    });
+}
 
 TEST_CASE("rgb colors") {
     Fixture f{80, 24};
