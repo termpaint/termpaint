@@ -1541,13 +1541,17 @@ void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, i
                     }
                 }
 
-                termpaintp_surface_vanish_char(dst_surface, dst_x + xOffset, dst_y + yOffset, src_cell->cluster_expansion + 1);
+                const bool crosses_boundary = xOffset + src_cell->cluster_expansion >= width;
+                const bool write_over_boundary = tile_right >= TERMPAINT_COPY_TILE_PUT && src_cell->cluster_expansion == 1;
+
+                termpaintp_surface_vanish_char(dst_surface, dst_x + xOffset, dst_y + yOffset,
+                                               (crosses_boundary && !write_over_boundary) ? 1 : src_cell->cluster_expansion + 1);
                 termpaintp_copy_colors_and_attibutes(src_surface, src_cell,
                                                      dst_surface, dst_cell);
                 bool vanish = false;
                 if (src_cell->cluster_expansion) {
-                    if (xOffset + src_cell->cluster_expansion >= width) {
-                        if (tile_right >= TERMPAINT_COPY_TILE_PUT && src_cell->cluster_expansion == 1) {
+                    if (crosses_boundary) {
+                        if (write_over_boundary) {
                             extra_width = 1;
                             dst_cell->cluster_expansion = src_cell->cluster_expansion;
                             in_complete_cluster = true;
