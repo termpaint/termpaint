@@ -363,7 +363,7 @@ static void termpaintp_handle_self_pipe(termpaint_integration_fd *t, struct poll
         // drain signaling pipe
         char buff[1000];
         int ret = read(sigwinch_pipe[0], buff, 999);
-        if (ret != EINTR && ret != EAGAIN && ret != EWOULDBLOCK) {
+        if (ret < 0 && ret != EINTR && ret != EAGAIN && ret != EWOULDBLOCK) {
             // something broken, don't try again
             sigwinch_set = false;
         }
