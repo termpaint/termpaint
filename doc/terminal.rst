@@ -337,10 +337,16 @@ See :ref:`safety` for general rules for calling functions in termpaint.
   Temporarily restore the terminal state. This should be called before running external applications.
   To return to rendering by termpaint call :c:func:`termpaint_terminal_unpause`.
 
+  After calling this function the application still needs to restore the kernel tty layer settings
+  to the state needed to run external applications.
+
 .. c:function:: void termpaint_terminal_unpause(termpaint_terminal *term)
 
   This function activates termpaint mode again after it was previously temporarily restored to the
   normal state.
+
+  Before calling this function the application needs to restore the kernel tty layer settings to
+  the state needed by termpaint (or to the state before calling pause).
 
 .. c:function:: void termpaint_terminal_set_raw_input_filter_cb(termpaint_terminal *term, bool (*cb)(void *user_data, const char *data, unsigned length, bool overflow), void *user_data)
 
