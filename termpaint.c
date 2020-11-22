@@ -949,6 +949,11 @@ static void termpaintp_surface_attr_apply(termpaint_surface *surface, cell *cell
 }
 
 void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string_s, termpaint_attr const *attr, int clip_x0, int clip_x1) {
+    int len = strlen(string_s);
+    termpaint_surface_write_with_len_attr_clipped(surface, x, y, string_s, len, attr, clip_x0, clip_x1);
+}
+
+void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, int x, int y, const char *string_s, int len, termpaint_attr const *attr, int clip_x0, int clip_x1) {
     const termpaintp_width *char_width_table = surface->terminal->char_width_table;
     const unsigned char *string = (const unsigned char *)string_s;
     if (y < 0) return;
@@ -956,7 +961,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
     if (clip_x1 >= surface->width) {
         clip_x1 = surface->width-1;
     }
-    while (*string) {
+    while (len) {
         if (x > clip_x1 || y >= surface->height) {
             return;
         }
@@ -971,11 +976,9 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             int size = termpaintp_utf8_len(string[input_bytes_used]);
 
             // check termpaintp_utf8_decode_from_utf8 precondition
-            for (int i = 0; i < size; i++) {
-                if (string[input_bytes_used + i] == 0) {
-                    // bogus, bail
-                    return;
-                }
+            if (input_bytes_used + size > len) {
+                // bogus, bail
+                return;
             }
             int codepoint;
             if (termpaintp_check_valid_sequence(string + input_bytes_used, size)) {
@@ -1070,6 +1073,7 @@ void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x
             }
         }
         string += input_bytes_used;
+        len -= input_bytes_used;
 
         x = x + cluster_width;
     }

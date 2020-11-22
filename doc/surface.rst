@@ -113,12 +113,17 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 
 .. c:function:: void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr, int clip_x0, int clip_x1)
 
-  Like :c:func:`termpaint_surface_write_with_attr()` but additionally applies clipping so that only cells in colum
+  Like :c:func:`termpaint_surface_write_with_attr()` but additionally applies clipping so that only cells in column
   ``clip_x0`` (inclusive) to column ``clip_x1`` are used for placing characters. ``x`` may be less than ``clip_x0``,
   in that case characters at the start of the string are not placed as needed to maintain the clipping interval.
 
   The clip range does *not* prevent modifications of characters outside of the interval to be changed if clusters cross
   the clipping boundary.
+
+.. c:function:: void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, int len, const termpaint_attr *attr, int clip_x0, int clip_x1)
+
+  Like :c:func:`termpaint_surface_write_with_attr_clipped()` but does take a explicit length parameter instead of
+  writing the string until it encounters a NUL character in the string.
 
 .. c:function:: void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg)
 

@@ -224,6 +224,7 @@ _tERMPAINT_PUBLIC void termpaint_surface_write_with_colors(termpaint_surface *su
 _tERMPAINT_PUBLIC void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1);
 _tERMPAINT_PUBLIC void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr);
 _tERMPAINT_PUBLIC void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr, int clip_x0, int clip_x1);
+_tERMPAINT_PUBLIC void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, int len, const termpaint_attr *attr, int clip_x0, int clip_x1);
 _tERMPAINT_PUBLIC void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_with_char(termpaint_surface *surface, int fg, int bg, int codepoint);
 _tERMPAINT_PUBLIC void termpaint_surface_clear_with_attr(termpaint_surface *surface, const termpaint_attr *attr);
