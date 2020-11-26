@@ -1,4 +1,4 @@
 *.h     diff=cpp
 *.c     diff=cpp
 *.cpp   diff=cpp
-
+*.inc linguist-language=c
