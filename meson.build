@@ -163,6 +163,13 @@ shuffledemo_files = [
 executable('shuffle', shuffledemo_files, link_with: [main_lib])
 
 #ide:editable-filelist
+lifedemo_files = [
+  'demo/life.c',
+]
+
+executable('life', lifedemo_files, link_with: [main_lib])
+
+#ide:editable-filelist
 detect_files = [
   'demo/detect.c',
 ]
