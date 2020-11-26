@@ -156,6 +156,13 @@ chardemo_files = [
 executable('chardemo', chardemo_files, link_with: [main_lib])
 
 #ide:editable-filelist
+shuffledemo_files = [
+  'demo/shuffle.c',
+]
+
+executable('shuffle', shuffledemo_files, link_with: [main_lib])
+
+#ide:editable-filelist
 detect_files = [
   'demo/detect.c',
 ]
