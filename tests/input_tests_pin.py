@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+# SPDX-License-Identifier: BSL-1.0
 
 """
 Updates input_tests.json from a set of input capture files

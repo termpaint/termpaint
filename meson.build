@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BSL-1.0
 project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized', 'cpp_std=c++14', 'c_std=gnu11'])
 
 if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_id() == 'clang'

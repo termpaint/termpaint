@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSL-1.0
 #define _GNU_SOURCE
 #include "termpaintx.h"
 

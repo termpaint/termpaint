@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSL-1.0
 #define NEW_WIDTH(num, width) ((num << 2) | (((unsigned)width) & 3))
 
 #include "charclassification.inc"

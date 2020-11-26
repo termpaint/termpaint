@@ -27,8 +27,7 @@ Features
 * possible to use where allocation failure needs to be handled gracefully
 * does not use global variables where possible, can handle multiple terminals in one process
 * input parsing subset usable standalone
-
-.. TODO mention license
+* permissively licensed: Boost Software License 1.0
 
 Does not contain:
 

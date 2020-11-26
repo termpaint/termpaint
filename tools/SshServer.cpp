@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSL-1.0
 #include "SshServer.h"
 
 /* Based on sample by Audrius Butkevicius */

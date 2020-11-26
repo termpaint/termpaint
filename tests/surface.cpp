@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSL-1.0
 #include <string.h>
 #include <map>
 #include <limits>

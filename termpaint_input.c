@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSL-1.0
 #include "termpaint_input.h"
 
 #include <string.h>

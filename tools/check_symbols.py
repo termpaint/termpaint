@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+# SPDX-License-Identifier: BSL-1.0
 
 import elftools
 from elftools.elf.elffile import ELFFile

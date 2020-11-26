@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSL-1.0
 #include <errno.h>
 #include <termios.h>
 #include <signal.h>
