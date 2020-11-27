@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSL-1.0
-project('termpaint', ['c', 'cpp'], default_options : ['buildtype=debugoptimized', 'cpp_std=c++14', 'c_std=gnu11'])
+project('termpaint', ['c', 'cpp'],
+  default_options : ['buildtype=debugoptimized', 'cpp_std=c++14', 'c_std=gnu11'],
+  version: '0.3.0')
 
 if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_id() == 'clang'
   add_project_arguments('-fvisibility=hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'c')
@@ -98,7 +100,6 @@ install_headers(main_lib_installed_headers)
 
 import('pkgconfig').generate(main_lib,
   subdirs : '.',
-  version : '0.0',
   name : 'libtermpaint',
   filebase : 'termpaint',
   description : 'A terminal cell display and keyboard abstraction library.',
@@ -127,7 +128,6 @@ install_headers(image_lib_installed_headers)
 
 import('pkgconfig').generate(image_lib,
   subdirs : '.',
-  version : '0.0',
   name : 'libtermpaint_image',
   filebase : 'termpaint_image',
   description : 'File load and save support for termpaint.',

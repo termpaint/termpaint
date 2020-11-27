@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Termpaint'
-copyright = '2019, Martin Hostettler'
+copyright = '2020, Martin Hostettler'
 author = 'Martin Hostettler'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0'
+release = '0.3.0'
 
 
 # -- General configuration ---------------------------------------------------
