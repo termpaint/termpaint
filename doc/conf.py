@@ -51,8 +51,13 @@ highlight_language = 'c'
 html_theme = 'alabaster'
 html_theme_options = {
     'page_width': '1040px',
-    'sidebar_width': '190px'
+    'sidebar_width': '190px',
+    'github_user': 'termpaint',
+    'github_repo': 'termpaint',
+    'github_banner': True,
 }
+
+html_show_copyright = False
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
