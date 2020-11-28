@@ -534,7 +534,11 @@ static int hexToInt(char input) {
 }
 
 TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
-    std::ifstream istrm("../tests/input_tests.json", std::ios::binary);
+    std::string path = "../tests/";
+    if (getenv("TERMPAINT_TEST_DATA")) {
+        path = getenv("TERMPAINT_TEST_DATA");
+    }
+    std::ifstream istrm(path + "/input_tests.json", std::ios::binary);
     picojson::value rootval;
     istrm >> rootval;
     if (istrm.fail()) {

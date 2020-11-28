@@ -208,7 +208,10 @@ test_files = [
   'tests/utf8_tests.cpp',
 ]
 
-test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings]), timeout: 1200)
+testtermpaint = executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings])
+testtermpaint_env = environment()
+testtermpaint_env.set('TERMPAINT_TEST_DATA', meson.current_source_dir() / ('tests'))
+test('testtermpaint', testtermpaint, timeout: 1200, env: testtermpaint_env)
 
 #ide:editable-filelist
 test_terminaloutput_files = [
@@ -216,12 +219,15 @@ test_terminaloutput_files = [
   'tests/terminaloutput_main.cpp',
 ]
 
-test('testtermpaint_terminaloutput', executable('testtermpaint_terminaloutput',
+testtermpaint_terminaloutput = executable('testtermpaint_terminaloutput',
   test_terminaloutput_files,
   link_with: [main_lib],
   dependencies: dependency('threads'),
-  cpp_args: ['-fno-inline', silence_warnings]),
-  timeout: 300)
+  cpp_args: ['-fno-inline', silence_warnings])
+
+# currently can't be run as meson registered test, because it needs a path to a terminal test driver
+#test('testtermpaint_terminaloutput', testtermpaint_terminaloutput,
+#  timeout: 300)
 
 # doc snippets
 executable('doc-getting-started', 'doc/getting-started.c', link_with: [main_lib])
