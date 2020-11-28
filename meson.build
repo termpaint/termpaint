@@ -208,7 +208,7 @@ test_files = [
   'tests/utf8_tests.cpp',
 ]
 
-test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings]))
+test('testtermpaint', executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings]), timeout: 1200)
 
 #ide:editable-filelist
 test_terminaloutput_files = [
@@ -220,7 +220,8 @@ test('testtermpaint_terminaloutput', executable('testtermpaint_terminaloutput',
   test_terminaloutput_files,
   link_with: [main_lib],
   dependencies: dependency('threads'),
-  cpp_args: ['-fno-inline', silence_warnings]))
+  cpp_args: ['-fno-inline', silence_warnings]),
+  timeout: 300)
 
 # doc snippets
 executable('doc-getting-started', 'doc/getting-started.c', link_with: [main_lib])
