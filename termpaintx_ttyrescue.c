@@ -321,10 +321,11 @@ termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const ch
 #ifdef __linux__
         if (shmfd != -1) {
             int exefd = termpaintp_memfd_create("ttyrescue (embedded)", MFD_CLOEXEC | MFD_ALLOW_SEALING);
-            write(exefd, ttyrescue_blob, sizeof(ttyrescue_blob));
-            argv[0] = "ttyrescue (embedded)";
-            fexecve(exefd, argv, envp);
-            close(exefd);
+            if (write(exefd, ttyrescue_blob, sizeof(ttyrescue_blob)) == sizeof(ttyrescue_blob)) {
+                argv[0] = "ttyrescue (embedded)";
+                fexecve(exefd, argv, envp);
+                close(exefd);
+            }
         }
 #else
 #error ttyrescue-fexec-blob option not available on this platform: not ported yet
