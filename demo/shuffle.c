@@ -219,7 +219,7 @@ bool do_move(int direction) {
 }
 
 void randomize(void) {
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 1000; i++) {
         bool did_step = false;
         while (!did_step) {
             int direction = rand() % 4;
