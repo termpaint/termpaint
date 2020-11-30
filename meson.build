@@ -105,6 +105,14 @@ import('pkgconfig').generate(main_lib,
   description : 'A terminal cell display and keyboard abstraction library.',
 )
 
+termpaint_dep = declare_dependency(
+  include_directories: include_directories('.'),
+  link_with: main_lib
+)
+if meson.version().version_compare('>=0.54')
+  meson.override_dependency('termpaint', termpaint_dep)
+endif
+
 #ide:editable-filelist
 ttyrescue_files = [
   'ttyrescue.c',
@@ -133,6 +141,14 @@ import('pkgconfig').generate(image_lib,
   description : 'File load and save support for termpaint.',
 )
 
+termpaint_image_dep = declare_dependency(
+  include_directories: include_directories('.'),
+  link_with: image_lib,
+  dependencies: termpaint_dep
+)
+if meson.version().version_compare('>=0.54')
+  meson.override_dependency('termpaint_image', termpaint_image_dep)
+endif
 
 #ide:editable-filelist
 playground_files = [
