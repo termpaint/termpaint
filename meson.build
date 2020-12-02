@@ -187,6 +187,13 @@ lifedemo_files = [
 executable('life', lifedemo_files, link_with: [main_lib])
 
 #ide:editable-filelist
+textwrapdemo_files = [
+  'demo/textwrap.c',
+]
+
+executable('textwrap', textwrapdemo_files, link_with: [main_lib])
+
+#ide:editable-filelist
 detect_files = [
   'demo/detect.c',
 ]

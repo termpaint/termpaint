@@ -60,6 +60,8 @@ See [Getting started](https://termpaint.namepad.de/latest/getting-started.html) 
   A simple "Conway's Game of Life" demo.
 * shuffle [demo/shuffle.c](demo/shuffle.c)  
   A simple shuffle numbers demo.
+* textwrap [demo/textwrap.c](demo/textwrap.c)  
+  Usage of text measurement to wrap text.
 
 ## Why?
 
