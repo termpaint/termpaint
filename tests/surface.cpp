@@ -241,6 +241,26 @@ TEST_CASE("simple text") {
     });
 }
 
+TEST_CASE("simple text - with len") {
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_attr *attr = termpaint_attr_new(TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_len_attr_clipped(f.surface, 10, 3, "SampleX", 6,
+                                                  attr, 0, 80);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 10, 3 }, singleWideChar("S")},
+        {{ 11, 3 }, singleWideChar("a")},
+        {{ 12, 3 }, singleWideChar("m")},
+        {{ 13, 3 }, singleWideChar("p")},
+        {{ 14, 3 }, singleWideChar("l")},
+        {{ 15, 3 }, singleWideChar("e")},
+    });
+
+    termpaint_attr_free(attr);
+}
+
 
 TEST_CASE("double width") {
     Fixture f{80, 24};

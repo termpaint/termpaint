@@ -973,7 +973,7 @@ void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, i
         size_t output_bytes_used = 0;
 
         // ATTENTION keep this in sync with termpaint_text_measurement_feed_codepoint
-        while (string[input_bytes_used]) {
+        while (len - input_bytes_used) {
             int size = termpaintp_utf8_len(string[input_bytes_used]);
 
             // check termpaintp_utf8_decode_from_utf8 precondition
