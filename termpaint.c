@@ -2685,6 +2685,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             entry = next;
         }
     }
+    int_puts(integration, "\033[m");
     int_flush(integration);
 }
 
