@@ -151,11 +151,12 @@ if meson.version().version_compare('>=0.54')
 endif
 
 #ide:editable-filelist
-playground_files = [
-  'playground2.cpp',
+inputevents_files = [
+  'inputevents.cpp',
 ]
 
-executable('playground', playground_files, link_with: [main_lib])
+executable('playground', inputevents_files, link_with: [main_lib])
+executable('inputevents', inputevents_files, link_with: [main_lib])
 
 #ide:editable-filelist
 attrdemo_files = [
