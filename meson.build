@@ -155,7 +155,6 @@ inputevents_files = [
   'inputevents.cpp',
 ]
 
-executable('playground', inputevents_files, link_with: [main_lib])
 executable('inputevents', inputevents_files, link_with: [main_lib])
 
 #ide:editable-filelist
