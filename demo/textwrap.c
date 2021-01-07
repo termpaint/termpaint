@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fread(buffer, 1, 39999, fp);
+    (void)!fread(buffer, 1, 39999, fp); // already nul filled, error checking on next line
     if (ferror(fp)) {
         perror("Error reading file");
         return 1;
