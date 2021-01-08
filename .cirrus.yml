@@ -1,0 +1,18 @@
+macos_instance:
+  image: big-sur-xcode
+
+task:
+  name: ci/cirrus/macOS
+  setup_script: |-
+    brew install meson pkg-config
+  info_script: |-
+    uname -a
+    git log --pretty=oneline -n1
+  configure_script: |-
+    meson -Db_lundef=false _build
+  compile_script: |-
+    ninja -v -C _build
+  test_script: |-
+    cd tests
+    ../_build/testtermpaint
+
