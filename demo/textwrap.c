@@ -35,12 +35,15 @@ int main(int argc, char **argv) {
     char *buffer = calloc(40000, 1);
     if (!buffer) {
         puts("Out of memory\n");
+        fclose(fp);
         return 1;
     }
 
     (void)!fread(buffer, 1, 39999, fp); // already nul filled, error checking on next line
     if (ferror(fp)) {
         perror("Error reading file");
+        fclose(fp);
+        free(buffer);
         return 1;
     }
     fclose(fp);
