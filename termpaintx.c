@@ -265,7 +265,9 @@ static bool termpaintp_has_option(const char *options, const char *name) {
 
 static bool termpaintp_fd_set_termios(int fd, const char *options) {
     struct termios tattr;
-    tcgetattr(fd, &tattr);
+    if (tcgetattr(fd, &tattr) < 0) {
+        return false;
+    }
     tattr.c_iflag |= IGNBRK|IGNPAR;
     tattr.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF);
     tattr.c_oflag &= ~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
@@ -291,13 +293,14 @@ static bool termpaintp_fd_set_termios(int fd, const char *options) {
         }
     }
 
-    tcsetattr (fd, TCSAFLUSH, &tattr);
+    if (tcsetattr (fd, TCSAFLUSH, &tattr) < 0) {
+        return false;
+    }
     return true;
 }
 
 bool termpaintx_fd_set_termios(int fd, const char *options) {
-    termpaintp_fd_set_termios(fd, options);
-    return true;
+    return termpaintp_fd_set_termios(fd, options);
 }
 
 termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
