@@ -17,6 +17,8 @@ using jobject = picojson::value::object;
 
 #include "../termpaint_input.h"
 
+#define U8(x) reinterpret_cast<const char*>(u8##x)
+
 template <typename Result, typename... Args>
 Result wrapper(void* state, Args... args) {
     using FnType = std::function<Result(Args...)>;
@@ -704,33 +706,33 @@ TEST_CASE("input: quirk: c1 for shift-ctrl") {
     struct TestCase { std::string rawInput; std::string ch; };
 
     const auto testCase = GENERATE(
-                TestCase{u8"\u0080", " "},
-                TestCase{u8"\u0081", "A"},
-                TestCase{u8"\u0082", "B"},
-                TestCase{u8"\u0083", "C"},
-                TestCase{u8"\u0084", "D"},
-                TestCase{u8"\u0085", "E"},
-                TestCase{u8"\u0086", "F"},
-                TestCase{u8"\u0087", "G"},
-                TestCase{u8"\u0088", "H"},
-                TestCase{u8"\u0089", "I"},
-                TestCase{u8"\u008a", "J"},
-                TestCase{u8"\u008b", "K"},
-                TestCase{u8"\u008c", "L"},
-                TestCase{u8"\u008d", "M"},
-                TestCase{u8"\u008e", "N"},
-                TestCase{u8"\u008f", "O"},
-                TestCase{u8"\u0090", "P"},
-                TestCase{u8"\u0091", "Q"},
-                TestCase{u8"\u0092", "R"},
-                TestCase{u8"\u0093", "S"},
-                TestCase{u8"\u0094", "T"},
-                TestCase{u8"\u0095", "U"},
-                TestCase{u8"\u0096", "V"},
-                TestCase{u8"\u0097", "W"},
-                TestCase{u8"\u0098", "X"},
-                TestCase{u8"\u0099", "Y"},
-                TestCase{u8"\u009a", "Z"}
+                TestCase{U8("\u0080"), " "},
+                TestCase{U8("\u0081"), "A"},
+                TestCase{U8("\u0082"), "B"},
+                TestCase{U8("\u0083"), "C"},
+                TestCase{U8("\u0084"), "D"},
+                TestCase{U8("\u0085"), "E"},
+                TestCase{U8("\u0086"), "F"},
+                TestCase{U8("\u0087"), "G"},
+                TestCase{U8("\u0088"), "H"},
+                TestCase{U8("\u0089"), "I"},
+                TestCase{U8("\u008a"), "J"},
+                TestCase{U8("\u008b"), "K"},
+                TestCase{U8("\u008c"), "L"},
+                TestCase{U8("\u008d"), "M"},
+                TestCase{U8("\u008e"), "N"},
+                TestCase{U8("\u008f"), "O"},
+                TestCase{U8("\u0090"), "P"},
+                TestCase{U8("\u0091"), "Q"},
+                TestCase{U8("\u0092"), "R"},
+                TestCase{U8("\u0093"), "S"},
+                TestCase{U8("\u0094"), "T"},
+                TestCase{U8("\u0095"), "U"},
+                TestCase{U8("\u0096"), "V"},
+                TestCase{U8("\u0097"), "W"},
+                TestCase{U8("\u0098"), "X"},
+                TestCase{U8("\u0099"), "Y"},
+                TestCase{U8("\u009a"), "Z"}
     );
 
     std::string rawInput = testCase.rawInput;
