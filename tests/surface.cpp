@@ -227,7 +227,7 @@ TEST_CASE("resize - oversized") {
 
 
 TEST_CASE("simple text") {
-    Fixture f{80, 24};
+    Fixture f{80, 6};
     termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
     termpaint_surface_write_with_colors(f.surface, 10, 3, "Sample", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
 
@@ -241,21 +241,77 @@ TEST_CASE("simple text") {
     });
 }
 
-TEST_CASE("simple text - with len") {
-    Fixture f{80, 24};
+
+TEST_CASE("simple text - with len and color") {
+    Fixture f{80, 6};
     termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
-    termpaint_attr *attr = termpaint_attr_new(TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_len_colors(f.surface, 10, 3, "SampleX", 6,
+                                            TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLACK);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 10, 3 }, singleWideChar("S").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 11, 3 }, singleWideChar("a").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 12, 3 }, singleWideChar("m").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 13, 3 }, singleWideChar("p").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 14, 3 }, singleWideChar("l").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 15, 3 }, singleWideChar("e").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+    });
+}
+
+
+TEST_CASE("simple text - with len, color and clipped") {
+    Fixture f{80, 6};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_len_colors_clipped(f.surface, 10, 3, "SampleX", 6,
+                                                    TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLACK, 12, 80);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 12, 3 }, singleWideChar("m").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 13, 3 }, singleWideChar("p").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 14, 3 }, singleWideChar("l").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 15, 3 }, singleWideChar("e").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+    });
+}
+
+
+TEST_CASE("simple text - with len and attr") {
+    Fixture f{80, 6};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_attr *attr = termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLACK);
+    termpaint_attr_set_style(attr, TERMPAINT_STYLE_BOLD);
 
     termpaint_surface_write_with_len_attr_clipped(f.surface, 10, 3, "SampleX", 6,
                                                   attr, 0, 80);
 
     checkEmptyPlusSome(f.surface, {
-        {{ 10, 3 }, singleWideChar("S")},
-        {{ 11, 3 }, singleWideChar("a")},
-        {{ 12, 3 }, singleWideChar("m")},
-        {{ 13, 3 }, singleWideChar("p")},
-        {{ 14, 3 }, singleWideChar("l")},
-        {{ 15, 3 }, singleWideChar("e")},
+        {{ 10, 3 }, singleWideChar("S").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 11, 3 }, singleWideChar("a").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 12, 3 }, singleWideChar("m").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 13, 3 }, singleWideChar("p").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 14, 3 }, singleWideChar("l").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 15, 3 }, singleWideChar("e").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+    });
+
+    termpaint_attr_free(attr);
+}
+
+
+TEST_CASE("simple text - with len, attr and clipped") {
+    Fixture f{80, 6};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_attr *attr = termpaint_attr_new(TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLACK);
+    termpaint_attr_set_style(attr, TERMPAINT_STYLE_BOLD);
+
+    termpaint_surface_write_with_len_attr_clipped(f.surface, 10, 3, "SampleX", 6,
+                                                  attr, 12, 80);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 12, 3 }, singleWideChar("m").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 13, 3 }, singleWideChar("p").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 14, 3 }, singleWideChar("l").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
+        {{ 15, 3 }, singleWideChar("e").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK).withStyle(TERMPAINT_STYLE_BOLD)},
     });
 
     termpaint_attr_free(attr);

@@ -870,7 +870,16 @@ void termpaint_surface_write_with_colors(termpaint_surface *surface, int x, int 
     termpaint_surface_write_with_colors_clipped(surface, x, y, string, fg, bg, 0, surface->width-1);
 }
 
+void termpaint_surface_write_with_len_colors(termpaint_surface *surface, int x, int y, const char *string, int len, int fg, int bg) {
+    termpaint_surface_write_with_len_colors_clipped(surface, x, y, string, len, fg, bg, 0, surface->width-1);
+}
+
 void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1) {
+    int len = strlen(string);
+    termpaint_surface_write_with_len_colors_clipped(surface, x, y, string, len, fg, bg, clip_x0, clip_x1);
+}
+
+void termpaint_surface_write_with_len_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int len, int fg, int bg, int clip_x0, int clip_x1) {
     termpaint_attr attr;
     attr.fg_color = fg;
     attr.bg_color = bg;
@@ -879,11 +888,15 @@ void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int
     attr.patch_setup = nullptr;
     attr.patch_cleanup = nullptr;
     attr.patch_optimize = false;
-    termpaint_surface_write_with_attr_clipped(surface, x, y, string, &attr, clip_x0, clip_x1);
+    termpaint_surface_write_with_len_attr_clipped(surface, x, y, string, len, &attr, clip_x0, clip_x1);
 }
 
 void termpaint_surface_write_with_attr(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr) {
     termpaint_surface_write_with_attr_clipped(surface, x, y, string, attr, 0, surface->width-1);
+}
+
+void termpaint_surface_write_with_len_attr(termpaint_surface *surface, int x, int y, const char *string, int len, const termpaint_attr *attr) {
+    termpaint_surface_write_with_len_attr_clipped(surface, x, y, string, len, attr, 0, surface->width-1);
 }
 
 // This ensures that cells [x, x + cluster_width) have cluster_expansion = 0

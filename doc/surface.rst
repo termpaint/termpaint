@@ -103,13 +103,18 @@ See :ref:`safety` for general rules for calling functions in termpaint.
   Write a text given in the null terminated utf8 string ``string`` to the surface starting in cell ``x``, ``y``.
   Uses ``attr`` as attributes for all newly placed characters.
 
-  The length of run of cells where the characters will be placed can be calculated using the
+  The length of the run of cells where the characters will be placed can be calculated using the
   :doc:`string measurement functions<measuring>`.
 
   If any modified cells have previously been part of a multicell character cluster the cluster as a whole is erased.
   Cells not overwritten will keep their previous attributes (colors, etc).
 
   If ``string`` contains the special character :c:macro:`TERMPAINT_ERASED` the corresponding cells are marked as erased.
+
+.. c:function:: void termpaint_surface_write_with_len_attr(termpaint_surface *surface, int x, int y, const char *string, int len, const termpaint_attr *attr)
+
+  Like :c:func:`termpaint_surface_write_with_attr()` but does take a explicit length parameter instead of
+  writing the string until it encounters a NUL character in the string.
 
 .. c:function:: void termpaint_surface_write_with_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, const termpaint_attr *attr, int clip_x0, int clip_x1)
 
@@ -132,12 +137,22 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 
   See :ref:`colors` for how to specify colors.
 
+.. c:function:: void termpaint_surface_write_with_len_colors(termpaint_surface *surface, int x, int y, const char *string, int len, int fg, int bg)
+
+  Like :c:func:`termpaint_surface_write_with_colors()` but does take a explicit length parameter instead of
+  writing the string until it encounters a NUL character in the string.
+
 .. c:function:: void termpaint_surface_write_with_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1)
 
   Like :c:func:`termpaint_surface_write_with_attr_clipped()` but with explicit parameters for foreground and background color.
   Decoration color will be set to TERMPAINT_DEFAULT_COLOR and no style attributes will be applied.
 
   See :ref:`colors` for how to specify colors.
+
+.. c:function:: void termpaint_surface_write_with_len_colors_clipped(termpaint_surface *surface, int x, int y, const char *string, int fg, int bg, int clip_x0, int clip_x1)
+
+  Like :c:func:`termpaint_surface_write_with_colors_clipped()` but does take a explicit length parameter instead of
+  writing the string until it encounters a NUL character in the string.
 
 .. c:function:: void termpaint_surface_clear(termpaint_surface *surface, int fg, int bg)
 
