@@ -2,6 +2,7 @@
 #include "termpaint_image.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #include <type_traits>
 
@@ -28,28 +29,87 @@ static const char *const names[16] = {
     "bright white",
 };
 
-static void print_color(FILE* f, const char* name, unsigned color) {
+namespace {
+
+struct FileWriter {
+    FILE *file;
+};
+
+void write_string(FileWriter *w, const char *s) {
+    fputs(s, w->file);
+}
+
+void write_char(FileWriter *w, int c) {
+    putc(c, w->file);
+}
+
+struct StringWriter {
+    std::string data;
+};
+
+void write_string(StringWriter *w, const char *s) {
+    w->data += s;
+}
+
+void write_char(StringWriter *w, int c) {
+    w->data += c;
+}
+
+
+template <typename WRITER>
+void write_printf(WRITER *w, const char *format, ...) {
+    char buff[100];
+    va_list aptr;
+    va_start(aptr, format);
+    int len = vsnprintf(buff, sizeof(buff), format, aptr);
+    va_end(aptr);
+    if (len < 0) {
+        abort();
+    }
+    if (len < static_cast<int>(sizeof(buff)) - 1) {
+        write_string(w, buff);
+    } else {
+        char *p = (char*)malloc(len + 1);
+        if (!p) {
+            abort();
+        }
+        va_start(aptr, format);
+        int res = vsnprintf(p, len + 1, format, aptr);
+        if (res < 0) {
+            abort();
+        }
+        va_end(aptr);
+        write_string(w, p);
+        free(p);
+    }
+}
+
+
+template <typename WRITER>
+static void print_color(WRITER* f, const char* name, unsigned color) {
     if (color != TERMPAINT_DEFAULT_COLOR) {
-        fprintf(f, ", \"%s\": \"", name);
+        write_printf(f, ", \"%s\": \"", name);
         if ((color & 0xff000000) == TERMPAINT_RGB_COLOR_OFFSET) {
-            fprintf(f, "#%02x%02x%02x\"", (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+            write_printf(f, "#%02x%02x%02x\"", (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
         } else if (TERMPAINT_NAMED_COLOR <= color && TERMPAINT_NAMED_COLOR + 15 >= color) {
-            fprintf(f, "%s\"", names[color & 0xf]);
+            write_printf(f, "%s\"", names[color & 0xf]);
         } else if (TERMPAINT_INDEXED_COLOR <= color && TERMPAINT_INDEXED_COLOR + 255 >= color) {
-            fprintf(f, "%i\"", color & 0xff);
+            write_printf(f, "%i\"", color & 0xff);
         }
     }
 }
 
-static int print_style(FILE* f, int style, const char* name, int flag) {
+template <typename WRITER>
+static int print_style(WRITER* f, int style, const char* name, int flag) {
     if (style & flag) {
         style &= ~flag;
-        fprintf(f, ", \"%s\": true", name);
+        write_printf(f, ", \"%s\": true", name);
     }
     return style;
 }
 
-static void print_string(FILE* f, const char* s_signed, size_t len) {
+template <typename WRITER>
+static void print_string(WRITER* f, const char* s_signed, size_t len) {
     const unsigned char* s = (const unsigned char*)s_signed;
     for (size_t i = 0; i < len;) {
         int l = termpaintp_utf8_len(s[i]);
@@ -58,73 +118,72 @@ static void print_string(FILE* f, const char* s_signed, size_t len) {
         }
         int ch = termpaintp_utf8_decode_from_utf8(s + i, l);
         if (s[i] >= 32 && s[i] <= 126 && s[i] != '"') {
-            putc(s[i], f);
+            write_char(f, s[i]);
         } else {
             unsigned both = termpaintp_utf16_split(ch);
-            fprintf(f, "\\u%04x", both & 0xffff);
+            write_printf(f, "\\u%04x", both & 0xffff);
             if (both > 0xffff) {
-                fprintf(f, "\\u%04x", both >> 16);
+                write_printf(f, "\\u%04x", both >> 16);
             }
         }
         i += l;
     }
 }
 
-bool termpaint_image_save(termpaint_surface *surface, const char *name) {
+}
+
+
+template <typename WRITER>
+static bool termpaintp_image_save_impl(termpaint_surface *surface, WRITER writer) {
     bool ok = true;
     const int width = termpaint_surface_width(surface);
     const int height = termpaint_surface_height(surface);
 
-    FILE* f = fopen(name, "w");
-    if (!f) {
-        return false;
-    }
+    write_string(&writer, "{\"termpaint_image\": true,\n");
 
-    fputs("{\"termpaint_image\": true,\n", f);
-
-    fprintf(f, "  \"width\": %d, \"height\": %d, \"version\": 0, \"cells\":[\n", width, height);
+    write_printf(&writer, "  \"width\": %d, \"height\": %d, \"version\": 0, \"cells\":[\n", width, height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            fprintf(f, "    {\"x\": %d, \"y\": %d,\n", x, y);
-            fprintf(f, "     \"t\": \"");
+            write_printf(&writer, "    {\"x\": %d, \"y\": %d,\n", x, y);
+            write_printf(&writer, "     \"t\": \"");
             int len, left, right;
             const char *text = termpaint_surface_peek_text(surface, x, y, &len, &left, &right);
             if (left != x) {
                 ok = false;
             }
             if (len != 1 || text[0] != '\x7f') {
-                print_string(f, text, len);
-                fputs("\"", f);
+                print_string(&writer, text, len);
+                write_string(&writer, "\"");
             } else {
-                fputs(" \", \"cleared\": true", f);
+                write_string(&writer, " \", \"cleared\": true");
             }
 
             if (right - left) {
-                fprintf(f, ", \"width\": %i", right - left + 1);
+                write_printf(&writer, ", \"width\": %i", right - left + 1);
             }
 
-            print_color(f, "fg", termpaint_surface_peek_fg_color(surface, x, y));
-            print_color(f, "bg", termpaint_surface_peek_bg_color(surface, x, y));
-            print_color(f, "deco", termpaint_surface_peek_deco_color(surface, x, y));
+            print_color(&writer, "fg", termpaint_surface_peek_fg_color(surface, x, y));
+            print_color(&writer, "bg", termpaint_surface_peek_bg_color(surface, x, y));
+            print_color(&writer, "deco", termpaint_surface_peek_deco_color(surface, x, y));
 
 
             int style = termpaint_surface_peek_style(surface, x, y);
-            style = print_style(f, style, "bold", TERMPAINT_STYLE_BOLD);
-            style = print_style(f, style, "italic", TERMPAINT_STYLE_ITALIC);
-            style = print_style(f, style, "blink", TERMPAINT_STYLE_BLINK);
-            style = print_style(f, style, "overline", TERMPAINT_STYLE_OVERLINE);
-            style = print_style(f, style, "inverse", TERMPAINT_STYLE_INVERSE);
-            style = print_style(f, style, "strike", TERMPAINT_STYLE_STRIKE);
-            style = print_style(f, style, "underline", TERMPAINT_STYLE_UNDERLINE);
-            style = print_style(f, style, "double underline", TERMPAINT_STYLE_UNDERLINE_DBL);
-            style = print_style(f, style, "curly underline", TERMPAINT_STYLE_UNDERLINE_CURLY);
+            style = print_style(&writer, style, "bold", TERMPAINT_STYLE_BOLD);
+            style = print_style(&writer, style, "italic", TERMPAINT_STYLE_ITALIC);
+            style = print_style(&writer, style, "blink", TERMPAINT_STYLE_BLINK);
+            style = print_style(&writer, style, "overline", TERMPAINT_STYLE_OVERLINE);
+            style = print_style(&writer, style, "inverse", TERMPAINT_STYLE_INVERSE);
+            style = print_style(&writer, style, "strike", TERMPAINT_STYLE_STRIKE);
+            style = print_style(&writer, style, "underline", TERMPAINT_STYLE_UNDERLINE);
+            style = print_style(&writer, style, "double underline", TERMPAINT_STYLE_UNDERLINE_DBL);
+            style = print_style(&writer, style, "curly underline", TERMPAINT_STYLE_UNDERLINE_CURLY);
 
             if (style != 0) {
                 ok = false;
             }
 
             if (termpaint_surface_peek_softwrap_marker(surface, x, y)) {
-                fputs(", \"x-termpaint-softwrap\": true", f);
+                write_string(&writer, ", \"x-termpaint-softwrap\": true");
             }
 
             const char* setup;
@@ -132,41 +191,72 @@ bool termpaint_image_save(termpaint_surface *surface, const char *name) {
             bool optimize;
             termpaint_surface_peek_patch(surface, x, y, &setup, &cleanup, &optimize);
             if (setup || cleanup) {
-                fputs(", \"patch\": { \"setup\": ", f);
+                write_string(&writer, ", \"patch\": { \"setup\": ");
                 if (setup) {
-                    fputs("\"", f);
-                    print_string(f, setup, strlen(setup));
-                    fputs("\"", f);
+                    write_string(&writer, "\"");
+                    print_string(&writer, setup, strlen(setup));
+                    write_string(&writer, "\"");
                 } else {
-                    fputs("null", f);
+                    write_string(&writer, "null");
                 }
-                fputs(", \"cleanup\": ", f);
+                write_string(&writer, ", \"cleanup\": ");
                 if (cleanup) {
-                    fputs("\"", f);
-                    print_string(f, cleanup, strlen(cleanup));
-                    fputs("\"", f);
+                    write_string(&writer, "\"");
+                    print_string(&writer, cleanup, strlen(cleanup));
+                    write_string(&writer, "\"");
                 } else {
-                    fputs("null", f);
+                    write_string(&writer, "null");
                 }
-                fprintf(f, ", \"optimize\": %s}", optimize ? "true" : "false");
+                write_printf(&writer, ", \"optimize\": %s}", optimize ? "true" : "false");
             }
 
             x = right;
 
             if (x == width-1 && y == height - 1) {
-                fputs("}\n", f);
+                write_string(&writer, "}\n");
             } else {
-                fputs("},\n", f);
+                write_string(&writer, "},\n");
             }
         }
-        fputs("\n", f);
+        write_string(&writer, "\n");
     }
-    fputs("]}\n", f);
+    write_string(&writer, "]}\n");
+
+    return ok;
+}
+
+char *termpaint_image_save_alloc_buffer(termpaint_surface *surface) {
+    StringWriter writer;
+    bool res = termpaintp_image_save_impl(surface, writer);
+    if (!res) {
+        return nullptr;
+    } else {
+        return strdup(writer.data.data());
+    }
+}
+
+void termpaint_image_save_dealloc_buffer(char *buffer) {
+    free(buffer);
+}
+
+bool termpaint_image_save_to_file(termpaint_surface *surface, FILE *file) {
+    FileWriter writer{file};
+    return termpaintp_image_save_impl(surface, writer);
+}
+
+bool termpaint_image_save(termpaint_surface *surface, const char *name) {
+    FILE* f = fopen(name, "w");
+    if (!f) {
+        return false;
+    }
+
+    bool ret = termpaint_image_save_to_file(surface, f);
 
     if (fclose(f) != 0) {
-        ok = false;
+        ret = false;
     }
-    return ok;
+
+    return ret;
 }
 
 namespace {
@@ -262,22 +352,8 @@ static bool streq_nullsafe(const char* a, const char* b) {
     return strcmp(a, b) == 0;
 }
 
-termpaint_surface *termpaint_image_load(termpaint_terminal *term, const char *name) {
+static termpaint_surface *termpaintp_image_load_from_value(termpaint_terminal *term, picojson::value& rootValue) {
     termpaint_surface *surface = nullptr;
-
-    FILE* f = fopen(name, "r");
-    if (!f) {
-        return nullptr;
-    }
-
-    picojson::value rootValue;
-    std::string err;
-    picojson::parse(rootValue, fread_iterator(f), fread_iterator(), &err);
-
-    fclose(f);
-    if (err.size()) {
-        return nullptr;
-    }
 
     if (!rootValue.is<picojson::object>()) {
         return nullptr;
@@ -422,4 +498,46 @@ termpaint_surface *termpaint_image_load(termpaint_terminal *term, const char *na
     termpaint_attr_free(attr);
 
     return surface;
+}
+
+termpaint_surface *termpaint_image_load_from_file(termpaint_terminal *term, FILE *file) {
+    picojson::value rootValue;
+    std::string err;
+    picojson::parse(rootValue, fread_iterator(file), fread_iterator(), &err);
+
+    if (err.size()) {
+        return nullptr;
+    }
+
+    return termpaintp_image_load_from_value(term, rootValue);
+}
+
+termpaint_surface *termpaint_image_load(termpaint_terminal *term, const char *name) {
+    FILE* f = fopen(name, "r");
+    if (!f) {
+        return nullptr;
+    }
+
+    picojson::value rootValue;
+    std::string err;
+    picojson::parse(rootValue, fread_iterator(f), fread_iterator(), &err);
+
+    fclose(f);
+    if (err.size()) {
+        return nullptr;
+    }
+
+    return termpaintp_image_load_from_value(term, rootValue);
+}
+
+termpaint_surface *termpaint_image_load_from_buffer(termpaint_terminal *term, char *buffer, int length) {
+    picojson::value rootValue;
+    std::string err;
+    picojson::parse(rootValue, buffer, buffer + length, &err);
+
+    if (err.size()) {
+        return nullptr;
+    }
+
+    return termpaintp_image_load_from_value(term, rootValue);
 }
