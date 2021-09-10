@@ -53,8 +53,15 @@ private:
 };
 
 std::u16string toUtf16(std::string data) {
-    static auto convx = iconv_cache("UTF-16", "UTF-8");
-    iconv_t conv = iconv_open("UTF-16", "UTF-8");
+    static auto cached = iconv_cache("UTF-16LE", "UTF-8");
+    static auto cachedBE = iconv_cache("UTF-16BE", "UTF-8");
+    iconv_t conv;
+    const char16_t endiannessTest = 1;
+    if (*((const char*)&endiannessTest) == 1) {
+        conv = iconv_open("UTF-16LE", "UTF-8");
+    } else {
+        conv = iconv_open("UTF-16BE", "UTF-8");
+    }
     REQUIRE( conv != reinterpret_cast<iconv_t>(-1));
     const char *pin = data.data();
     std::vector<char16_t> outbuffer;
@@ -65,12 +72,23 @@ std::u16string toUtf16(std::string data) {
     size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
     REQUIRE(retval != static_cast<size_t>(-1));
     iconv_close(conv);
-    return std::u16string { outbuffer.data() + 1 };
+    if (outlen > 0 && outbuffer[0] == 0xFEFF /* BOM */) {
+        return std::u16string { outbuffer.data() + 1 };
+    } else {
+        return std::u16string { outbuffer.data()};
+    }
 }
 
 std::u32string toUtf32(std::string data) {
-    static auto convx = iconv_cache("UTF-32", "UTF-8"); // keep one context to avoid repeatedly loading/unloading in glibc
-    iconv_t conv = iconv_open("UTF-32", "UTF-8");
+    static auto cached = iconv_cache("UTF-32LE", "UTF-8"); // keep one context to avoid repeatedly loading/unloading in glibc
+    static auto cachedBe = iconv_cache("UTF-32BE", "UTF-8"); // keep one context to avoid repeatedly loading/unloading in glibc
+    iconv_t conv;
+    const char32_t endiannessTest = 1;
+    if (*((const char*)&endiannessTest) == 1) {
+        conv = iconv_open("UTF-32LE", "UTF-8");
+    } else {
+        conv = iconv_open("UTF-32BE", "UTF-8");
+    }
     REQUIRE( conv != reinterpret_cast<iconv_t>(-1));
     const char *pin = data.data();
     std::vector<char32_t> outbuffer;
@@ -81,12 +99,23 @@ std::u32string toUtf32(std::string data) {
     size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
     REQUIRE(retval != static_cast<size_t>(-1));
     iconv_close(conv);
-    return std::u32string { outbuffer.data() + 1 };
+    if (outlen > 0 && outbuffer[0] == 0xFEFF /* BOM */) {
+        return std::u32string { outbuffer.data() + 1 };
+    } else {
+        return std::u32string { outbuffer.data() };
+    }
 }
 
 std::u32string toUtf32(std::u16string data) {
-    static auto convx = iconv_cache("UTF-32", "UTF-16"); // keep one context to avoid repeatedly loading/unloading in glibc
-    iconv_t conv = iconv_open("UTF-32", "UTF-16");
+    static auto cached = iconv_cache("UTF-32LE", "UTF-8"); // keep one context to avoid repeatedly loading/unloading in glibc
+    static auto cachedBe = iconv_cache("UTF-32BE", "UTF-8"); // keep one context to avoid repeatedly loading/unloading in glibc
+    iconv_t conv;
+    const char32_t endiannessTest = 1;
+    if (*((const char*)&endiannessTest) == 1) {
+        conv = iconv_open("UTF-32LE", "UTF-16LE");
+    } else {
+        conv = iconv_open("UTF-32BE", "UTF-16BE");
+    }
     REQUIRE( conv != reinterpret_cast<iconv_t>(-1));
     const char *pin = reinterpret_cast<const char*>(data.data());
     std::vector<char32_t> outbuffer;
@@ -97,7 +126,11 @@ std::u32string toUtf32(std::u16string data) {
     size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
     REQUIRE(retval != static_cast<size_t>(-1));
     iconv_close(conv);
-    return std::u32string { outbuffer.data() + 1 };
+    if (outlen > 0 && outbuffer[0] == 0xFEFF /* BOM */) {
+        return std::u32string { outbuffer.data() + 1 };
+    } else {
+        return std::u32string { outbuffer.data() };
+    }
 }
 #endif
 
