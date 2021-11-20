@@ -134,7 +134,7 @@ static void print_string(WRITER* f, const char* s_signed, size_t len) {
 
 
 template <typename WRITER>
-static bool termpaintp_image_save_impl(termpaint_surface *surface, WRITER writer) {
+static bool termpaintp_image_save_impl(termpaint_surface *surface, WRITER &writer) {
     bool ok = true;
     const int width = termpaint_surface_width(surface);
     const int height = termpaint_surface_height(surface);
