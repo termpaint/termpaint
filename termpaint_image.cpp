@@ -117,7 +117,7 @@ static void print_string(WRITER* f, const char* s_signed, size_t len) {
             break;
         }
         int ch = termpaintp_utf8_decode_from_utf8(s + i, l);
-        if (s[i] >= 32 && s[i] <= 126 && s[i] != '"') {
+        if (s[i] >= 32 && s[i] <= 126 && s[i] != '"' && s[i] != '\\') {
             write_char(f, s[i]);
         } else {
             unsigned both = termpaintp_utf16_split(ch);
