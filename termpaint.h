@@ -145,6 +145,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *t
 #define TERMPAINT_CAPABILITY_7BIT_ST 12
 #define TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE 13
 #define TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE 14
+#define TERMPAINT_CAPABILITY_CLEARED_COLORING_DEFCOLOR 15
 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_capable(const termpaint_terminal *terminal, int capability);
 _tERMPAINT_PUBLIC void termpaint_terminal_promise_capability(termpaint_terminal *terminal, int capability);

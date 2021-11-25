@@ -261,7 +261,7 @@ typedef struct termpaint_integration_private_ {
     void (*logging_func)(struct termpaint_integration_ *integration, const char *data, int length);
 } termpaint_integration_private;
 
-#define NUM_CAPABILITIES 15
+#define NUM_CAPABILITIES 16
 
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
@@ -2107,6 +2107,8 @@ static void termpaintp_terminal_reset_capabilites(termpaint_terminal *terminal) 
     // Most terminals support background color erase (bce) and allow multiple colors in cleared parts
     // of lines.
     termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CLEARED_COLORING);
+    // VTE specific quirk
+    termpaint_terminal_promise_capability(terminal, TERMPAINT_CAPABILITY_CLEARED_COLORING_DEFCOLOR);
 
     // Most terminals support support 7-bit ST (ESC backslash) for terminating OSC/DCS sequences,
     // as that's what all traditional standards say.
@@ -2337,6 +2339,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     int pending_colum_move = 0;
     int pending_colum_move_digits = 1;
     int pending_colum_move_digits_step = 10;
+    const bool cleared_defcolor = termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_CLEARED_COLORING_DEFCOLOR);
 
     enum { sw_no, sw_single, sw_double } softwrap_prev = sw_no, softwrap = sw_no;
 
@@ -2382,7 +2385,8 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 for (int x = term->primary.width - 1; x >= 0; x--) {
                     cell* c = termpaintp_getcell(&term->primary, x, y);
                     if ((c->text_len == 0 && c->text_overflow == nullptr)
-                            && (c->flags & CELL_ATTR_INVERSE) == 0) {
+                            && (c->flags & CELL_ATTR_INVERSE) == 0
+                            && (cleared_defcolor || c->bg_color != TERMPAINT_DEFAULT_COLOR)) {
                         first_noncopy_space = x;
                     } else {
                         break;
@@ -2976,6 +2980,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         } else {
             termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         }
+        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CLEARED_COLORING_DEFCOLOR);
     } else if (term->terminal_type == TT_XTERM) {
         if (term->auto_detect_sec_device_attributes.len > 10) {
             const unsigned char* data = term->auto_detect_sec_device_attributes.data;

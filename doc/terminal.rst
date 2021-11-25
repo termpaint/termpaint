@@ -443,6 +443,11 @@ See :ref:`safety` for general rules for calling functions in termpaint.
         spaces. This includes support for setting up multiple colored ranges per line using this
         sequence.
 
+    .. c:macro:: TERMPAINT_CAPABILITY_CLEARED_COLORING_DEFCOLOR
+
+        If TERMPAINT_CAPABILITY_CLEARED_COLORING is supported this indicated if this sequence also
+        works for the special "default" terminal color.
+
     .. c:macro:: TERMPAINT_CAPABILITY_CSI_EQUALS
 
         The terminal's escape sequence parser properly handles sequences starting with ``ESC[=``
