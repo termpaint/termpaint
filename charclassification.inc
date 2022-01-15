@@ -2,72 +2,72 @@ static const uint16_t termpaint_char_width_offsets_default[0x45] = {
     0,
     450,
     453,
-    528,
-    552,
-    721,
-    731,
-    743,
-    860,
-    861,
-    862,
-    863,
-    865,
-    866,
-    867,
-    868,
-    870,
-    871,
-    872,
-    873,
-    874,
-    875,
-    876,
-    877,
-    878,
-    879,
-    880,
-    881,
-    882,
-    883,
-    884,
-    885,
-    886,
-    887,
-    888,
-    889,
-    890,
-    891,
-    892,
-    893,
-    894,
-    895,
-    896,
-    897,
-    898,
-    899,
-    900,
-    901,
-    902,
-    903,
-    904,
-    905,
-    906,
-    907,
-    908,
-    909,
-    910,
-    917,
-    918,
-    919,
-    920,
-    921,
-    922,
-    923,
-    924,
-    925,
-    926,
-    927,
-    928,
+    530,
+    554,
+    749,
+    764,
+    788,
+    931,
+    932,
+    933,
+    934,
+    936,
+    937,
+    938,
+    939,
+    941,
+    942,
+    943,
+    944,
+    945,
+    946,
+    947,
+    948,
+    949,
+    950,
+    951,
+    952,
+    953,
+    954,
+    955,
+    956,
+    957,
+    958,
+    959,
+    960,
+    961,
+    962,
+    963,
+    964,
+    965,
+    966,
+    967,
+    968,
+    969,
+    970,
+    971,
+    972,
+    973,
+    974,
+    975,
+    976,
+    977,
+    978,
+    979,
+    980,
+    981,
+    988,
+    989,
+    990,
+    991,
+    992,
+    993,
+    994,
+    995,
+    996,
+    997,
+    998,
+    999,
 };
 
 static const uint16_t termpaint_char_width_data_default[] = {
@@ -127,7 +127,11 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x082e, 1), // U+00082e
     NEW_WIDTH(0x0859, 0), // U+000859
     NEW_WIDTH(0x085c, 1), // U+00085c
-    NEW_WIDTH(0x08d3, 0), // U+0008d3
+    NEW_WIDTH(0x0890, 0), // U+000890
+    NEW_WIDTH(0x0892, 1), // U+000892
+    NEW_WIDTH(0x0898, 0), // U+000898
+    NEW_WIDTH(0x08a0, 1), // U+0008a0
+    NEW_WIDTH(0x08ca, 0), // U+0008ca
     NEW_WIDTH(0x0903, 1), // U+000903
     NEW_WIDTH(0x093a, 0), // U+00093a
     NEW_WIDTH(0x093b, 1), // U+00093b
@@ -193,7 +197,7 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x0b45, 1), // U+000b45
     NEW_WIDTH(0x0b4d, 0), // U+000b4d
     NEW_WIDTH(0x0b4e, 1), // U+000b4e
-    NEW_WIDTH(0x0b56, 0), // U+000b56
+    NEW_WIDTH(0x0b55, 0), // U+000b55
     NEW_WIDTH(0x0b57, 1), // U+000b57
     NEW_WIDTH(0x0b62, 0), // U+000b62
     NEW_WIDTH(0x0b64, 1), // U+000b64
@@ -207,6 +211,8 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x0c01, 1), // U+000c01
     NEW_WIDTH(0x0c04, 0), // U+000c04
     NEW_WIDTH(0x0c05, 1), // U+000c05
+    NEW_WIDTH(0x0c3c, 0), // U+000c3c
+    NEW_WIDTH(0x0c3d, 1), // U+000c3d
     NEW_WIDTH(0x0c3e, 0), // U+000c3e
     NEW_WIDTH(0x0c41, 1), // U+000c41
     NEW_WIDTH(0x0c46, 0), // U+000c46
@@ -239,6 +245,8 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x0d4e, 1), // U+000d4e
     NEW_WIDTH(0x0d62, 0), // U+000d62
     NEW_WIDTH(0x0d64, 1), // U+000d64
+    NEW_WIDTH(0x0d81, 0), // U+000d81
+    NEW_WIDTH(0x0d82, 1), // U+000d82
     NEW_WIDTH(0x0dca, 0), // U+000dca
     NEW_WIDTH(0x0dcb, 1), // U+000dcb
     NEW_WIDTH(0x0dd2, 0), // U+000dd2
@@ -254,8 +262,6 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x0eb1, 0), // U+000eb1
     NEW_WIDTH(0x0eb2, 1), // U+000eb2
     NEW_WIDTH(0x0eb4, 0), // U+000eb4
-    NEW_WIDTH(0x0eba, 1), // U+000eba
-    NEW_WIDTH(0x0ebb, 0), // U+000ebb
     NEW_WIDTH(0x0ebd, 1), // U+000ebd
     NEW_WIDTH(0x0ec8, 0), // U+000ec8
     NEW_WIDTH(0x0ece, 1), // U+000ece
@@ -309,7 +315,7 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x1712, 0), // U+001712
     NEW_WIDTH(0x1715, 1), // U+001715
     NEW_WIDTH(0x1732, 0), // U+001732
-    NEW_WIDTH(0x1735, 1), // U+001735
+    NEW_WIDTH(0x1734, 1), // U+001734
     NEW_WIDTH(0x1752, 0), // U+001752
     NEW_WIDTH(0x1754, 1), // U+001754
     NEW_WIDTH(0x1772, 0), // U+001772
@@ -325,7 +331,7 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x17dd, 0), // U+0017dd
     NEW_WIDTH(0x17de, 1), // U+0017de
     NEW_WIDTH(0x180b, 0), // U+00180b
-    NEW_WIDTH(0x180f, 1), // U+00180f
+    NEW_WIDTH(0x1810, 1), // U+001810
     NEW_WIDTH(0x1885, 0), // U+001885
     NEW_WIDTH(0x1887, 1), // U+001887
     NEW_WIDTH(0x18a9, 0), // U+0018a9
@@ -357,7 +363,7 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x1a7f, 0), // U+001a7f
     NEW_WIDTH(0x1a80, 1), // U+001a80
     NEW_WIDTH(0x1ab0, 0), // U+001ab0
-    NEW_WIDTH(0x1abf, 1), // U+001abf
+    NEW_WIDTH(0x1acf, 1), // U+001acf
     NEW_WIDTH(0x1b00, 0), // U+001b00
     NEW_WIDTH(0x1b04, 1), // U+001b04
     NEW_WIDTH(0x1b34, 0), // U+001b34
@@ -403,8 +409,6 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x1cf8, 0), // U+001cf8
     NEW_WIDTH(0x1cfa, 1), // U+001cfa
     NEW_WIDTH(0x1dc0, 0), // U+001dc0
-    NEW_WIDTH(0x1dfa, 1), // U+001dfa
-    NEW_WIDTH(0x1dfb, 0), // U+001dfb
     NEW_WIDTH(0x1e00, 1), // U+001e00
     NEW_WIDTH(0x200b, 0), // U+00200b
     NEW_WIDTH(0x2010, 1), // U+002010
@@ -512,16 +516,12 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x3131, 2), // U+003131
     NEW_WIDTH(0x318f, 1), // U+00318f
     NEW_WIDTH(0x3190, 2), // U+003190
-    NEW_WIDTH(0x31bb, 1), // U+0031bb
-    NEW_WIDTH(0x31c0, 2), // U+0031c0
     NEW_WIDTH(0x31e4, 1), // U+0031e4
     NEW_WIDTH(0x31f0, 2), // U+0031f0
     NEW_WIDTH(0x321f, 1), // U+00321f
     NEW_WIDTH(0x3220, 2), // U+003220
     NEW_WIDTH(0x3248, 1), // U+003248
     NEW_WIDTH(0x3250, 2), // U+003250
-    NEW_WIDTH(0x32ff, 1), // U+0032ff
-    NEW_WIDTH(0x3300, 2), // U+003300
     // U+004000,
     NEW_WIDTH(0x0000, 2), // U+004000
     NEW_WIDTH(0x0dc0, 1), // U+004dc0
@@ -547,6 +547,8 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x280c, 1), // U+00a80c
     NEW_WIDTH(0x2825, 0), // U+00a825
     NEW_WIDTH(0x2827, 1), // U+00a827
+    NEW_WIDTH(0x282c, 0), // U+00a82c
+    NEW_WIDTH(0x282d, 1), // U+00a82d
     NEW_WIDTH(0x28c4, 0), // U+00a8c4
     NEW_WIDTH(0x28c6, 1), // U+00a8c6
     NEW_WIDTH(0x28e0, 0), // U+00a8e0
@@ -566,7 +568,7 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x29b6, 0), // U+00a9b6
     NEW_WIDTH(0x29ba, 1), // U+00a9ba
     NEW_WIDTH(0x29bc, 0), // U+00a9bc
-    NEW_WIDTH(0x29bd, 1), // U+00a9bd
+    NEW_WIDTH(0x29be, 1), // U+00a9be
     NEW_WIDTH(0x29e5, 0), // U+00a9e5
     NEW_WIDTH(0x29e6, 1), // U+00a9e6
     NEW_WIDTH(0x2a29, 0), // U+00aa29
@@ -649,12 +651,20 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x0ae7, 1), // U+010ae7
     NEW_WIDTH(0x0d24, 0), // U+010d24
     NEW_WIDTH(0x0d28, 1), // U+010d28
+    NEW_WIDTH(0x0eab, 0), // U+010eab
+    NEW_WIDTH(0x0ead, 1), // U+010ead
     NEW_WIDTH(0x0f46, 0), // U+010f46
     NEW_WIDTH(0x0f51, 1), // U+010f51
+    NEW_WIDTH(0x0f82, 0), // U+010f82
+    NEW_WIDTH(0x0f86, 1), // U+010f86
     NEW_WIDTH(0x1001, 0), // U+011001
     NEW_WIDTH(0x1002, 1), // U+011002
     NEW_WIDTH(0x1038, 0), // U+011038
     NEW_WIDTH(0x1047, 1), // U+011047
+    NEW_WIDTH(0x1070, 0), // U+011070
+    NEW_WIDTH(0x1071, 1), // U+011071
+    NEW_WIDTH(0x1073, 0), // U+011073
+    NEW_WIDTH(0x1075, 1), // U+011075
     NEW_WIDTH(0x107f, 0), // U+01107f
     NEW_WIDTH(0x1082, 1), // U+011082
     NEW_WIDTH(0x10b3, 0), // U+0110b3
@@ -663,6 +673,8 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x10bb, 1), // U+0110bb
     NEW_WIDTH(0x10bd, 0), // U+0110bd
     NEW_WIDTH(0x10be, 1), // U+0110be
+    NEW_WIDTH(0x10c2, 0), // U+0110c2
+    NEW_WIDTH(0x10c3, 1), // U+0110c3
     NEW_WIDTH(0x10cd, 0), // U+0110cd
     NEW_WIDTH(0x10ce, 1), // U+0110ce
     NEW_WIDTH(0x1100, 0), // U+011100
@@ -679,6 +691,8 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x11bf, 1), // U+0111bf
     NEW_WIDTH(0x11c9, 0), // U+0111c9
     NEW_WIDTH(0x11cd, 1), // U+0111cd
+    NEW_WIDTH(0x11cf, 0), // U+0111cf
+    NEW_WIDTH(0x11d0, 1), // U+0111d0
     NEW_WIDTH(0x122f, 0), // U+01122f
     NEW_WIDTH(0x1232, 1), // U+011232
     NEW_WIDTH(0x1234, 0), // U+011234
@@ -749,6 +763,18 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x1838, 1), // U+011838
     NEW_WIDTH(0x1839, 0), // U+011839
     NEW_WIDTH(0x183b, 1), // U+01183b
+    NEW_WIDTH(0x193b, 0), // U+01193b
+    NEW_WIDTH(0x193d, 1), // U+01193d
+    NEW_WIDTH(0x193e, 0), // U+01193e
+    NEW_WIDTH(0x193f, 1), // U+01193f
+    NEW_WIDTH(0x1943, 0), // U+011943
+    NEW_WIDTH(0x1944, 1), // U+011944
+    NEW_WIDTH(0x19d4, 0), // U+0119d4
+    NEW_WIDTH(0x19d8, 1), // U+0119d8
+    NEW_WIDTH(0x19da, 0), // U+0119da
+    NEW_WIDTH(0x19dc, 1), // U+0119dc
+    NEW_WIDTH(0x19e0, 0), // U+0119e0
+    NEW_WIDTH(0x19e1, 1), // U+0119e1
     NEW_WIDTH(0x1a01, 0), // U+011a01
     NEW_WIDTH(0x1a0b, 1), // U+011a0b
     NEW_WIDTH(0x1a33, 0), // U+011a33
@@ -797,24 +823,43 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x1d98, 1), // U+011d98
     NEW_WIDTH(0x1ef3, 0), // U+011ef3
     NEW_WIDTH(0x1ef5, 1), // U+011ef5
+    NEW_WIDTH(0x3430, 0), // U+013430
+    NEW_WIDTH(0x3439, 1), // U+013439
     // U+014000,
     NEW_WIDTH(0x0000, 1), // U+014000
     NEW_WIDTH(0x2af0, 0), // U+016af0
     NEW_WIDTH(0x2af5, 1), // U+016af5
     NEW_WIDTH(0x2b30, 0), // U+016b30
     NEW_WIDTH(0x2b37, 1), // U+016b37
+    NEW_WIDTH(0x2f4f, 0), // U+016f4f
+    NEW_WIDTH(0x2f50, 1), // U+016f50
     NEW_WIDTH(0x2f8f, 0), // U+016f8f
     NEW_WIDTH(0x2f93, 1), // U+016f93
     NEW_WIDTH(0x2fe0, 2), // U+016fe0
-    NEW_WIDTH(0x2fe2, 1), // U+016fe2
+    NEW_WIDTH(0x2fe4, 0), // U+016fe4
+    NEW_WIDTH(0x2fe5, 1), // U+016fe5
+    NEW_WIDTH(0x2ff0, 2), // U+016ff0
+    NEW_WIDTH(0x2ff2, 1), // U+016ff2
     NEW_WIDTH(0x3000, 2), // U+017000
     // U+018000,
     NEW_WIDTH(0x0000, 2), // U+018000
-    NEW_WIDTH(0x07f2, 1), // U+0187f2
+    NEW_WIDTH(0x07f8, 1), // U+0187f8
     NEW_WIDTH(0x0800, 2), // U+018800
-    NEW_WIDTH(0x0af3, 1), // U+018af3
+    NEW_WIDTH(0x0cd6, 1), // U+018cd6
+    NEW_WIDTH(0x0d00, 2), // U+018d00
+    NEW_WIDTH(0x0d09, 1), // U+018d09
+    NEW_WIDTH(0x2ff0, 2), // U+01aff0
+    NEW_WIDTH(0x2ff4, 1), // U+01aff4
+    NEW_WIDTH(0x2ff5, 2), // U+01aff5
+    NEW_WIDTH(0x2ffc, 1), // U+01affc
+    NEW_WIDTH(0x2ffd, 2), // U+01affd
+    NEW_WIDTH(0x2fff, 1), // U+01afff
     NEW_WIDTH(0x3000, 2), // U+01b000
-    NEW_WIDTH(0x311f, 1), // U+01b11f
+    NEW_WIDTH(0x3123, 1), // U+01b123
+    NEW_WIDTH(0x3150, 2), // U+01b150
+    NEW_WIDTH(0x3153, 1), // U+01b153
+    NEW_WIDTH(0x3164, 2), // U+01b164
+    NEW_WIDTH(0x3168, 1), // U+01b168
     NEW_WIDTH(0x3170, 2), // U+01b170
     NEW_WIDTH(0x32fc, 1), // U+01b2fc
     NEW_WIDTH(0x3c9d, 0), // U+01bc9d
@@ -823,6 +868,10 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x3ca4, 1), // U+01bca4
     // U+01c000,
     NEW_WIDTH(0x0000, 1), // U+01c000
+    NEW_WIDTH(0x0f00, 0), // U+01cf00
+    NEW_WIDTH(0x0f2e, 1), // U+01cf2e
+    NEW_WIDTH(0x0f30, 0), // U+01cf30
+    NEW_WIDTH(0x0f47, 1), // U+01cf47
     NEW_WIDTH(0x1167, 0), // U+01d167
     NEW_WIDTH(0x116a, 1), // U+01d16a
     NEW_WIDTH(0x1173, 0), // U+01d173
@@ -855,6 +904,12 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x2025, 1), // U+01e025
     NEW_WIDTH(0x2026, 0), // U+01e026
     NEW_WIDTH(0x202b, 1), // U+01e02b
+    NEW_WIDTH(0x2130, 0), // U+01e130
+    NEW_WIDTH(0x2137, 1), // U+01e137
+    NEW_WIDTH(0x22ae, 0), // U+01e2ae
+    NEW_WIDTH(0x22af, 1), // U+01e2af
+    NEW_WIDTH(0x22ec, 0), // U+01e2ec
+    NEW_WIDTH(0x22f0, 1), // U+01e2f0
     NEW_WIDTH(0x28d0, 0), // U+01e8d0
     NEW_WIDTH(0x28d7, 1), // U+01e8d7
     NEW_WIDTH(0x2944, 0), // U+01e944
@@ -919,26 +974,42 @@ static const uint16_t termpaint_char_width_data_default[] = {
     NEW_WIDTH(0x36cd, 1), // U+01f6cd
     NEW_WIDTH(0x36d0, 2), // U+01f6d0
     NEW_WIDTH(0x36d3, 1), // U+01f6d3
+    NEW_WIDTH(0x36d5, 2), // U+01f6d5
+    NEW_WIDTH(0x36d8, 1), // U+01f6d8
+    NEW_WIDTH(0x36dd, 2), // U+01f6dd
+    NEW_WIDTH(0x36e0, 1), // U+01f6e0
     NEW_WIDTH(0x36eb, 2), // U+01f6eb
     NEW_WIDTH(0x36ed, 1), // U+01f6ed
     NEW_WIDTH(0x36f4, 2), // U+01f6f4
-    NEW_WIDTH(0x36fa, 1), // U+01f6fa
-    NEW_WIDTH(0x3910, 2), // U+01f910
-    NEW_WIDTH(0x393f, 1), // U+01f93f
-    NEW_WIDTH(0x3940, 2), // U+01f940
-    NEW_WIDTH(0x3971, 1), // U+01f971
-    NEW_WIDTH(0x3973, 2), // U+01f973
-    NEW_WIDTH(0x3977, 1), // U+01f977
-    NEW_WIDTH(0x397a, 2), // U+01f97a
-    NEW_WIDTH(0x397b, 1), // U+01f97b
-    NEW_WIDTH(0x397c, 2), // U+01f97c
-    NEW_WIDTH(0x39a3, 1), // U+01f9a3
-    NEW_WIDTH(0x39b0, 2), // U+01f9b0
-    NEW_WIDTH(0x39ba, 1), // U+01f9ba
-    NEW_WIDTH(0x39c0, 2), // U+01f9c0
-    NEW_WIDTH(0x39c3, 1), // U+01f9c3
-    NEW_WIDTH(0x39d0, 2), // U+01f9d0
+    NEW_WIDTH(0x36fd, 1), // U+01f6fd
+    NEW_WIDTH(0x37e0, 2), // U+01f7e0
+    NEW_WIDTH(0x37ec, 1), // U+01f7ec
+    NEW_WIDTH(0x37f0, 2), // U+01f7f0
+    NEW_WIDTH(0x37f1, 1), // U+01f7f1
+    NEW_WIDTH(0x390c, 2), // U+01f90c
+    NEW_WIDTH(0x393b, 1), // U+01f93b
+    NEW_WIDTH(0x393c, 2), // U+01f93c
+    NEW_WIDTH(0x3946, 1), // U+01f946
+    NEW_WIDTH(0x3947, 2), // U+01f947
     NEW_WIDTH(0x3a00, 1), // U+01fa00
+    NEW_WIDTH(0x3a70, 2), // U+01fa70
+    NEW_WIDTH(0x3a75, 1), // U+01fa75
+    NEW_WIDTH(0x3a78, 2), // U+01fa78
+    NEW_WIDTH(0x3a7d, 1), // U+01fa7d
+    NEW_WIDTH(0x3a80, 2), // U+01fa80
+    NEW_WIDTH(0x3a87, 1), // U+01fa87
+    NEW_WIDTH(0x3a90, 2), // U+01fa90
+    NEW_WIDTH(0x3aad, 1), // U+01faad
+    NEW_WIDTH(0x3ab0, 2), // U+01fab0
+    NEW_WIDTH(0x3abb, 1), // U+01fabb
+    NEW_WIDTH(0x3ac0, 2), // U+01fac0
+    NEW_WIDTH(0x3ac6, 1), // U+01fac6
+    NEW_WIDTH(0x3ad0, 2), // U+01fad0
+    NEW_WIDTH(0x3ada, 1), // U+01fada
+    NEW_WIDTH(0x3ae0, 2), // U+01fae0
+    NEW_WIDTH(0x3ae8, 1), // U+01fae8
+    NEW_WIDTH(0x3af0, 2), // U+01faf0
+    NEW_WIDTH(0x3af7, 1), // U+01faf7
     // U+020000,
     NEW_WIDTH(0x0000, 2), // U+020000
     // U+024000,
