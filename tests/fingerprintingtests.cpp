@@ -1221,6 +1221,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "konsole 22.03.70" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;115;0c" }},
+            { "\033[>1c",         { "\033[>0;115;0c" }},
+            { "\033[>0;1c",       { "\033[>0;115;0c\033[>0;115;0c" }},
+            { "\033[=c",          { "\033P!|7E4B4445\033\\"}},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: konsole(220370)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "mlterm 3.8.9" LINEINFO,
         {
             { "\033[>c",          { "\033[>24;279;0c" }},

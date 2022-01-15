@@ -3030,17 +3030,24 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
     } else if (term->terminal_type == TT_TMUX) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
     } else if (term->terminal_type == TT_KONSOLE) {
+        if (term->terminal_type_confidence == 2) {
+            // this is set by 3RD_DEV_ATTRIB, which was introduced in version 22.03.70
+            term->terminal_version = 220370;
+        }
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         // konsole starting at version 18.07.70 could do the CSI space q one too, but
         // we don't have the konsole version.
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_CURSOR_SHAPE_OSC50);
-        // konsole starting at version 19.08.2 supports 7-bit ST, but
-        // we don't have the konsole version.
-        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_7BIT_ST);
+        if (term->terminal_version < 220370) {
+            // konsole starting at version 19.08.2 supports 7-bit ST, but
+            // we don't have a fine konsole version.
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_7BIT_ST);
+            // konsole maps some ordinary non spacing characters to width 1, unbreak output by using a specific width table.
+            term->char_width_table = &termpaintp_char_width_konsole2018;
+        } else {
+            term->char_width_table = &termpaintp_char_width_konsole2022;
+        }
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
-
-        // konsole maps some ordinary non spacing characters to width 1, unbreak output by using a specific width table.
-        term->char_width_table = &termpaintp_char_width_konsole2018;
     } else if (term->terminal_type == TT_URXVT) {
         termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
         // XXX: urxvt 9.19 seems to crash on bracketed paste, so don't set it
@@ -3590,6 +3597,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                         terminal->terminal_type_confidence = 2;
                     } else if (memcmp(event->raw.string, "7E7E5459", 8) == 0) { // ~~TY
                         terminal->terminal_type = TT_TERMINOLOGY;
+                        terminal->terminal_type_confidence = 2;
+                    } else if (memcmp(event->raw.string, "7E4B4445", 8) == 0) { // ~KDE
+                        terminal->terminal_type = TT_KONSOLE;
                         terminal->terminal_type_confidence = 2;
                     } else if (memcmp(event->raw.string, "7E4C4E58", 8) == 0) { // ~LNX
                         terminal->terminal_type = TT_LINUXVC;

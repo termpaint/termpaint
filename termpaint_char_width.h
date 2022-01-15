@@ -3,6 +3,7 @@
 
 #include "charclassification.inc"
 #include "charclassification_konsole_2018.inc"
+#include "charclassification_konsole_2022.inc"
 
 #undef NEW_WIDTH
 
@@ -19,6 +20,11 @@ const termpaintp_width termpaintp_char_width_default = {
 const termpaintp_width termpaintp_char_width_konsole2018 = {
     .termpaint_char_width_offsets = termpaint_char_width_offsets_konsole_2018,
     .termpaint_char_width_data = termpaint_char_width_data_konsole_2018
+};
+
+const termpaintp_width termpaintp_char_width_konsole2022 = {
+    .termpaint_char_width_offsets = termpaint_char_width_offsets_konsole_2022,
+    .termpaint_char_width_data = termpaint_char_width_data_konsole_2022
 };
 
 static int termpaintp_char_width(const termpaintp_width *table, int ch) {
