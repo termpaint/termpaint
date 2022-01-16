@@ -23,13 +23,6 @@ files = [
 
 sequences = {}
 
-sequences['1b5b306e'] = {
-    'raw': '1b5b306e',
-    'type': 'key',
-    'mod': '   ',
-    'key': 'i_resync'
-}
-
 for filename in files:
     f = open('../tools/miscdata/' + filename, 'r')
     source = json.load(f)
