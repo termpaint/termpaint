@@ -42,7 +42,8 @@ static inline int create_encoding_with_length(int codepoint, unsigned char *buf,
     codepoint = codepoint >> 6;
 
     if (length == 6) {
-        REQUIRE(codepoint < (1u << (6*5+1)));
+        //This is implied by the range of int:
+        //REQUIRE(codepoint < (1u << (6*5+1)));
         STORE_AND_SHIFT(5)
         STORE_AND_SHIFT(4)
         STORE_AND_SHIFT(3)

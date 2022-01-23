@@ -136,9 +136,9 @@ std::u32string toUtf32(std::u16string data) {
 
 
 template <typename T>
-int toInt(T x);
+static int toInt(T x);
 
-int toInt(size_t x) {
+static int toInt(size_t x) {
     if (x > std::numeric_limits<int>::max()) {
         throw std::runtime_error("out of range in conversion to int");
     }
@@ -146,7 +146,7 @@ int toInt(size_t x) {
 }
 
 template <typename T>
-unsigned toUInt(T x) {
+static unsigned toUInt(T x) {
     const unsigned result = static_cast<int>(x);
     if (result != x) {
         throw std::runtime_error("out of range in conversion to int");
@@ -219,7 +219,7 @@ TEST_CASE("test for PartitionGenerator", "[measurement]") {
                                {"a", "bcd"}, {"a", "bc", "d"}, {"a", "b", "cd"}, {"a", "b", "c", "d"}} }
     );
     PartitionGenerator<std::string> gen(testCase.str);
-    int idx = 0;
+    unsigned int idx = 0;
     do {
         REQUIRE(idx < testCase.splits.size());
         REQUIRE(gen.get() == testCase.splits[idx]);
@@ -385,8 +385,8 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
         result = measureOneCluster(partition);
         CHECK(result.limitReached == true);
         CHECK(result.columns == testCase.columns);
-        CHECK(result.codeunits == testCase.str.length());
-        CHECK(result.codepoints == utf32.length());
+        CHECK(result.codeunits == toInt(testCase.str.length()));
+        CHECK(result.codepoints == toInt(utf32.length()));
     }
     SECTION("parse as utf16") {
         INFO(testCase.desc);
@@ -397,8 +397,8 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
         result = measureOneCluster(partition);
         CHECK(result.limitReached == true);
         CHECK(result.columns == testCase.columns);
-        CHECK(result.codeunits == utf16.length());
-        CHECK(result.codepoints == utf32.length());
+        CHECK(result.codeunits == toInt(utf16.length()));
+        CHECK(result.codepoints == toInt(utf32.length()));
     }
     SECTION("parse as utf32") {
         INFO(testCase.desc);
@@ -408,8 +408,8 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
         result = measureOneCluster(partition);
         CHECK(result.limitReached == true);
         CHECK(result.columns == testCase.columns);
-        CHECK(result.codeunits == utf32.length());
-        CHECK(result.codepoints == utf32.length());
+        CHECK(result.codeunits == toInt(utf32.length()));
+        CHECK(result.codepoints == toInt(utf32.length()));
     }
 }
 

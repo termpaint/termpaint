@@ -19,6 +19,25 @@ using jobject = picojson::value::object;
 
 #define U8(x) reinterpret_cast<const char*>(u8##x)
 
+template <typename T>
+static int toInt(T x);
+
+static int toInt(size_t x) {
+    if (x > std::numeric_limits<int>::max()) {
+        throw std::runtime_error("out of range in conversion to int");
+    }
+    return static_cast<int>(x);
+}
+
+template <typename T>
+static unsigned toUInt(T x) {
+    const unsigned result = static_cast<int>(x);
+    if (result != x) {
+        throw std::runtime_error("out of range in conversion to int");
+    }
+    return x;
+}
+
 template <typename Result, typename... Args>
 Result wrapper(void* state, Args... args) {
     using FnType = std::function<Result(Args...)>;
@@ -1370,7 +1389,7 @@ TEST_CASE("input: peek buffer") {
     std::string buffer;
     for (size_t i = 0; i < sequence.size(); i++) {
         CAPTURE(i);
-        REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == buffer.size());
+        REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == toInt(buffer.size()));
         REQUIRE(std::string(termpaint_input_peek_buffer(input_ctx), buffer.size()) == buffer);
         termpaint_input_add_data(input_ctx, sequence.data() + i, 1);
         buffer.append(sequence.data() + i, 1);
