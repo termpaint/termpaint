@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSL-1.0
-// compile with: gcc -fno-asynchronous-unwind-tables -fno-ident -nostdlib -static -Os -fvisibility=hidden -std=gnu11 ttyrescue_nolibc.c -o ttyrescue_nolibc
+// compile with: gcc -fno-asynchronous-unwind-tables -fno-ident -nostdlib -ffreestanding -static -Os -fvisibility=hidden -std=gnu11 ttyrescue_nolibc.c -o ttyrescue_nolibc
 // strip: strip --strip-all --remove-section=.comment --remove-section=.note --remove-section=.eh_frame_hdr --remove-section=.eh_frame --remove-section=.note.gnu.gold-version  ttyrescue_nolibc
 
 #include <poll.h>
@@ -74,6 +74,13 @@ int x_strlen(const char *s) {
         s++;
     }
     return len;
+}
+
+void *memset(void *s, int c, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        ((unsigned char*)s)[i] = c;
+    }
+    return s;
 }
 
 static void output(const char *s) {

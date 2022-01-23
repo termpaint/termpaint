@@ -36,7 +36,7 @@ main_lib_cargs = []
 # does not really allow doing that in a reasonable way. So just ignore it on other platforms.
 if get_option('ttyrescue-fexec-blob') and host_machine.system() == 'linux'
   ttyrescue_nolibc_exe = executable('ttyrescue_nolibc', 'ttyrescue_nolibc.c',
-    c_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
+    c_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-ffreestanding', '-nostdlib', '-static', '-Os',
                '-fvisibility=hidden', '-std=gnu11'],
     link_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
                 '-fvisibility=hidden', '-std=gnu11'])
