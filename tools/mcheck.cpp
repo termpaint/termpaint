@@ -8,9 +8,21 @@ typedef bool _Bool;
 
 #include "../termpaint_input.h"
 
+#ifndef BUNDLED_PICOJSON
+#include "picojson.h"
+#else
 #include "../third-party/picojson.h"
+#endif
+#ifndef BUNDLED_DOCOPT
+#include "docopt/docopt.h"
+#else
 #include "../third-party/docopt/docopt.h"
+#endif
+#ifndef BUNDLED_FMT
+#include "fmt/format.h"
+#else
 #include "../third-party/format.h"
+#endif
 
 using jarray = picojson::value::array;
 using jobject = picojson::value::object;

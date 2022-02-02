@@ -6,7 +6,11 @@
 
 #include <termpaint.h>
 
+#ifndef BUNDLED_CATCH2
+#include "catch2/catch.hpp"
+#else
 #include "../third-party/catch.hpp"
+#endif
 
 template<typename T>
 using cptr_DEL = void(T*);

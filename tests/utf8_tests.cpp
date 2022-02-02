@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: BSL-1.0
 #include <string.h>
 
+#ifndef BUNDLED_CATCH2
+#include "catch2/catch.hpp"
+#else
 #include "../third-party/catch.hpp"
+#endif
 
 typedef bool _Bool;
 #include <termpaint_utf8.h>

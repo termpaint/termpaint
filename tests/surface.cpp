@@ -3,7 +3,11 @@
 #include <map>
 #include <limits>
 
+#ifndef BUNDLED_CATCH2
+#include "catch2/catch.hpp"
+#else
 #include "../third-party/catch.hpp"
+#endif
 
 #include <termpaint.h>
 

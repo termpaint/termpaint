@@ -120,12 +120,19 @@ ttyrescue_files = [
 
 executable('ttyrescue', ttyrescue_files)
 
+if cc.has_header('picojson.h')
+  picojson_dep = []
+else
+  picojson_dep = declare_dependency(compile_args: ['-DBUNDLED_PICOJSON'])
+endif
+
 #ide:editable-filelist
 image_lib_files = [
   'termpaint_image.cpp',
 ]
 
 image_lib = library('termpaint_image', image_lib_files, link_with: [main_lib],
+                    dependencies: [picojson_dep],
                     install: true)
 
 image_lib_installed_headers = [
@@ -206,19 +213,35 @@ keyboardcollector_files = [
 ]
 
 
-executable('keyboardcollector', keyboardcollector_files, link_with: [main_lib])
+executable('keyboardcollector', keyboardcollector_files, link_with: [main_lib], dependencies: [picojson_dep])
 if get_option('ssh')
   executable('keyboardcollector-ssh', 'tools/keyboardcollector.cpp', 'tools/SshServer.cpp',
     cpp_args: ['-DUSE_SSH'],
     link_with: [main_lib],
     dependencies: dependency('libssh'))
 endif
-docopt_lib = static_library('libdocopt', 'third-party/docopt/docopt.cpp', cpp_args: ['-Wno-unknown-pragmas'])
-fmt_lib = static_library('libfmt', 'third-party/format.cc')
-executable('mcheck', 'tools/mcheck.cpp', link_with: [main_lib, docopt_lib, fmt_lib])
+
+docopt_dep = dependency('docopt', required : get_option('system-docopt'))
+if not docopt_dep.found()
+  docopt_lib = static_library('libdocopt', 'third-party/docopt/docopt.cpp', cpp_args: ['-Wno-unknown-pragmas'])
+  docopt_dep = declare_dependency(link_with: docopt_lib, compile_args: ['-DBUNDLED_DOCOPT'])
+endif
+
+fmt_dep = dependency('fmt', required : get_option('system-fmt'))
+if not fmt_dep.found()
+  fmt_lib = static_library('libfmt', 'third-party/format.cc')
+  fmt_dep = declare_dependency(link_with: fmt_lib, compile_args: ['-DBUNDLED_FMT'])
+endif
+
+executable('mcheck', 'tools/mcheck.cpp', link_with: [main_lib], dependencies: [docopt_dep, fmt_dep, picojson_dep])
 executable('termquery', 'termquery.cpp', link_with: [main_lib])
 
-testlib = static_library('testlib', 'tests/catch_main.cpp')
+catch2_dep = dependency('catch2', required : get_option('system-catch2'))
+if not catch2_dep.found()
+  catch2_dep = declare_dependency(compile_args: ['-DBUNDLED_CATCH2'])
+endif
+
+testlib = static_library('testlib', 'tests/catch_main.cpp', dependencies: [catch2_dep])
 
 #ide:editable-filelist
 test_files = [
@@ -231,7 +254,11 @@ test_files = [
   'tests/utf8_tests.cpp',
 ]
 
-testtermpaint = executable('testtermpaint', test_files, link_with: [main_lib, testlib], cpp_args: ['-fno-inline', silence_warnings])
+testtermpaint = executable('testtermpaint', test_files,
+  link_with: [main_lib, testlib],
+  cpp_args: ['-fno-inline', silence_warnings],
+  dependencies: [catch2_dep, picojson_dep])
+
 testtermpaint_env = environment()
 testtermpaint_env.set('TERMPAINT_TEST_DATA', meson.current_source_dir() / ('tests'))
 test('testtermpaint', testtermpaint, timeout: 1200, env: testtermpaint_env)
@@ -245,7 +272,7 @@ test_terminaloutput_files = [
 testtermpaint_terminaloutput = executable('testtermpaint_terminaloutput',
   test_terminaloutput_files,
   link_with: [main_lib],
-  dependencies: dependency('threads'),
+  dependencies: [dependency('threads'), catch2_dep, picojson_dep],
   cpp_args: ['-fno-inline', silence_warnings])
 
 # currently can't be run as meson registered test, because it needs a path to a terminal test driver

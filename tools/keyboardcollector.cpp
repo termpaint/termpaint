@@ -20,7 +20,11 @@
 #include "SshServer.h"
 #endif
 
+#ifndef BUNDLED_PICOJSON
+#include "picojson.h"
+#else
 #include "../third-party/picojson.h"
+#endif
 
 using jarray = picojson::value::array;
 using jobject = picojson::value::object;

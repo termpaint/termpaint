@@ -3,8 +3,17 @@
 #include <functional>
 #include <fstream>
 
+#ifndef BUNDLED_CATCH2
+#include "catch2/catch.hpp"
+#else
 #include "../third-party/catch.hpp"
+#endif
+
+#ifndef BUNDLED_PICOJSON
+#include "picojson.h"
+#else
 #include "../third-party/picojson.h"
+#endif
 
 #if __GNUC__
 #pragma GCC diagnostic ignored "-Wpadded"

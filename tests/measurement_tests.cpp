@@ -5,7 +5,11 @@
 #include <locale>
 #include <numeric>
 
+#ifndef BUNDLED_CATCH2
+#include "catch2/catch.hpp"
+#else
 #include "../third-party/catch.hpp"
+#endif
 
 
 // NOTE: This file assumes that the compiler uses utf-8 for string constants.

@@ -3,6 +3,10 @@
 option('ttyrescue-path', type : 'string', value : '/usr/libexec')
 option('ttyrescue-fexec-blob', type : 'boolean', value : true)
 option('valgrind-compat', type : 'boolean', value : true)
+option('system-docopt', type : 'feature', value : 'disabled')
+option('system-fmt', type : 'feature', value : 'disabled')
+option('system-catch2', type : 'feature', value : 'disabled')
+option('system-picojson', type : 'feature', value : 'disabled')
 option('errorlog', type : 'boolean', value : false)
 # samples etc
 option('ssh', type : 'boolean', value : false)
