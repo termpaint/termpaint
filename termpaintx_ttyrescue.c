@@ -422,7 +422,7 @@ termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const ch
         if (RUNNING_ON_VALGRIND) {
             // There is no way to avoid leaking the main programs allocations
             // Valgrind's leak check would report these, so instead exit this process without valgrind noticeing.
-            VALGRIND_PRINTF("termpaint embedded ttyrescue exited (supressing valgrind reports in rescue process)\n");
+            VALGRIND_PRINTF("termpaint embedded ttyrescue exited (suppressing valgrind reports in rescue process)\n");
             (void)VALGRIND_NON_SIMD_CALL1(exit_wrapper, _exit);
         }
 #endif
