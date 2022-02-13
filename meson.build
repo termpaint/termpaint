@@ -86,6 +86,7 @@ main_lib_cargs += '-DTERMPAINT_RESCUE_PATH="@0@"'.format(get_option('ttyrescue-p
 main_lib = library('termpaint', main_lib_files,
   dependencies: lib_rt,
   c_args: main_lib_cargs,
+  soversion: '0a',
   install: true)
 
 main_lib_installed_headers = [
@@ -139,6 +140,7 @@ image_lib_files = [
 
 image_lib = library('termpaint_image', image_lib_files, link_with: [main_lib],
                     dependencies: [picojson_dep],
+                    soversion: '0a',
                     install: true)
 
 image_lib_installed_headers = [
