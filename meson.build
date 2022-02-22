@@ -118,7 +118,13 @@ ttyrescue_files = [
   'ttyrescue.c',
 ]
 
-executable('ttyrescue', ttyrescue_files)
+ttyrescue_exe_args = {}
+
+if get_option('ttyrescue-install')
+    ttyrescue_exe_args += {'install': true, 'install_dir': get_option('ttyrescue-path')}
+endif
+
+executable('ttyrescue', ttyrescue_files, kwargs: ttyrescue_exe_args)
 
 if cc.has_header('picojson.h')
   picojson_dep = []
