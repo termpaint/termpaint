@@ -163,12 +163,18 @@ if meson.version().version_compare('>=0.54')
   meson.override_dependency('termpaint_image', termpaint_image_dep)
 endif
 
+tools_kwargs = {}
+
+if get_option('tools-path') != ''
+  tools_kwargs += {'install': true, 'install_dir': get_option('tools-path')}
+endif
+
 #ide:editable-filelist
 inputevents_files = [
   'inputevents.cpp',
 ]
 
-executable('inputevents', inputevents_files, link_with: [main_lib])
+executable('inputevents', inputevents_files, link_with: [main_lib], kwargs: tools_kwargs)
 
 #ide:editable-filelist
 attrdemo_files = [
@@ -211,7 +217,7 @@ detect_files = [
   'demo/detect.c',
 ]
 
-executable('detect', detect_files, link_with: [main_lib])
+executable('detect', detect_files, link_with: [main_lib], kwargs: tools_kwargs)
 
 #ide:editable-filelist
 keyboardcollector_files = [
