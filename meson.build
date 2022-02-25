@@ -87,6 +87,7 @@ main_lib = library('termpaint', main_lib_files,
   dependencies: lib_rt,
   c_args: main_lib_cargs,
   soversion: '0a',
+  darwin_versions: ['1', '1'],
   install: true)
 
 main_lib_installed_headers = [
@@ -141,6 +142,7 @@ image_lib_files = [
 image_lib = library('termpaint_image', image_lib_files, link_with: [main_lib],
                     dependencies: [picojson_dep],
                     soversion: '0a',
+                    darwin_versions: ['1', '1'],
                     install: true)
 
 image_lib_installed_headers = [
