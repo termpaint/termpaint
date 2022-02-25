@@ -5142,6 +5142,7 @@ static bool termpaintp_test_parse_version(void) {
     return ret;
 }
 
+// this in internal don't link to this externally
 _tERMPAINT_PUBLIC bool termpaintp_test(void) {
     bool ret = true;
     ret &= termpaintp_test_quantize_to_256();
