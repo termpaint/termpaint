@@ -128,7 +128,7 @@ endif
 
 executable('ttyrescue', ttyrescue_files, kwargs: ttyrescue_exe_args)
 
-if cc.has_header('picojson.h')
+if cc.has_header('picojson.h', required : get_option('system-picojson'))
   picojson_dep = []
 else
   picojson_dep = declare_dependency(compile_args: ['-DBUNDLED_PICOJSON'])
