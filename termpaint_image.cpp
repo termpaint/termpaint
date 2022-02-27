@@ -9,7 +9,7 @@
 #ifndef BUNDLED_PICOJSON
 #include "picojson.h"
 #else
-#include "../third-party/picojson.h"
+#include "third-party/picojson.h"
 #endif
 
 #include <termpaint_utf8.h>
