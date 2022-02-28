@@ -1,0 +1,10 @@
+TERMPAINT_0.3 { global:
+    termpaint_image_load;
+    termpaint_image_load_from_buffer;
+    termpaint_image_load_from_file;
+    termpaint_image_save;
+    termpaint_image_save_alloc_buffer;
+    termpaint_image_save_dealloc_buffer;
+    termpaint_image_save_to_file;
+local: *;
+};

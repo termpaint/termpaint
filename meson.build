@@ -69,6 +69,14 @@ else
   debugwin_inc = []
 endif
 
+main_vscript = 'termpaint.symver'
+if host_machine.system() == 'linux'
+  # for now, only do this on linux, expand supported platforms as needed
+  main_ld_vscript = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), main_vscript)
+else
+  main_ld_vscript = []
+endif
+
 #ide:editable-filelist
 main_lib_files = [
   'termpaint.c',
@@ -88,6 +96,8 @@ main_lib = library('termpaint', main_lib_files,
   c_args: main_lib_cargs,
   soversion: '0a',
   darwin_versions: ['1', '1'],
+  link_args : main_ld_vscript,
+  link_depends : main_vscript,
   install: true)
 
 main_lib_installed_headers = [
@@ -134,6 +144,13 @@ else
   picojson_dep = declare_dependency(compile_args: ['-DBUNDLED_PICOJSON'])
 endif
 
+image_vscript = 'termpaint_image.symver'
+if host_machine.system() == 'linux'
+  image_ld_vscript = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), image_vscript)
+else
+  image_ld_vscript = []
+endif
+
 #ide:editable-filelist
 image_lib_files = [
   'termpaint_image.cpp',
@@ -143,6 +160,8 @@ image_lib = library('termpaint_image', image_lib_files, link_with: [main_lib],
                     dependencies: [picojson_dep],
                     soversion: '0a',
                     darwin_versions: ['1', '1'],
+                    link_args : image_ld_vscript,
+                    link_depends : image_vscript,
                     install: true)
 
 image_lib_installed_headers = [
