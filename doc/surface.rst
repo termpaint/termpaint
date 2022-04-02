@@ -230,9 +230,11 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 .. c:function:: void termpaint_surface_copy_rect(termpaint_surface *src_surface, int x, int y, int width, int height, termpaint_surface *dst_surface, int dst_x, int dst_y, int tile_left, int tile_right)
 
   Copies the contents of the rectangle with the upper-left corner ``x``, ``y`` and width ``width`` and height ``height``
-  in surface ``surc_surface`` into the surface ``dst_surface`` at position ``dst_x``, ``dst_y``.
+  in surface ``src_surface`` into the surface ``dst_surface`` at position ``dst_x``, ``dst_y``.
 
-  if clusters in the source or destination surface cross the boundary of the rectangle the behavior depends on the
+  Overlapping source and destination rectangles are supported.
+
+  If clusters in the source or destination surface cross the boundary of the rectangle the behavior depends on the
   values in ``tile_left`` for the left boundary and ``tile_right`` for the right boundary.
 
   The following tiling modes are available:
