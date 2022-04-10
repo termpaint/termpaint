@@ -122,8 +122,9 @@ See :ref:`safety` for general rules for calling functions in termpaint.
   ``clip_x0`` (inclusive) to column ``clip_x1`` are used for placing characters. ``x`` may be less than ``clip_x0``,
   in that case characters at the start of the string are not placed as needed to maintain the clipping interval.
 
-  The clip range does *not* prevent modifications of characters outside of the interval to be changed if clusters cross
-  the clipping boundary.
+  The clip range does *not* prevent modifications of characters outside of the interval to be changed if a existing
+  cluster in surface cross the clipping boundary. In that case if that cluster is partially overwritten the part
+  outside the interval is erased (preserving its previous attributes).
 
 .. c:function:: void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, int x, int y, const char *string, int len, const termpaint_attr *attr, int clip_x0, int clip_x1)
 
