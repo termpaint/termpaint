@@ -385,7 +385,7 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
         auto partition = GENERATE_COPY(partitions(testCase.str));
         INFO(testCase.desc);
         INFO("Partition: " << printPartition(partition));
-        INFO("Checking for string " << testCase.str)
+        INFO("Checking for string " << testCase.str);
         result = measureOneCluster(partition);
         CHECK(result.limitReached == true);
         CHECK(result.columns == testCase.columns);
@@ -394,7 +394,7 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
     }
     SECTION("parse as utf16") {
         INFO(testCase.desc);
-        INFO("Checking for string " << testCase.str)
+        INFO("Checking for string " << testCase.str);
         std::u16string utf16 = toUtf16(testCase.str);
         auto partition = GENERATE_COPY(partitions(utf16));
         INFO("Partition: " << printPartition(partition));
@@ -406,7 +406,7 @@ TEST_CASE( "Measurements for single clusters", "[measurement]") {
     }
     SECTION("parse as utf32") {
         INFO(testCase.desc);
-        INFO("Checking for string " << testCase.str)
+        INFO("Checking for string " << testCase.str);
         auto partition = GENERATE_COPY(partitions(utf32));
         INFO("Partition: " << printPartition(partition));
         result = measureOneCluster(partition);
