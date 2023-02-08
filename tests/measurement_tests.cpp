@@ -6,7 +6,11 @@
 #include <numeric>
 
 #ifndef BUNDLED_CATCH2
+#ifdef CATCH3
+#include "catch2/catch_all.hpp"
+#else
 #include "catch2/catch.hpp"
+#endif
 #else
 #include "../third-party/catch.hpp"
 #endif
@@ -209,8 +213,12 @@ private:
 
 template <typename STR>
 Catch::Generators::GeneratorWrapper<std::vector<STR>> partitions(STR str) {
+#ifdef CATCH3
+    return Catch::Generators::GeneratorWrapper<std::vector<STR>>(new PartitionGenerator<STR>(str));
+#else
     return Catch::Generators::GeneratorWrapper<std::vector<STR>>(
         std::unique_ptr<Catch::Generators::IGenerator<std::vector<STR>>>(new PartitionGenerator<STR>(str)));
+#endif
 }
 
 TEST_CASE("test for PartitionGenerator", "[measurement]") {

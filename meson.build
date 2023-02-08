@@ -274,6 +274,10 @@ executable('termquery', 'termquery.cpp', link_with: [main_lib])
 catch2_dep = dependency('catch2', required : get_option('system-catch2'))
 if not catch2_dep.found()
   catch2_dep = declare_dependency(compile_args: ['-DBUNDLED_CATCH2'])
+else
+  if catch2_dep.version().version_compare('>=3.0')
+    catch2_dep = [catch2_dep, declare_dependency(compile_args: ['-DCATCH3'])]
+  endif
 endif
 
 testlib = static_library('testlib', 'tests/catch_main.cpp', dependencies: [catch2_dep])

@@ -3,7 +3,11 @@
 #define CATCH_CONFIG_NOSTDOUT
 
 #ifndef BUNDLED_CATCH2
+#ifdef CATCH3
+#include "catch2/catch_all.hpp"
+#else
 #include "catch2/catch.hpp"
+#endif
 #else
 #include "../third-party/catch.hpp"
 #endif
@@ -344,7 +348,11 @@ int main( int argc, char* argv[] ) {
     std::string testdriver;
     bool valgrind = false;
 
+#ifdef CATCH3
+    using namespace Catch::Clara;
+#else
     using namespace Catch::clara;
+#endif
 
     auto cli
       = session.cli()

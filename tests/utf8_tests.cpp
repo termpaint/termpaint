@@ -2,7 +2,11 @@
 #include <string.h>
 
 #ifndef BUNDLED_CATCH2
+#ifdef CATCH3
+#include "catch2/catch_all.hpp"
+#else
 #include "catch2/catch.hpp"
+#endif
 #else
 #include "../third-party/catch.hpp"
 #endif
@@ -199,6 +203,6 @@ TEST_CASE( "utf8 brute force unicode", "[utf8]" ) {
     codepoint_test(1, 0x10ffff);
 }
 
-TEST_CASE( "utf8 brute force", "[!hide][utf8slow]" ) {
+TEST_CASE( "utf8 brute force", "[.utf8slow]" ) {
     codepoint_test(1, 0x7fffffff);
 }
