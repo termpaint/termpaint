@@ -1410,7 +1410,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
     }
 }
 
-termpaint_input *termpaint_input_new_or_nullptr() {
+termpaint_input *termpaint_input_new_or_nullptr(void) {
     termpaintp_input_selfcheck();
     termpaint_input *ctx = calloc(1, sizeof(termpaint_input));
     if (!ctx) {
@@ -1427,7 +1427,7 @@ termpaint_input *termpaint_input_new_or_nullptr() {
     return ctx;
 }
 
-termpaint_input *termpaint_input_new() {
+termpaint_input *termpaint_input_new(void) {
     termpaint_input *ret = termpaint_input_new_or_nullptr();
     if (!ret) {
         abort();
