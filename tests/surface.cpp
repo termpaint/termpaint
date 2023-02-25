@@ -400,6 +400,41 @@ TEST_CASE("vanish chars") {
     });
 }
 
+TEST_CASE("vanish chars - clipping right") {
+    // regression test for consistency violation in termpaint_surface_write_with_len_attr_clipped
+    // leading to crash when rendering
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 3, 3, "あえ", TERMPAINT_COLOR_RED, TERMPAINT_COLOR_GREEN);
+
+    termpaint_surface_write_with_colors_clipped(f.surface, 3, 3, "あえ", TERMPAINT_COLOR_YELLOW, TERMPAINT_COLOR_BLUE,
+                                                0, 5);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 3, 3 }, doubleWideChar("あ").withBg(TERMPAINT_COLOR_BLUE).withFg(TERMPAINT_COLOR_YELLOW)},
+        {{ 5, 3 }, singleWideChar(" ").withBg(TERMPAINT_COLOR_BLUE).withFg(TERMPAINT_COLOR_YELLOW)},
+        {{ 6, 3 }, singleWideChar(" ").withBg(TERMPAINT_COLOR_GREEN).withFg(TERMPAINT_COLOR_RED)},
+    });
+}
+
+TEST_CASE("vanish chars - clipping left") {
+    // regression test for consistency violation in termpaint_surface_write_with_len_attr_clipped
+    // leading to out of range cell access in termpaint_surface_vanish_char
+    Fixture f{80, 24};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(f.surface, 2, 3, "abあ", TERMPAINT_COLOR_RED, TERMPAINT_COLOR_GREEN);
+
+    termpaint_surface_write_with_colors_clipped(f.surface, 3, 3, "あえ", TERMPAINT_COLOR_YELLOW, TERMPAINT_COLOR_BLUE,
+                                                4, 6);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 2, 3 }, singleWideChar("a").withBg(TERMPAINT_COLOR_GREEN).withFg(TERMPAINT_COLOR_RED)},
+        {{ 3, 3 }, singleWideChar("b").withBg(TERMPAINT_COLOR_GREEN).withFg(TERMPAINT_COLOR_RED)},
+        {{ 4, 3 }, singleWideChar(" ").withBg(TERMPAINT_COLOR_BLUE).withFg(TERMPAINT_COLOR_YELLOW)},
+        {{ 5, 3 }, doubleWideChar("え").withBg(TERMPAINT_COLOR_BLUE).withFg(TERMPAINT_COLOR_YELLOW)},
+    });
+}
+
 TEST_CASE("vanish chars - misaligned wide") {
     Fixture f{80, 24};
     termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);

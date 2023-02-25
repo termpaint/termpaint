@@ -1039,10 +1039,10 @@ void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, i
         if (cluster_width == 2 && x + 1 == clip_x0) {
             // char is split by clipping boundary. Fill in right half as if the char was split later
             cell *c = termpaintp_getcell(surface, x + 1, y);
-            c->cluster_expansion = 0;
 
             termpaintp_surface_vanish_char(surface, x + 1, y, cluster_width - 1);
 
+            c->cluster_expansion = 0;
             termpaintp_surface_attr_apply(surface, c, attr);
 
             c->text[0] = ' ';
@@ -1050,10 +1050,10 @@ void termpaint_surface_write_with_len_attr_clipped(termpaint_surface *surface, i
         } else if (x + cluster_width - 1 > clip_x1) {
             // char is split by clipping boundary. Fill in left half as if the char was split later
             cell *c = termpaintp_getcell(surface, x, y);
-            c->cluster_expansion = 0;
 
             termpaintp_surface_vanish_char(surface, x, y, cluster_width - 1);
 
+            c->cluster_expansion = 0;
             termpaintp_surface_attr_apply(surface, c, attr);
 
             c->text[0] = ' ';
