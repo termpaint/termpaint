@@ -1,5 +1,5 @@
 macos_instance:
-  image: big-sur-xcode
+  image: ghcr.io/cirruslabs/macos-ventura-xcode:14.2
 
 task:
   name: ci/cirrus/macOS
