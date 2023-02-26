@@ -383,6 +383,7 @@ int main( int argc, char* argv[] ) {
         }
         args.insert(begin(args), strdup("--"));
         args.insert(begin(args), strdup("--control-via-fd0"));
+        args.insert(begin(args), strdup("--propagate-exit-code"));
         args.insert(begin(args), strdup(testdriver.data()));
         args.push_back(nullptr);
 
