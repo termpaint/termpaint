@@ -60,6 +60,18 @@ private:
     iconv_t cache;
 };
 
+#ifdef __NetBSD__
+#include <sys/param.h>
+#if __NetBSD_Version__ < 1000000000
+// NetBSD < 10 does not follow posix and takes a const.
+// See https://man.netbsd.org/iconv.3#STANDARDS
+#define ICONV_INCAST(p) (p)
+#endif
+#endif
+#ifndef ICONV_INCAST
+#define ICONV_INCAST(p) const_cast<char**>(p)
+#endif
+
 std::u16string toUtf16(std::string data) {
     static auto cached = iconv_cache("UTF-16LE", "UTF-8");
     static auto cachedBE = iconv_cache("UTF-16BE", "UTF-8");
@@ -77,7 +89,7 @@ std::u16string toUtf16(std::string data) {
     char *pout = reinterpret_cast<char*>(outbuffer.data());
     size_t inlen = data.size() + 1;
     size_t outlen = outbuffer.size() * sizeof (char16_t);
-    size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
+    size_t retval = iconv(conv, ICONV_INCAST(&pin), &inlen, &pout, &outlen);
     REQUIRE(retval != static_cast<size_t>(-1));
     iconv_close(conv);
     if (outlen > 0 && outbuffer[0] == 0xFEFF /* BOM */) {
@@ -104,7 +116,7 @@ std::u32string toUtf32(std::string data) {
     char *pout = reinterpret_cast<char*>(outbuffer.data());
     size_t inlen = data.size() + 1;
     size_t outlen = outbuffer.size() * sizeof (char32_t);
-    size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
+    size_t retval = iconv(conv, ICONV_INCAST(&pin), &inlen, &pout, &outlen);
     REQUIRE(retval != static_cast<size_t>(-1));
     iconv_close(conv);
     if (outlen > 0 && outbuffer[0] == 0xFEFF /* BOM */) {
@@ -131,7 +143,7 @@ std::u32string toUtf32(std::u16string data) {
     char *pout = reinterpret_cast<char*>(outbuffer.data());
     size_t inlen = (data.size() + 1) * 2;
     size_t outlen = outbuffer.size() * sizeof (char32_t);
-    size_t retval = iconv(conv, const_cast<char**>(&pin), &inlen, &pout, &outlen);
+    size_t retval = iconv(conv, ICONV_INCAST(&pin), &inlen, &pout, &outlen);
     REQUIRE(retval != static_cast<size_t>(-1));
     iconv_close(conv);
     if (outlen > 0 && outbuffer[0] == 0xFEFF /* BOM */) {
