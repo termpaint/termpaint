@@ -169,7 +169,7 @@ void update_interpretation(std::string filename) {
                 }
                 state = GOT_SYNC;
             } else {
-                die(fmt::format("Unable to interpret value for key '{}'. State was {}", keyId, state));
+                die(fmt::format("Unable to interpret value for key '{}'. State was {}", keyId, (int)state));
             }
         };
 
