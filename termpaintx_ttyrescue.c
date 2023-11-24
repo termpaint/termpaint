@@ -38,7 +38,7 @@ _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "lock free atomic_int needed");
 #endif
 
 #ifdef TERMPAINT_RESCUE_FEXEC
-#include "ttyrescue_nolibc.inc"
+#include "ttyrescue_blob.inc"
 #endif
 
 #ifdef TERMPAINTP_VALGRIND

@@ -31,35 +31,56 @@ silence_warnings = [
 
 main_lib_cargs = []
 
-###### nolibc ttyrescue
+###### blob ttyrescue
 # This option should only default to true on linux (or other supported platforms). But meson
 # does not really allow doing that in a reasonable way. So just ignore it on other platforms.
 if get_option('ttyrescue-fexec-blob') and host_machine.system() == 'linux'
-  ttyrescue_nolibc_exe = executable('ttyrescue_nolibc', 'ttyrescue_nolibc.c',
-    c_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-ffreestanding', '-nostdlib', '-static', '-Os',
-               '-fvisibility=hidden', '-std=gnu11'],
-    link_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
-                '-fvisibility=hidden', '-std=gnu11'])
+  ttyrescue_fexec_blob_type = get_option('ttyrescue-fexec-blob-type')
+  if ttyrescue_fexec_blob_type == 'default'
+    if (host_machine.cpu_family() == 'ppc64' or host_machine.cpu_family() == 's390x'
+        or host_machine.cpu_family() == 'aarch64')
+      # the vendored version of linux-syscall-support is known not to work on these architectures
+      ttyrescue_fexec_blob_type = 'musl-gcc'
+    else
+      ttyrescue_fexec_blob_type = 'lss'
+    endif
+  endif
+  if ttyrescue_fexec_blob_type == 'lss'
+    ttyrescue_blob_exe = executable('ttyrescue_nolibc', 'ttyrescue_nolibc.c',
+      c_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-ffreestanding', '-nostdlib', '-static', '-Os',
+                 '-fvisibility=hidden', '-std=gnu11'],
+      link_args: ['-fno-asynchronous-unwind-tables', '-fno-ident', '-nostdlib', '-static', '-Os',
+                  '-fvisibility=hidden', '-std=gnu11'])
+  elif ttyrescue_fexec_blob_type == 'musl-gcc'
+    # In the future this should be made cross compilation compatible
+    ttyrescue_blob_exe = custom_target('ttyrescue_blob',
+      input: 'ttyrescue_mini.c',
+      output: 'ttyrescue_musl',
+      command: [find_program('musl-gcc'), '-static', '-no-pie', '-Wl,-znoseparate-code,-z,norelro',
+                '-fno-asynchronous-unwind-tables', '-fno-ident', '-Os', '-fvisibility=hidden', '-std=gnu11',
+                '@INPUT@', '-o', '@OUTPUT@'])
 
-  ttyrescue_nolibc_stripped = custom_target('ttyrescue_nolibc_stripped',
-    input: ttyrescue_nolibc_exe,
-    output: 'ttyrescue_nolibc_stripped',
+  endif
+
+  ttyrescue_blob_stripped = custom_target('ttyrescue_blob_stripped',
+    input: ttyrescue_blob_exe,
+    output: 'ttyrescue_blob_stripped',
     command: [find_program('strip'), '--strip-all', '--remove-section=.comment',
               '--remove-section=.note', '--remove-section=.eh_frame_hdr',
               '--remove-section=.eh_frame', '--remove-section=.note.gnu.gold-version',
               '--remove-section=.note.gnu.build-id',
               '@INPUT@', '-o', '@OUTPUT@'])
 
-  ttyrescue_nolibc_inc = custom_target('ttyrescue_nolibc_inc',
-    input: ttyrescue_nolibc_stripped,
-    output: ['ttyrescue_nolibc.inc'],
+  ttyrescue_blob_inc = custom_target('ttyrescue_blob_inc',
+    input: ttyrescue_blob_stripped,
+    output: ['ttyrescue_blob.inc'],
     command: [find_program('./filetoinc.py'), 'ttyrescue_blob', '@INPUT@', '@OUTPUT0@'])
 
   main_lib_cargs += '-DTERMPAINT_RESCUE_FEXEC'
 else
-  ttyrescue_nolibc_inc = []
+  ttyrescue_blob_inc = []
 endif
-###### /nolibc ttyrescue
+###### /blob ttyrescue
 
 if get_option('errorlog')
   debugwin_inc = custom_target('debugwin_inc', output: ['debugwin.py.inc'],
@@ -86,7 +107,7 @@ main_lib_files = [
   'termpaintx_ttyrescue.c',
   'ttyrescue.c',
   debugwin_inc,
-  ttyrescue_nolibc_inc
+  ttyrescue_blob_inc
 ]
 
 main_lib_cargs += '-DTERMPAINT_RESCUE_EMBEDDED'
