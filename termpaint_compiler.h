@@ -19,7 +19,7 @@ static inline _Bool termpaint_smul_overflow(int a, int b, int* res) {
 #if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_smul_overflow)
     return __builtin_smul_overflow(a, b, res);
 #else
-    _Static_assert(sizeof(int) < sizeof(unsigned long long), "overflow protectiong not supported");
+    _Static_assert(sizeof(int) < sizeof(unsigned long long), "overflow protection not supported");
     *res = (unsigned int)a * (unsigned int)b;
     unsigned long long ores = (unsigned long long)a * (unsigned long long)b;
     return ores != (unsigned long long)*res;
@@ -30,8 +30,8 @@ static inline _Bool termpaint_sadd_overflow(int a, int b, int* res) {
 #if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_sadd_overflow)
     return __builtin_sadd_overflow(a, b, res);
 #else
-    _Static_assert(sizeof(int) < sizeof(long long), "overflow protectiong not supported");
-    int tmp = (long long)a + (long long)b;
+    _Static_assert(sizeof(int) < sizeof(long long), "overflow protection not supported");
+    long long tmp = (long long)a + (long long)b;
     *res = (int)tmp;
     return tmp > INT_MAX || tmp < INT_MIN;
 #endif
