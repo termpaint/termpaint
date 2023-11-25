@@ -102,6 +102,9 @@ int main(int argc, char **argv) {
         info_vec.emplace_back(i);
     };
 
+    // Modenames mostly based on the fine documentation of xterm and some other sources
+    // https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+
     addMode("2"    , "Keyboard Action Mode          ");
     addMode("3"    , "Display control chars         ");
     addMode("4"    , "Insert Mode                   ");
