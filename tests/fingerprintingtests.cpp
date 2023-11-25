@@ -2056,7 +2056,7 @@ static void event_callback(void *ctx, termpaint_event *event) {
     if (!(__VA_ARGS__)) ok = false
 
 TEST_CASE("finger printing") {
-    const TestCase& testcase = GENERATE(values(tests));
+    const TestCase testcase = GENERATE(values(tests));
     CAPTURE(testcase.name);
 
     REQUIRE(testcase.seq.size() == allSeq.size()); // test case sanity check
