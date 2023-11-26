@@ -12,17 +12,17 @@ typedef struct termpaintp_width_ {
     const uint16_t* termpaint_char_width_data;
 } termpaintp_width;
 
-const termpaintp_width termpaintp_char_width_default = {
+static const termpaintp_width termpaintp_char_width_default = {
     .termpaint_char_width_offsets = termpaint_char_width_offsets_default,
     .termpaint_char_width_data = termpaint_char_width_data_default
 };
 
-const termpaintp_width termpaintp_char_width_konsole2018 = {
+static const termpaintp_width termpaintp_char_width_konsole2018 = {
     .termpaint_char_width_offsets = termpaint_char_width_offsets_konsole_2018,
     .termpaint_char_width_data = termpaint_char_width_data_konsole_2018
 };
 
-const termpaintp_width termpaintp_char_width_konsole2022 = {
+static const termpaintp_width termpaintp_char_width_konsole2022 = {
     .termpaint_char_width_offsets = termpaint_char_width_offsets_konsole_2022,
     .termpaint_char_width_data = termpaint_char_width_data_konsole_2022
 };
