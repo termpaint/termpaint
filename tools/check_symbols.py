@@ -1,6 +1,8 @@
 #! /usr/bin/python3
 # SPDX-License-Identifier: BSL-1.0
 
+import sys
+
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import NoteSection, SymbolTableSection
@@ -8,7 +10,7 @@ from elftools.elf.sections import NoteSection, SymbolTableSection
 # C standard functions and widespread kernel independent posix
 # (_chk variants are what some libc implementations use internally)
 # Allowed in portable core
-import_whitelist_main = [
+import_allowlist_main = [
   # implicit linux ABI
     '_GLOBAL_OFFSET_TABLE_',
   # C89
@@ -37,7 +39,7 @@ import_whitelist_main = [
 ]
 
 # OS functions needed for integration component
-import_whitelist_x = [
+import_allowlist_x = [
   # implicit linux ABI
     '__errno_location',
   # OS api
@@ -132,44 +134,54 @@ def analyze_symbols(filename, prefix='termpaint_'):
                 file.import_system.append(symbol.name)
                 # print('system import', symbol.name)
 
-    file.import_system_main = [s for s in file.import_system if s in import_whitelist_main]
-    file.import_system = [s for s in file.import_system if s not in import_whitelist_main]
-    file.import_system_x = [s for s in file.import_system if s in import_whitelist_x]
-    file.import_system = [s for s in file.import_system if s not in import_whitelist_x]
+    file.import_system_main = [s for s in file.import_system if s in import_allowlist_main]
+    file.import_system = [s for s in file.import_system if s not in import_allowlist_main]
+    file.import_system_x = [s for s in file.import_system if s in import_allowlist_x]
+    file.import_system = [s for s in file.import_system if s not in import_allowlist_x]
     return file
 
 def print_violations(file):
+    ok = True
     for sym in file.import_system:
-        print('system import not on whitelist {}: {}'.format(file.name, sym))
+        print('system import not on allowlist {}: {}'.format(file.name, sym))
+        ok = False
 
     for sym in file.export_private:
         if sym in expected_leaked_private: continue
         print('leaked private symbol {}: {}'.format(file.name, sym))
+        ok = False
 
     for sym in file.export_generic:
         print('leaked generic symbol {}: {}'.format(file.name, sym))
+        ok = False
+
+    return ok
 
 def main():
     mainlib = [
-        analyze_symbols('_build/termpaint@sta/termpaint.c.o'),
-        analyze_symbols('_build/termpaint@sta/termpaint_event.c.o'),
-        analyze_symbols('_build/termpaint@sta/termpaint_input.c.o'),
+        analyze_symbols('_build/libtermpaint.a.p/termpaint.c.o'),
+        analyze_symbols('_build/libtermpaint.a.p/termpaint_event.c.o'),
+        analyze_symbols('_build/libtermpaint.a.p/termpaint_input.c.o'),
     ]
 
     integration = [
-        analyze_symbols('_build/termpaint@sta/termpaintx.c.o', prefix='termpaintx_'),
-        analyze_symbols('_build/termpaint@sta/ttyrescue.c.o', prefix='termpaintp_rescue_embedded'),
+        analyze_symbols('_build/libtermpaint.a.p/termpaintx.c.o', prefix='termpaintx_'),
+        analyze_symbols('_build/libtermpaint.a.p/ttyrescue.c.o', prefix='termpaintp_rescue_embedded'),
     ]
+
+    ok = True
 
     for file in mainlib:
         for sym in file.import_system_x:
-            print('system import not on whitelist {}: {}'.format(file.name, sym))
+            print('system import not on allowlist {}: {}'.format(file.name, sym))
+            ok = False
 
-        print_violations(file)
+        ok = ok and print_violations(file)
 
     for file in integration:
-        print_violations(file)
+        ok = ok and print_violations(file)
 
+    return not ok
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
