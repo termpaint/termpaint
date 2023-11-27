@@ -22,8 +22,10 @@
  *
  */
 
+#ifndef __STDC_VERSION_STDDEF_H__
 #ifndef nullptr
 #define nullptr ((void*)0)
+#endif
 #endif
 
 // First cast to void* in order to silence alignment warnings because the containing structure,
