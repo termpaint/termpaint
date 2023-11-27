@@ -2541,15 +2541,15 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 termpaintp_sgr_params params;
                 params.index = 1;
                 params.max = term->max_csi_parameters;
-#define PUT_PARAMETER(s)                        \
-    do { if (params.index + 1 >= params.max) {  \
-        int_puts(integration, "m\033[");        \
-        int_puts(integration, s + 1);           \
-        params.index = 1;                       \
-    } else {                                    \
-        int_puts(integration, s);               \
-        params.index += 1;                      \
-    } } while (false)                           \
+#define PUT_PARAMETER(s)                             \
+    do { if (params.index + 1 >= params.max) {       \
+        int_puts(integration, "m\033[");             \
+        int_puts(integration, ((const char*)s) + 1); \
+        params.index = 1;                            \
+    } else {                                         \
+        int_puts(integration, s);                    \
+        params.index += 1;                           \
+    } } while (false)                                \
     /* end macro */
                 write_color_sgr_values(integration, &params, effective_bg_color, ";48;2;", ";48;5;", ";", 40, 100);
                 write_color_sgr_values(integration, &params, effective_fg_color, ";38;2;", ";38;5;", ";", 30, 90);
