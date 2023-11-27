@@ -2744,7 +2744,7 @@ bool termpaint_terminal_set_color_mustcheck(termpaint_terminal *term, int color_
     char buff_slot[30];
     char buff_color[20];
     sprintf(buff_slot, "%d", color_slot);
-    sprintf(buff_color, "#%02x%02x%02x", r, g, b);
+    sprintf(buff_color, "#%02x%02x%02x", r & 0xff, g & 0xff, b & 0xff);
     termpaint_color_entry *entry = termpaintp_hash_get(&term->colors, (uchar*)buff_slot);
 
     if (!entry) {
