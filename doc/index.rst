@@ -71,7 +71,11 @@ It's known to work on
  * konsole
  * linux
  * freebsd
- * and more
+ * and more.
+
+The core library (but not the OS integration and the meson build system) only depend on C11 (plus a few common string
+functions like strdup).
+
 
 .. toctree::
    :maxdepth: 2
