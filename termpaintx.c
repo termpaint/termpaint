@@ -205,7 +205,7 @@ static _Bool fd_is_bad(termpaint_integration* integration) {
     return FDPTR(integration)->fd == -1;
 }
 
-static void fd_write(termpaint_integration* integration, const char *data, int length) {
+static void fd_write_data(termpaint_integration* integration, const char *data, int length) {
     ssize_t written = 0;
     ssize_t ret;
     errno = 0;
@@ -305,7 +305,7 @@ bool termpaintx_fd_set_termios(int fd, const char *options) {
 
 termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
-    termpaint_integration_init(&ret->base, fd_free, fd_write, fd_flush);
+    termpaint_integration_init(&ret->base, fd_free, fd_write_data, fd_flush);
     termpaint_integration_set_is_bad(&ret->base, fd_is_bad);
     termpaint_integration_set_request_callback(&ret->base, fd_request_callback);
     termpaint_integration_set_awaiting_response(&ret->base, fd_awaiting_response);
@@ -339,7 +339,7 @@ void termpaintx_full_integration_wait_for_ready_with_message(termpaint_integrati
                 break;
             }
             if (milliseconds <= 0) {
-                fd_write(integration, message, strlen(message));
+                fd_write_data(integration, message, strlen(message));
             }
         } else {
             if (!termpaintx_full_integration_do_iteration(integration)) {
