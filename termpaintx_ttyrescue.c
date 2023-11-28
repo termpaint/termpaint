@@ -50,8 +50,23 @@ static void exit_wrapper(long tid, void (*fn)(int)) {
 #endif
 
 #if defined(__linux__) && defined(__NR_memfd_create)
-int termpaintp_memfd_create(const char *name, unsigned int flags) {
-    return (int)syscall(__NR_memfd_create, name, flags);
+int termpaintp_memfd_create(const char *name, unsigned int flags, bool allow_exec) {
+#ifdef MFD_EXEC
+    if (allow_exec) {
+        flags |= MFD_EXEC;
+    } else {
+        flags |= MFD_NOEXEC_SEAL;
+    }
+#endif
+    int fd = (int)syscall(__NR_memfd_create, name, flags);
+#ifdef MFD_EXEC
+    if (fd < 0 && errno == EINVAL) {
+        // Need to retry if kernel does not yet support MFD_EXEC / MFD_NOEXEC_SEAL.
+        flags &= ~(MFD_EXEC | MFD_NOEXEC_SEAL);
+        fd = (int)syscall(__NR_memfd_create, name, flags);
+    }
+#endif
+    return fd;
 }
 #define HAVE_MEMFD 1
 #endif
@@ -141,7 +156,7 @@ termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const ch
 
     int shmfd = -1;
 #if HAVE_MEMFD
-    shmfd = termpaintp_memfd_create("ttyrescue ctl", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    shmfd = termpaintp_memfd_create("ttyrescue ctl", MFD_CLOEXEC | MFD_ALLOW_SEALING, false);
     if (shmfd < 0) {
         shmfd = -1;
     }
@@ -320,7 +335,7 @@ termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const ch
 #ifdef TERMPAINT_RESCUE_FEXEC
 #ifdef __linux__
         if (shmfd != -1) {
-            int exefd = termpaintp_memfd_create("ttyrescue (embedded)", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+            int exefd = termpaintp_memfd_create("ttyrescue (embedded)", MFD_CLOEXEC | MFD_ALLOW_SEALING, true);
             if (write(exefd, ttyrescue_blob, sizeof(ttyrescue_blob)) == sizeof(ttyrescue_blob)) {
                 argv[0] = "ttyrescue (embedded)";
                 fexecve(exefd, argv, envp);
