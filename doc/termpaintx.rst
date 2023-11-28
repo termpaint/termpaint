@@ -88,6 +88,8 @@ These functions are contained in the header ``termpaintx.h``
 
   Returns NULL on failure.
 
+  Handling of the WINCH (window size changed) signal is automatically setup if possible.
+
 .. c:function:: termpaint_integration *termpaintx_full_integration_from_controlling_terminal(const char *options)
 
   Creates an integration object with the given options. It tries finding a connected
@@ -95,12 +97,17 @@ These functions are contained in the header ``termpaintx.h``
 
   Returns NULL on failure.
 
+  Handling of the WINCH (window size changed) signal is automatically setup.
+
   See :ref:`here<termpaintx-options>` for allowed values of the ``options`` parameter.
 
 .. c:function:: termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options)
 
   Creates an integration object with the given options. It uses file descriptor ``fd``. If ``auto_close`` is true, the
   file descriptor will be closed when the integration is deallocated.
+
+  The application is responsible to detect terminal size changes and call
+  :c:func:`termpaint_surface_resize` on the primary surface with the new size.
 
   See :ref:`here<termpaintx-options>` for allowed values of the ``options`` parameter.
 
