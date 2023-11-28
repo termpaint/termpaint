@@ -47,6 +47,7 @@ import_allowlist_x = [
     'clock_gettime',
     'close',
     'fcntl', 'fcntl64',
+    'fstat', 'fstat64',
     'isatty',
     'open', 'open64',
     'poll',

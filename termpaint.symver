@@ -216,6 +216,9 @@ TERMPAINT_0.3 { global:
     termpaintx_ttyrescue_stop;
     termpaintx_ttyrescue_update;
 };
+TERMPAINT_0.3.1 { global:
+    termpaintx_full_integration_from_fds;
+};
 TERMPAINT_PRIVATE {
     global: termpaintp_test;
     local: *;

@@ -37,8 +37,10 @@
 typedef struct termpaint_integration_fd_ {
     termpaint_integration base;
     char *options;
-    int fd;
-    bool auto_close;
+    // In rare situations, read and write MUST use different fds to be able to communicate with the terminal
+    int fd_read;
+    int fd_write;
+    bool auto_close; // if true fd_read == fd_write is assumed
     struct termios original_terminal_attributes;
     bool callback_requested;
     bool awaiting_response;
@@ -91,6 +93,33 @@ static bool termpaintp_is_file_rw(int fd) {
     return ret != -1 && (ret & O_ACCMODE) == O_RDWR;
 }
 
+static bool termpaintp_is_file_readable(int fd) {
+    int ret = fcntl(fd, F_GETFL);
+    return ret != -1 && ((ret & O_ACCMODE) == O_RDWR || (ret & O_ACCMODE) == O_RDONLY);
+}
+
+static bool termpaintp_is_file_writable(int fd) {
+    int ret = fcntl(fd, F_GETFL);
+    return ret != -1 && ((ret & O_ACCMODE) == O_RDWR || (ret & O_ACCMODE) == O_WRONLY);
+}
+
+static bool termpaintp_is_terminal_fd_pair(int fd_read, int fd_write) {
+    if (isatty(fd_read) && isatty(fd_write)
+            && termpaintp_is_file_readable(fd_read) && termpaintp_is_file_writable(fd_write)) {
+        struct stat statbuf_r;
+        struct stat statbuf_w;
+
+        if (fstat(fd_read, &statbuf_r) == 0 && fstat(fd_write, &statbuf_w) == 0) {
+            if (statbuf_r.st_rdev == statbuf_w.st_rdev
+                    && statbuf_r.st_dev == statbuf_w.st_dev
+                    && statbuf_r.st_ino == statbuf_w.st_ino) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 _Bool termpaintx_full_integration_available(void) {
     _Bool from_std_fd = false;
     from_std_fd = (isatty(0) && termpaintp_is_file_rw(0))
@@ -105,12 +134,24 @@ _Bool termpaintx_full_integration_available(void) {
         close(fd);
         return true;
     }
+
+    // as last resort check if (0, 1) or (0, 2) are matching read/write pairs pointing to the same terminal
+    if (termpaintp_is_terminal_fd_pair(0, 1)) {
+        return true;
+    }
+
+    if (termpaintp_is_terminal_fd_pair(0, 2)) {
+        return true;
+    }
+
     return false;
 }
 
 termpaint_integration *termpaintx_full_integration(const char *options) {
     int fd = -1;
+    int fd_write = -1; // only if differs
     _Bool auto_close = false;
+    bool might_be_controlling_terminal = true;
 
     if (isatty(0) && termpaintp_is_file_rw(0)) {
         fd = 0;
@@ -120,15 +161,30 @@ termpaint_integration *termpaintx_full_integration(const char *options) {
         fd = 2;
     } else {
         fd = open("/dev/tty", O_RDWR | O_NOCTTY | FD_CLOEXEC);
-        auto_close = true;
-        if (fd == -1) {
-            return nullptr;
+        if (fd != -1) {
+            auto_close = true;
+        } else {
+            might_be_controlling_terminal = false;
+            // as last resort check if (0, 1) or (0, 2) are matching read/write pairs pointing to the same terminal
+
+            if (termpaintp_is_terminal_fd_pair(0, 1)) {
+                fd = 0;
+                fd_write = 1;
+            } else if (termpaintp_is_terminal_fd_pair(0, 2)) {
+                fd = 0;
+                fd_write = 2;
+            } else {
+                return nullptr;
+            }
         }
     }
 
-    termpaint_integration *ret = termpaintx_full_integration_from_fd(fd, auto_close, options);
-    termpaintp_setup_winch();
-    FDPTR(ret)->poll_sigwinch = true;
+    termpaint_integration *ret = (fd_write == -1) ? termpaintx_full_integration_from_fd(fd, auto_close, options)
+                                                  : termpaintx_full_integration_from_fds(fd, fd_write, options);
+    if (might_be_controlling_terminal) {
+        termpaintp_setup_winch();
+        FDPTR(ret)->poll_sigwinch = true;
+    }
     return ret;
 }
 
@@ -165,12 +221,12 @@ static void fd_free(termpaint_integration* integration) {
             }
             int ret;
             struct pollfd info;
-            info.fd = fd_data->fd;
+            info.fd = fd_data->fd_read;
             info.events = POLLIN;
             ret = poll(&info, 1, 100 - time_waited_ms);
             if (ret == 1) {
                 char buff[1000];
-                int amount = (int)read(fd_data->fd, buff, 999);
+                int amount = (int)read(fd_data->fd_read, buff, 999);
                 if (amount < 0) {
                     break;
                 }
@@ -183,9 +239,10 @@ static void fd_free(termpaint_integration* integration) {
         fd_data->rescue = nullptr;
     }
 
-    tcsetattr (fd_data->fd, TCSAFLUSH, &fd_data->original_terminal_attributes);
-    if (fd_data->auto_close && fd_data->fd != -1) {
-        close(fd_data->fd);
+    tcsetattr (fd_data->fd_read, TCSAFLUSH, &fd_data->original_terminal_attributes);
+    if (fd_data->auto_close && fd_data->fd_read != -1) {
+        // assumnes that auto_close will only be true if fd_read == fd_write
+        close(fd_data->fd_read);
     }
     free(fd_data->options);
     termpaint_integration_deinit(&fd_data->base);
@@ -198,11 +255,12 @@ static void fd_flush(termpaint_integration* integration) {
 }
 
 static void fd_mark_bad(termpaint_integration* integration) {
-    FDPTR(integration)->fd = -1;
+    FDPTR(integration)->fd_read = -1;
+    FDPTR(integration)->fd_write = -1;
 }
 
 static _Bool fd_is_bad(termpaint_integration* integration) {
-    return FDPTR(integration)->fd == -1;
+    return FDPTR(integration)->fd_read == -1;
 }
 
 static void fd_write_data(termpaint_integration* integration, const char *data, int length) {
@@ -210,7 +268,7 @@ static void fd_write_data(termpaint_integration* integration, const char *data, 
     ssize_t ret;
     errno = 0;
     while (written != length) {
-        ret = write(FDPTR(integration)->fd, data+written, length-written);
+        ret = write(FDPTR(integration)->fd_write, data+written, length-written);
         if (ret > 0) {
             written += ret;
         } else {
@@ -303,21 +361,31 @@ bool termpaintx_fd_set_termios(int fd, const char *options) {
     return termpaintp_fd_set_termios(fd, options);
 }
 
-termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
+static termpaint_integration *termpaintp_full_integration_from_fds(int fd_read, int fd_write, _Bool auto_close, const char *options) {
+    // NOTE: If fd_read != fd_write then auto_close must be false.
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
     termpaint_integration_init(&ret->base, fd_free, fd_write_data, fd_flush);
     termpaint_integration_set_is_bad(&ret->base, fd_is_bad);
     termpaint_integration_set_request_callback(&ret->base, fd_request_callback);
     termpaint_integration_set_awaiting_response(&ret->base, fd_awaiting_response);
     ret->options = strdup(options);
-    ret->fd = fd;
+    ret->fd_read = fd_read;
+    ret->fd_write = fd_write;
     ret->auto_close = auto_close;
     ret->callback_requested = false;
     ret->awaiting_response = false;
 
-    tcgetattr(ret->fd, &ret->original_terminal_attributes);
-    termpaintp_fd_set_termios(ret->fd, options);
+    tcgetattr(ret->fd_read, &ret->original_terminal_attributes);
+    termpaintp_fd_set_termios(ret->fd_read, options);
     return (termpaint_integration*)ret;
+}
+
+termpaint_integration *termpaintx_full_integration_from_fd(int fd, _Bool auto_close, const char *options) {
+    return termpaintp_full_integration_from_fds(fd, fd, auto_close, options);
+}
+
+termpaint_integration *termpaintx_full_integration_from_fds(int fd_read, int fd_write, const char *options) {
+    return termpaintp_full_integration_from_fds(fd_read, fd_write, false, options);
 }
 
 void termpaintx_full_integration_wait_for_ready(termpaint_integration *integration) {
@@ -351,10 +419,10 @@ void termpaintx_full_integration_wait_for_ready_with_message(termpaint_integrati
 }
 
 bool termpaintx_full_integration_terminal_size(termpaint_integration *integration, int *width, int *height) {
-    if (fd_is_bad(integration) || !isatty(FDPTR(integration)->fd)) {
+    if (fd_is_bad(integration) || !isatty(FDPTR(integration)->fd_read)) {
         return false;
     }
-    return termpaintx_fd_terminal_size(FDPTR(integration)->fd, width, height);
+    return termpaintx_fd_terminal_size(FDPTR(integration)->fd_read, width, height);
 }
 
 void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal) {
@@ -387,7 +455,7 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     char buff[1000];
     if (t->poll_sigwinch && sigwinch_set) {
         struct pollfd info[2];
-        info[0].fd = t->fd;
+        info[0].fd = t->fd_read;
         info[0].events = POLLIN;
         info[1].fd = sigwinch_pipe[0];
         info[1].events = POLLIN;
@@ -400,7 +468,7 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
             return true;
         }
     }
-    int amount = (int)read(t->fd, buff, 999);
+    int amount = (int)read(t->fd_read, buff, 999);
     if (amount < 0) {
         if (errno != EINTR && errno != EWOULDBLOCK) {
             return false;
@@ -414,11 +482,11 @@ bool termpaintx_full_integration_do_iteration(termpaint_integration *integration
     if (t->callback_requested) {
         t->callback_requested = false;
         struct pollfd info;
-        info.fd = t->fd;
+        info.fd = t->fd_read;
         info.events = POLLIN;
         int ret = poll(&info, 1, 100);
         if (ret == 1) {
-            int amount = (int)read(t->fd, buff, 999);
+            int amount = (int)read(t->fd_read, buff, 999);
             if (amount < 0) {
                 if (errno != EINTR && errno != EWOULDBLOCK) {
                     return false;
@@ -448,7 +516,7 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
     {
         int count = 1;
         struct pollfd info[2];
-        info[0].fd = t->fd;
+        info[0].fd = t->fd_read;
         info[0].events = POLLIN;
         if (t->poll_sigwinch && sigwinch_set) {
             info[1].fd = sigwinch_pipe[0];
@@ -473,7 +541,7 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
         }
     }
     if (ret == 1) {
-        int amount = (int)read(t->fd, buff, 999);
+        int amount = (int)read(t->fd_read, buff, 999);
         if (amount < 0) {
             if (errno != EINTR && errno != EWOULDBLOCK) {
                 return false;
@@ -494,12 +562,12 @@ bool termpaintx_full_integration_do_iteration_with_timeout(termpaint_integration
                        + now.tv_nsec / 1000000 - start_time.tv_nsec / 1000000);
             if (remaining > 0) {
                 struct pollfd info;
-                info.fd = t->fd;
+                info.fd = t->fd_read;
                 info.events = POLLIN;
                 ret = poll(&info, 1, remaining < 100 ? remaining : 100);
             }
             if (ret == 1) {
-                int amount = (int)read(t->fd, buff, 999);
+                int amount = (int)read(t->fd_read, buff, 999);
                 if (amount < 0) {
                     if (errno != EINTR && errno != EWOULDBLOCK) {
                         return false;
@@ -554,7 +622,7 @@ static void fd_restore_sequence_updated(struct termpaint_integration_ *integrati
 bool termpaintx_full_integration_ttyrescue_start(termpaint_integration *integration) {
     termpaint_integration_fd *t = FDPTR(integration);
     if (t->rescue || !t->terminal) return false;
-    t->rescue = termpaintx_ttyrescue_start_or_nullptr(t->fd, termpaint_terminal_restore_sequence(t->terminal));
+    t->rescue = termpaintx_ttyrescue_start_or_nullptr(t->fd_write, termpaint_terminal_restore_sequence(t->terminal));
     if (t->rescue) {
         termpaint_integration_set_restore_sequence_updated(integration, fd_restore_sequence_updated);
         termpaintx_ttyrescue_set_restore_termios(t->rescue, &t->original_terminal_attributes);

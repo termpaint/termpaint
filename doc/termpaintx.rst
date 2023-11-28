@@ -111,6 +111,16 @@ These functions are contained in the header ``termpaintx.h``
 
   See :ref:`here<termpaintx-options>` for allowed values of the ``options`` parameter.
 
+.. c:function:: termpaint_integration *termpaintx_full_integration_from_fds(int fd_read, int fd_write, const char *options)
+
+  Creates an integration object with the given options. It uses file descriptor ``fd_read`` for reading from the
+  terminal and ``fd_write`` for writing to the terminal.
+
+  The application is responsible to detect terminal size changes and call
+  :c:func:`termpaint_surface_resize` on the primary surface with the new size.
+
+  See :ref:`here<termpaintx-options>` for allowed values of the ``options`` parameter.
+
 .. c:function:: termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(const char *options, void (*event_handler)(void *, termpaint_event *), void *event_handler_user_data, termpaint_terminal **terminal_out)
 
   Creates an integration and a terminal object with the given options and connects them to work together.
