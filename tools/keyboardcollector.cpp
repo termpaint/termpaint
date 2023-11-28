@@ -480,7 +480,7 @@ int Main::main() {
     ::terminal = this->terminal;
     surface = termpaint_terminal_get_surface(this->terminal);
 #else
-    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "");
+    termpaint_integration *integration = termpaintx_full_integration("");
     if (!integration) {
         outStr("Could not init!");
         return 1;

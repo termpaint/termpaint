@@ -325,7 +325,7 @@ int main(int argc, char **argv) {
         init_str_set = true;
     }
 
-    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, init_str_set ? init_str.data() : "+kbdsigint +kbdsigtstp");
+    termpaint_integration *integration = termpaintx_full_integration(init_str_set ? init_str.data() : "+kbdsigint +kbdsigtstp");
     if (!integration) {
         puts("Could not init!");
         return 1;
