@@ -954,7 +954,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             char final = 0;
 
             const int default_arg = -1;
-            int args[10] = {};
+            int args[10] = { 0 };
             bool has_sub_args = false;
             const int max_args = sizeof(args) / sizeof(*args);
             int arg_count = 0;

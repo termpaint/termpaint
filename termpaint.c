@@ -2748,8 +2748,8 @@ bool termpaint_terminal_set_color_mustcheck(termpaint_terminal *term, int color_
     termpaint_color_entry *entry = termpaintp_hash_get(&term->colors, (uchar*)buff_slot);
 
     if (!entry) {
-        termpaint_str prealloc_requested = {};
-        termpaint_str prealloc_restore = {};
+        termpaint_str prealloc_requested = { 0 };
+        termpaint_str prealloc_restore = { 0 };
 
         if (!termpaintp_str_preallocate(&prealloc_restore, 32)) {
             return false;
