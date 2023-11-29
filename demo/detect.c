@@ -14,23 +14,24 @@ void null_callback(void *ctx, termpaint_event *event) {
 typedef struct {
     int id;
     const char *name;
+    const char *short_name;
     _Bool state;
 } Cap;
 
 Cap caps[] = {
-#define C(name) { TERMPAINT_CAPABILITY_ ## name, #name, 0 }
-    C(CSI_POSTFIX_MOD),
-    C(TITLE_RESTORE),
-    C(MAY_TRY_CURSOR_SHAPE_BAR),
-    C(CURSOR_SHAPE_OSC50),
-    C(EXTENDED_CHARSET),
-    C(TRUECOLOR_MAYBE_SUPPORTED),
-    C(TRUECOLOR_SUPPORTED),
-    C(88_COLOR),
-    C(CLEARED_COLORING),
-    C(7BIT_ST),
-    C(MAY_TRY_TAGGED_PASTE),
-    C(CLEARED_COLORING_DEFCOLOR),
+#define C(name, s) { TERMPAINT_CAPABILITY_ ## name, #name, s, 0 }
+    C(CSI_POSTFIX_MOD, "pf-mod"),
+    C(TITLE_RESTORE, "title"),
+    C(MAY_TRY_CURSOR_SHAPE_BAR, "cur-bar"),
+    C(CURSOR_SHAPE_OSC50, "cur50"),
+    C(EXTENDED_CHARSET, "extchset"),
+    C(TRUECOLOR_MAYBE_SUPPORTED, "24maybe"),
+    C(TRUECOLOR_SUPPORTED, "24sup"),
+    C(88_COLOR, "88col"),
+    C(CLEARED_COLORING, "clrcol"),
+    C(7BIT_ST, "7bit-st"),
+    C(MAY_TRY_TAGGED_PASTE, "taggedpaste"),
+    C(CLEARED_COLORING_DEFCOLOR, "clrcoldef"),
 #undef C
     { 0, NULL, 0 }
 };
@@ -104,9 +105,18 @@ int main(int argc, char **argv) {
 
     termpaint_terminal_free_with_restore(terminal);
 
-    _Bool quiet = (argc > 1 && strcmp(argv[1], "--quiet") == 0);
+    _Bool quiet = false;
+    _Bool short_output = false;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--quiet") == 0) {
+           quiet = true;
+        }
+        if (strcmp(argv[i], "--short") == 0) {
+           short_output = true;
+        }
+    }
 
-    if (!quiet) {
+    if (!quiet && !short_output) {
         puts(buff);
 
         if (self_reported_name_and_version) {
@@ -116,6 +126,19 @@ int main(int argc, char **argv) {
         for (Cap *c = caps; c->name; c++) {
             printf("%s: %s\n", c->name, c->state ? "1" : "0");
         }
+    }
+
+    if (short_output) {
+        printf("V1 %s", buff);
+        if (self_reported_name_and_version) {
+            printf(" >%s<", self_reported_name_and_version);
+        }
+        for (Cap *c = caps; c->name; c++) {
+            if (c->state) {
+                printf(" %s", c->short_name);
+            }
+        }
+        puts("\n");
     }
 
     for (int i=1; i < argc; i++) {
