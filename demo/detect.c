@@ -30,6 +30,7 @@ Cap caps[] = {
     C(CLEARED_COLORING),
     C(7BIT_ST),
     C(MAY_TRY_TAGGED_PASTE),
+    C(CLEARED_COLORING_DEFCOLOR),
 #undef C
     { 0, NULL, 0 }
 };
