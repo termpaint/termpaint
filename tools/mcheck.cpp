@@ -80,7 +80,7 @@ void check_tok(std::string filename) {
         }
         rawstr = instr;
         while (rawstr.find("\\e") != std::string::npos)
-            rawstr.replace(rawstr.find("\\e"), 2, "\e");
+            rawstr.replace(rawstr.find("\\e"), 2, "\033");
 
         if (!parses_as_one(rawstr.c_str())) {
             puts(instr.c_str());
@@ -177,7 +177,7 @@ void update_interpretation(std::string filename) {
         wrap(termpaint_input_set_event_cb, input_ctx, event_callback);
         termpaint_input_add_data(input_ctx, rawInput.data(), rawInput.size());
         if (termpaint_input_peek_buffer_length(input_ctx)) {
-            termpaint_input_add_data(input_ctx, "\e[0n", 4);
+            termpaint_input_add_data(input_ctx, "\033[0n", 4);
         }
         newSequences.emplace_back(result);
     }

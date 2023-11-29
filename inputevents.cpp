@@ -217,7 +217,7 @@ const auto rgb_red7F = TERMPAINT_RGB_COLOR(0xff, 0, 0);
 
 void display_esc(int x, int y, const std::string &data) {
     for (unsigned i = 0; i < data.length(); i++) {
-        if (u8(data[i]) == '\e') {
+        if (u8(data[i]) == '\033') {
             termpaint_surface_write_with_colors(surface, x, y, "^[", rgb_white, rgb_red7F);
             x+=2;
         } else if (0xfc == (0xfe & u8(data[i])) && i+5 < data.length()) {

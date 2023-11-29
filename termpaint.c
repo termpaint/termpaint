@@ -1877,7 +1877,7 @@ static void int_flush(termpaint_integration *integration) {
 
 static void termpaintp_terminal_set_cursor(termpaint_terminal *term, int x, int y) {
     termpaint_integration *integration = term->integration;
-    int_puts(integration, "\e[");
+    int_puts(integration, "\033[");
     int_put_num(integration, y+1);
     int_puts(integration, ";");
     int_put_num(integration, x+1);
@@ -2334,7 +2334,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
     termpaint_integration *integration = term->integration;
     full_repaint |= term->force_full_repaint;
     termpaintp_terminal_hide_cursor(term);
-    int_puts(integration, "\e[H");
+    int_puts(integration, "\033[H");
     char speculation_buffer[30];
     int speculation_buffer_state = 0; // 0 = cursor position matches current cell, -1 = force move, > 0 bytes to print instead of move
     int pending_row_move = 0;
@@ -2513,7 +2513,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                             --pending_row_move;
                         }
                     } else {
-                        int_puts(integration, "\e[");
+                        int_puts(integration, "\033[");
                         int_put_num(integration, pending_row_move);
                         int_puts(integration, "B");
                         pending_row_move = 0;
@@ -2523,7 +2523,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                     if (speculation_buffer_state > 0) {
                         int_write(integration, speculation_buffer, speculation_buffer_state);
                     } else {
-                        int_puts(integration, "\e[");
+                        int_puts(integration, "\033[");
                         if (pending_colum_move != 1) {
                             int_put_num(integration, pending_colum_move);
                         }
@@ -2537,7 +2537,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
             }
 
             if (needs_attribute_change) {
-                int_puts(integration, "\e[0");
+                int_puts(integration, "\033[0");
                 termpaintp_sgr_params params;
                 params.index = 1;
                 params.max = term->max_csi_parameters;
@@ -2662,7 +2662,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
                 --pending_row_move;
             }
         } else {
-            int_puts(integration, "\e[");
+            int_puts(integration, "\033[");
             int_put_num(integration, pending_row_move);
             int_puts(integration, "B");
         }
@@ -2672,7 +2672,7 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
         termpaintp_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
     } else {
         if (pending_colum_move) {
-            int_puts(integration, "\e[");
+            int_puts(integration, "\033[");
             if (pending_colum_move != 1) {
                 int_put_num(integration, pending_colum_move);
             }

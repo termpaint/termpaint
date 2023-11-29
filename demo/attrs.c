@@ -118,7 +118,7 @@ void repaint_samples(termpaint_attr* attr_ui, termpaint_attr* attr_sample)
 
     // There is not yet explicit support for URLs, so use the low level patch interface
     termpaint_attr* attr_url = termpaint_attr_clone(attr_sample);
-    termpaint_attr_set_patch(attr_url, true, "\e]8;;http://example.com\a", "\e]8;;\a");
+    termpaint_attr_set_patch(attr_url, true, "\033]8;;http://example.com\a", "\033]8;;\a");
     write_sample(attr_ui, attr_url, 14, "url:", 0);
     termpaint_attr_free(attr_url);
 }

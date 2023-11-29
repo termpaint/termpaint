@@ -159,395 +159,395 @@ typedef struct key_mapping_entry_ key_mapping_entry;
 
 static const key_mapping_entry key_mapping_table[] = {
     { "\x0d", ATOM_enter, 0 }, // also ctrl-m in traditional mode
-    { "\e\x0d", ATOM_enter, MOD_ALT },
-    XTERM_MODS("\e[27;", ";13~", ATOM_enter), // modifiy other keys mode
-    XTERM_MODS("\e[13;", "u", ATOM_enter), // modifiy other keys mode
+    { "\033\x0d", ATOM_enter, MOD_ALT },
+    XTERM_MODS("\033[27;", ";13~", ATOM_enter), // modifiy other keys mode
+    XTERM_MODS("\033[13;", "u", ATOM_enter), // modifiy other keys mode
 
     { "\x09", ATOM_tab, 0 }, //also ctrl_i
-    { "\e\x09", ATOM_tab, MOD_ALT }, //also ctrl-alt-i
-    { "\e[Z", ATOM_tab, MOD_SHIFT }, // xterm, normal mode
-    XTERM_MODS("\e[27;", ";9~", ATOM_tab), // modifiy other keys mode
-    XTERM_MODS("\e[9;", "u", ATOM_tab), // modifiy other keys mode
+    { "\033\x09", ATOM_tab, MOD_ALT }, //also ctrl-alt-i
+    { "\033[Z", ATOM_tab, MOD_SHIFT }, // xterm, normal mode
+    XTERM_MODS("\033[27;", ";9~", ATOM_tab), // modifiy other keys mode
+    XTERM_MODS("\033[9;", "u", ATOM_tab), // modifiy other keys mode
 
     { " ", ATOM_space, 0 },
-    { "\e ", ATOM_space, MOD_ALT },
+    { "\033 ", ATOM_space, MOD_ALT },
     // { "\x00", ATOM_SPACE, MOD_CTRL } via special case in code
-    // { "\e\x00", ATOM_space, MOD_CTRL | MOD_ALT} via special case in code
-    XTERM_MODS("\e[27;", ";32~", ATOM_space), // modifiy other keys mode
-    XTERM_MODS("\e[32;", "u", ATOM_space), // modifiy other keys mode
+    // { "\033\x00", ATOM_space, MOD_CTRL | MOD_ALT} via special case in code
+    XTERM_MODS("\033[27;", ";32~", ATOM_space), // modifiy other keys mode
+    XTERM_MODS("\033[32;", "u", ATOM_space), // modifiy other keys mode
     //+ also ctrl-2
 
-    { "\e[29~", ATOM_context_menu, 0 },
+    { "\033[29~", ATOM_context_menu, 0 },
     // + also shift F4 in linux vt
-    XTERM_MODS("\e[29;", "~", ATOM_context_menu),
+    XTERM_MODS("\033[29;", "~", ATOM_context_menu),
 
-    { "\e[3~", ATOM_delete, 0 },
-    XTERM_MODS("\e[3;", "~", ATOM_delete),
-    { "\e[3$", ATOM_delete, MOD_SHIFT},
-    { "\e[3^", ATOM_delete, MOD_CTRL},
-    { "\e[3@", ATOM_delete, MOD_CTRL | MOD_SHIFT},
-    { "\e\e[3~", ATOM_delete, MOD_ALT },
-    { "\e\e[3$", ATOM_delete, MOD_ALT | MOD_SHIFT},
-    { "\e\e[3^", ATOM_delete, MOD_CTRL | MOD_ALT},
-    { "\e\e[3@", ATOM_delete, MOD_CTRL | MOD_ALT | MOD_SHIFT},
-    { "\e[3;1~", ATOM_delete, MOD_ALTGR },
-    { "\e[F", ATOM_end, 0},
+    { "\033[3~", ATOM_delete, 0 },
+    XTERM_MODS("\033[3;", "~", ATOM_delete),
+    { "\033[3$", ATOM_delete, MOD_SHIFT},
+    { "\033[3^", ATOM_delete, MOD_CTRL},
+    { "\033[3@", ATOM_delete, MOD_CTRL | MOD_SHIFT},
+    { "\033\033[3~", ATOM_delete, MOD_ALT },
+    { "\033\033[3$", ATOM_delete, MOD_ALT | MOD_SHIFT},
+    { "\033\033[3^", ATOM_delete, MOD_CTRL | MOD_ALT},
+    { "\033\033[3@", ATOM_delete, MOD_CTRL | MOD_ALT | MOD_SHIFT},
+    { "\033[3;1~", ATOM_delete, MOD_ALTGR },
+    { "\033[F", ATOM_end, 0},
     XTERM_MODS_GT("1;", "F", ATOM_end),
-    { "\eOF", ATOM_end,  0},
-    { "\e[4~", ATOM_end, 0},
-    { "\e[8~", ATOM_end, 0},
-    { "\e[8$", ATOM_end, MOD_SHIFT},
-    { "\e[8^", ATOM_end, MOD_CTRL},
-    { "\e[8@", ATOM_end, MOD_CTRL | MOD_SHIFT},
-    { "\e\e[8~", ATOM_end, MOD_ALT},
-    { "\e\e[8$", ATOM_end, MOD_ALT | MOD_SHIFT},
-    { "\e\e[8^", ATOM_end, MOD_CTRL | MOD_ALT},
-    { "\e\e[8@", ATOM_end, MOD_CTRL | MOD_ALT | MOD_SHIFT},
-    { "\e[1;1F", ATOM_end, MOD_ALTGR},
-    { "\e[H", ATOM_home, 0},
+    { "\033OF", ATOM_end,  0},
+    { "\033[4~", ATOM_end, 0},
+    { "\033[8~", ATOM_end, 0},
+    { "\033[8$", ATOM_end, MOD_SHIFT},
+    { "\033[8^", ATOM_end, MOD_CTRL},
+    { "\033[8@", ATOM_end, MOD_CTRL | MOD_SHIFT},
+    { "\033\033[8~", ATOM_end, MOD_ALT},
+    { "\033\033[8$", ATOM_end, MOD_ALT | MOD_SHIFT},
+    { "\033\033[8^", ATOM_end, MOD_CTRL | MOD_ALT},
+    { "\033\033[8@", ATOM_end, MOD_CTRL | MOD_ALT | MOD_SHIFT},
+    { "\033[1;1F", ATOM_end, MOD_ALTGR},
+    { "\033[H", ATOM_home, 0},
     XTERM_MODS_GT("1;", "H", ATOM_home),
-    { "\eOH", ATOM_home,  0},
-    { "\e[1~", ATOM_home, 0},
-    { "\e[7~", ATOM_home, 0},
-    { "\e[7$", ATOM_home, MOD_SHIFT},
-    { "\e[7^", ATOM_home, MOD_CTRL},
-    { "\e[7@", ATOM_home, MOD_CTRL | MOD_SHIFT},
-    { "\e\e[7~", ATOM_home, MOD_ALT},
-    { "\e\e[7$", ATOM_home, MOD_ALT | MOD_SHIFT},
-    { "\e\e[7^", ATOM_home, MOD_CTRL | MOD_ALT},
-    { "\e\e[7@", ATOM_home, MOD_CTRL | MOD_ALT | MOD_SHIFT},
-    { "\e[1;1H", ATOM_home, MOD_ALTGR},
-    { "\e[2~", ATOM_insert, 0},
-    XTERM_MODS("\e[2;", "~", ATOM_insert),
-    { "\e[2$", ATOM_insert, MOD_SHIFT},
-    { "\e[2^", ATOM_insert, MOD_CTRL},
-    { "\e[2@", ATOM_insert, MOD_CTRL | MOD_SHIFT},
-    { "\e\e[2~", ATOM_insert, MOD_ALT},
-    { "\e\e[2$", ATOM_insert, MOD_ALT | MOD_SHIFT},
-    { "\e\e[2^", ATOM_insert, MOD_CTRL | MOD_ALT},
-    { "\e\e[2@", ATOM_insert, MOD_CTRL | MOD_ALT | MOD_SHIFT},
-    { "\e[2;1~", ATOM_insert, MOD_ALTGR},
-    { "\e[6~", ATOM_page_down, 0},
-    XTERM_MODS("\e[6;", "~", ATOM_page_down),
-    { "\e[6$", ATOM_page_down, MOD_SHIFT},
-    { "\e[6^", ATOM_page_down, MOD_CTRL},
-    { "\e[6@", ATOM_page_down, MOD_CTRL | MOD_SHIFT},
-    { "\e\e[6~", ATOM_page_down, MOD_ALT},
-    { "\e\e[6$", ATOM_page_down, MOD_ALT | MOD_SHIFT},
-    { "\e\e[6^", ATOM_page_down, MOD_CTRL | MOD_ALT},
-    { "\e\e[6@", ATOM_page_down, MOD_CTRL | MOD_ALT | MOD_SHIFT},
-    { "\e[6;1~", ATOM_page_down, MOD_ALTGR},
-    { "\e[5~", ATOM_page_up, 0},
-    XTERM_MODS("\e[5;", "~", ATOM_page_up), // shift combinations only available when scroll bindings are removed in xterm
-    { "\e[5$", ATOM_page_up, MOD_SHIFT},
-    { "\e[5^", ATOM_page_up, MOD_CTRL},
-    { "\e[5@", ATOM_page_up, MOD_CTRL | MOD_SHIFT},
-    { "\e\e[5~", ATOM_page_up, MOD_ALT},
-    { "\e\e[5$", ATOM_page_up, MOD_ALT | MOD_SHIFT},
-    { "\e\e[5^", ATOM_page_up, MOD_CTRL | MOD_ALT},
-    { "\e\e[5@", ATOM_page_up, MOD_CTRL | MOD_ALT | MOD_SHIFT},
-    { "\e[5;1~", ATOM_page_up, MOD_ALTGR},
+    { "\033OH", ATOM_home,  0},
+    { "\033[1~", ATOM_home, 0},
+    { "\033[7~", ATOM_home, 0},
+    { "\033[7$", ATOM_home, MOD_SHIFT},
+    { "\033[7^", ATOM_home, MOD_CTRL},
+    { "\033[7@", ATOM_home, MOD_CTRL | MOD_SHIFT},
+    { "\033\033[7~", ATOM_home, MOD_ALT},
+    { "\033\033[7$", ATOM_home, MOD_ALT | MOD_SHIFT},
+    { "\033\033[7^", ATOM_home, MOD_CTRL | MOD_ALT},
+    { "\033\033[7@", ATOM_home, MOD_CTRL | MOD_ALT | MOD_SHIFT},
+    { "\033[1;1H", ATOM_home, MOD_ALTGR},
+    { "\033[2~", ATOM_insert, 0},
+    XTERM_MODS("\033[2;", "~", ATOM_insert),
+    { "\033[2$", ATOM_insert, MOD_SHIFT},
+    { "\033[2^", ATOM_insert, MOD_CTRL},
+    { "\033[2@", ATOM_insert, MOD_CTRL | MOD_SHIFT},
+    { "\033\033[2~", ATOM_insert, MOD_ALT},
+    { "\033\033[2$", ATOM_insert, MOD_ALT | MOD_SHIFT},
+    { "\033\033[2^", ATOM_insert, MOD_CTRL | MOD_ALT},
+    { "\033\033[2@", ATOM_insert, MOD_CTRL | MOD_ALT | MOD_SHIFT},
+    { "\033[2;1~", ATOM_insert, MOD_ALTGR},
+    { "\033[6~", ATOM_page_down, 0},
+    XTERM_MODS("\033[6;", "~", ATOM_page_down),
+    { "\033[6$", ATOM_page_down, MOD_SHIFT},
+    { "\033[6^", ATOM_page_down, MOD_CTRL},
+    { "\033[6@", ATOM_page_down, MOD_CTRL | MOD_SHIFT},
+    { "\033\033[6~", ATOM_page_down, MOD_ALT},
+    { "\033\033[6$", ATOM_page_down, MOD_ALT | MOD_SHIFT},
+    { "\033\033[6^", ATOM_page_down, MOD_CTRL | MOD_ALT},
+    { "\033\033[6@", ATOM_page_down, MOD_CTRL | MOD_ALT | MOD_SHIFT},
+    { "\033[6;1~", ATOM_page_down, MOD_ALTGR},
+    { "\033[5~", ATOM_page_up, 0},
+    XTERM_MODS("\033[5;", "~", ATOM_page_up), // shift combinations only available when scroll bindings are removed in xterm
+    { "\033[5$", ATOM_page_up, MOD_SHIFT},
+    { "\033[5^", ATOM_page_up, MOD_CTRL},
+    { "\033[5@", ATOM_page_up, MOD_CTRL | MOD_SHIFT},
+    { "\033\033[5~", ATOM_page_up, MOD_ALT},
+    { "\033\033[5$", ATOM_page_up, MOD_ALT | MOD_SHIFT},
+    { "\033\033[5^", ATOM_page_up, MOD_CTRL | MOD_ALT},
+    { "\033\033[5@", ATOM_page_up, MOD_CTRL | MOD_ALT | MOD_SHIFT},
+    { "\033[5;1~", ATOM_page_up, MOD_ALTGR},
 
-    { "\e[B", ATOM_arrow_down, 0 },
+    { "\033[B", ATOM_arrow_down, 0 },
     XTERM_MODS_GT("1;", "B", ATOM_arrow_down),
-    { "\eOB", ATOM_arrow_down, 0 },
-    { "\e[b", ATOM_arrow_down, MOD_SHIFT },
-    { "\eOb", ATOM_arrow_down, MOD_CTRL },
-    { "\e\e[B", ATOM_arrow_down, MOD_ALT },
-    { "\e\e[b", ATOM_arrow_down, MOD_ALT | MOD_SHIFT },
-    { "\e\eOb", ATOM_arrow_down, MOD_CTRL | MOD_ALT },
-    { "\e[1;1B", ATOM_arrow_down, MOD_ALTGR },
-    { "\e[D", ATOM_arrow_left, 0 },
+    { "\033OB", ATOM_arrow_down, 0 },
+    { "\033[b", ATOM_arrow_down, MOD_SHIFT },
+    { "\033Ob", ATOM_arrow_down, MOD_CTRL },
+    { "\033\033[B", ATOM_arrow_down, MOD_ALT },
+    { "\033\033[b", ATOM_arrow_down, MOD_ALT | MOD_SHIFT },
+    { "\033\033Ob", ATOM_arrow_down, MOD_CTRL | MOD_ALT },
+    { "\033[1;1B", ATOM_arrow_down, MOD_ALTGR },
+    { "\033[D", ATOM_arrow_left, 0 },
     XTERM_MODS_GT("1;", "D", ATOM_arrow_left),
-    { "\eOD", ATOM_arrow_left, 0 },
-    { "\e[d", ATOM_arrow_left, MOD_SHIFT },
-    { "\eOd", ATOM_arrow_left, MOD_CTRL },
-    { "\e\e[D", ATOM_arrow_left, MOD_ALT },
-    { "\e\e[d", ATOM_arrow_left, MOD_ALT | MOD_SHIFT },
-    { "\e\eOd", ATOM_arrow_left, MOD_CTRL | MOD_ALT },
-    { "\e[1;1D", ATOM_arrow_left, MOD_ALTGR },
-    { "\e[C", ATOM_arrow_right, 0 },
+    { "\033OD", ATOM_arrow_left, 0 },
+    { "\033[d", ATOM_arrow_left, MOD_SHIFT },
+    { "\033Od", ATOM_arrow_left, MOD_CTRL },
+    { "\033\033[D", ATOM_arrow_left, MOD_ALT },
+    { "\033\033[d", ATOM_arrow_left, MOD_ALT | MOD_SHIFT },
+    { "\033\033Od", ATOM_arrow_left, MOD_CTRL | MOD_ALT },
+    { "\033[1;1D", ATOM_arrow_left, MOD_ALTGR },
+    { "\033[C", ATOM_arrow_right, 0 },
     XTERM_MODS_GT("1;", "C", ATOM_arrow_right),
-    { "\eOC", ATOM_arrow_right, 0 },
-    { "\e[c", ATOM_arrow_right, MOD_SHIFT },
-    { "\eOc", ATOM_arrow_right, MOD_CTRL },
-    { "\e\e[C", ATOM_arrow_right, MOD_ALT },
-    { "\e\e[c", ATOM_arrow_right, MOD_ALT | MOD_SHIFT },
-    { "\e\eOc", ATOM_arrow_right, MOD_CTRL | MOD_ALT },
-    { "\e[1;1C", ATOM_arrow_right, MOD_ALTGR },
-    { "\e[A", ATOM_arrow_up, 0 },
+    { "\033OC", ATOM_arrow_right, 0 },
+    { "\033[c", ATOM_arrow_right, MOD_SHIFT },
+    { "\033Oc", ATOM_arrow_right, MOD_CTRL },
+    { "\033\033[C", ATOM_arrow_right, MOD_ALT },
+    { "\033\033[c", ATOM_arrow_right, MOD_ALT | MOD_SHIFT },
+    { "\033\033Oc", ATOM_arrow_right, MOD_CTRL | MOD_ALT },
+    { "\033[1;1C", ATOM_arrow_right, MOD_ALTGR },
+    { "\033[A", ATOM_arrow_up, 0 },
     XTERM_MODS_GT("1;", "A", ATOM_arrow_up),
-    { "\eOA", ATOM_arrow_up, 0 },
-    { "\e[a", ATOM_arrow_up, MOD_SHIFT },
-    { "\eOa", ATOM_arrow_up, MOD_CTRL },
-    { "\e\e[A", ATOM_arrow_up, MOD_ALT },
-    { "\e\e[a", ATOM_arrow_up, MOD_ALT | MOD_SHIFT },
-    { "\e\eOa", ATOM_arrow_up, MOD_CTRL | MOD_ALT },
-    { "\e[1;1A", ATOM_arrow_up, MOD_ALTGR },
+    { "\033OA", ATOM_arrow_up, 0 },
+    { "\033[a", ATOM_arrow_up, MOD_SHIFT },
+    { "\033Oa", ATOM_arrow_up, MOD_CTRL },
+    { "\033\033[A", ATOM_arrow_up, MOD_ALT },
+    { "\033\033[a", ATOM_arrow_up, MOD_ALT | MOD_SHIFT },
+    { "\033\033Oa", ATOM_arrow_up, MOD_CTRL | MOD_ALT },
+    { "\033[1;1A", ATOM_arrow_up, MOD_ALTGR },
 
-    { "\eOo", ATOM_numpad_divide, 0 },
-    { "\e\eOo", ATOM_numpad_divide, MOD_ALT },
-    XTERM_MODS("\eO", "o", ATOM_numpad_divide), // ctrl-alt (not shifted) not reachable in xterm
-    { "\eOj", ATOM_numpad_multiply, 0 },
-    { "\e\eOj", ATOM_numpad_multiply, MOD_ALT },
-    XTERM_MODS("\eO", "j", ATOM_numpad_multiply), // ctrl-alt (not shifted) not reachable in xterm
-    { "\eOm", ATOM_numpad_subtract, 0 },
-    { "\e\eOm", ATOM_numpad_subtract, MOD_ALT },
-    XTERM_MODS("\eO", "m", ATOM_numpad_subtract), // ctrl-alt (not shifted) not reachable in xterm
-    { "\eOk", ATOM_numpad_add, 0 },
-    { "\e\eOk", ATOM_numpad_add, MOD_ALT },
-    XTERM_MODS("\eO", "k", ATOM_numpad_add), // ctrl-alt (not shifted) not reachable in xterm
-    { "\eOM", ATOM_numpad_enter, 0 },
-    { "\e\eOM", ATOM_numpad_enter, MOD_ALT },
-    XTERM_MODS("\eO", "M", ATOM_numpad_enter),
-    //{ "\e[3~", ATOM_numpad_decimal, 0 },
-    //XTERM_MODS("\e[3;", "~", ATOM_numpad_decimal), // shifted combinations produce other codes in xterm
-    { "\eO2l", ATOM_numpad_decimal,                      MOD_SHIFT },
-    { "\eO3l", ATOM_numpad_decimal,            MOD_ALT             },
-    { "\eO5l", ATOM_numpad_decimal, MOD_CTRL                       },
-    { "\eO6l", ATOM_numpad_decimal, MOD_CTRL           | MOD_SHIFT },
-    { "\eO4l", ATOM_numpad_decimal,            MOD_ALT | MOD_SHIFT },
-    { "\eO7l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT             },
-    { "\eO8l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOl",  ATOM_numpad_decimal,            MOD_ALT             },
-    { "\eOn",  ATOM_numpad_decimal,                              0 },
-    { "\e\eOn",ATOM_numpad_decimal,            MOD_ALT             },
+    { "\033Oo", ATOM_numpad_divide, 0 },
+    { "\033\033Oo", ATOM_numpad_divide, MOD_ALT },
+    XTERM_MODS("\033O", "o", ATOM_numpad_divide), // ctrl-alt (not shifted) not reachable in xterm
+    { "\033Oj", ATOM_numpad_multiply, 0 },
+    { "\033\033Oj", ATOM_numpad_multiply, MOD_ALT },
+    XTERM_MODS("\033O", "j", ATOM_numpad_multiply), // ctrl-alt (not shifted) not reachable in xterm
+    { "\033Om", ATOM_numpad_subtract, 0 },
+    { "\033\033Om", ATOM_numpad_subtract, MOD_ALT },
+    XTERM_MODS("\033O", "m", ATOM_numpad_subtract), // ctrl-alt (not shifted) not reachable in xterm
+    { "\033Ok", ATOM_numpad_add, 0 },
+    { "\033\033Ok", ATOM_numpad_add, MOD_ALT },
+    XTERM_MODS("\033O", "k", ATOM_numpad_add), // ctrl-alt (not shifted) not reachable in xterm
+    { "\033OM", ATOM_numpad_enter, 0 },
+    { "\033\033OM", ATOM_numpad_enter, MOD_ALT },
+    XTERM_MODS("\033O", "M", ATOM_numpad_enter),
+    //{ "\033[3~", ATOM_numpad_decimal, 0 },
+    //XTERM_MODS("\033[3;", "~", ATOM_numpad_decimal), // shifted combinations produce other codes in xterm
+    { "\033O2l", ATOM_numpad_decimal,                      MOD_SHIFT },
+    { "\033O3l", ATOM_numpad_decimal,            MOD_ALT             },
+    { "\033O5l", ATOM_numpad_decimal, MOD_CTRL                       },
+    { "\033O6l", ATOM_numpad_decimal, MOD_CTRL           | MOD_SHIFT },
+    { "\033O4l", ATOM_numpad_decimal,            MOD_ALT | MOD_SHIFT },
+    { "\033O7l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT             },
+    { "\033O8l", ATOM_numpad_decimal, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Ol",  ATOM_numpad_decimal,            MOD_ALT             },
+    { "\033On",  ATOM_numpad_decimal,                              0 },
+    { "\033\033On",ATOM_numpad_decimal,            MOD_ALT             },
 
-    { "\eO2p", ATOM_numpad0,                             MOD_SHIFT },
-    { "\eO3p", ATOM_numpad0,                   MOD_ALT             },
-    { "\eO5p", ATOM_numpad0,        MOD_CTRL                       },
-    { "\eO6p", ATOM_numpad0,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4p", ATOM_numpad0,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7p", ATOM_numpad0,        MOD_CTRL | MOD_ALT             },
-    { "\eO8p", ATOM_numpad0,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOp",  ATOM_numpad0,                                     0 },
-    { "\e\eOp",ATOM_numpad0,                   MOD_ALT             },
+    { "\033O2p", ATOM_numpad0,                             MOD_SHIFT },
+    { "\033O3p", ATOM_numpad0,                   MOD_ALT             },
+    { "\033O5p", ATOM_numpad0,        MOD_CTRL                       },
+    { "\033O6p", ATOM_numpad0,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4p", ATOM_numpad0,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7p", ATOM_numpad0,        MOD_CTRL | MOD_ALT             },
+    { "\033O8p", ATOM_numpad0,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Op",  ATOM_numpad0,                                     0 },
+    { "\033\033Op",ATOM_numpad0,                   MOD_ALT             },
 
 
-    { "\eO2q", ATOM_numpad1,                             MOD_SHIFT },
-    { "\eO3q", ATOM_numpad1,                   MOD_ALT             },
-    { "\eO5q", ATOM_numpad1,        MOD_CTRL                       },
-    { "\eO6q", ATOM_numpad1,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4q", ATOM_numpad1,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7q", ATOM_numpad1,        MOD_CTRL | MOD_ALT             },
-    { "\eO8q", ATOM_numpad1,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOq",  ATOM_numpad1,                                     0 },
-    { "\e\eOq",ATOM_numpad1,                   MOD_ALT             },
+    { "\033O2q", ATOM_numpad1,                             MOD_SHIFT },
+    { "\033O3q", ATOM_numpad1,                   MOD_ALT             },
+    { "\033O5q", ATOM_numpad1,        MOD_CTRL                       },
+    { "\033O6q", ATOM_numpad1,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4q", ATOM_numpad1,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7q", ATOM_numpad1,        MOD_CTRL | MOD_ALT             },
+    { "\033O8q", ATOM_numpad1,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Oq",  ATOM_numpad1,                                     0 },
+    { "\033\033Oq",ATOM_numpad1,                   MOD_ALT             },
 
-    { "\eO2r", ATOM_numpad2,                             MOD_SHIFT },
-    { "\eO3r", ATOM_numpad2,                   MOD_ALT             },
-    { "\eO5r", ATOM_numpad2,        MOD_CTRL                       },
-    { "\eO6r", ATOM_numpad2,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4r", ATOM_numpad2,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7r", ATOM_numpad2,        MOD_CTRL | MOD_ALT             },
-    { "\eO8r", ATOM_numpad2,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOr",  ATOM_numpad2,                                     0 },
-    { "\e\eOr",ATOM_numpad2,                   MOD_ALT             },
+    { "\033O2r", ATOM_numpad2,                             MOD_SHIFT },
+    { "\033O3r", ATOM_numpad2,                   MOD_ALT             },
+    { "\033O5r", ATOM_numpad2,        MOD_CTRL                       },
+    { "\033O6r", ATOM_numpad2,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4r", ATOM_numpad2,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7r", ATOM_numpad2,        MOD_CTRL | MOD_ALT             },
+    { "\033O8r", ATOM_numpad2,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Or",  ATOM_numpad2,                                     0 },
+    { "\033\033Or",ATOM_numpad2,                   MOD_ALT             },
 
-    { "\eO2s", ATOM_numpad3,                             MOD_SHIFT },
-    { "\eO3s", ATOM_numpad3,                   MOD_ALT             },
-    { "\eO5s", ATOM_numpad3,        MOD_CTRL                       },
-    { "\eO6s", ATOM_numpad3,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4s", ATOM_numpad3,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7s", ATOM_numpad3,        MOD_CTRL | MOD_ALT             },
-    { "\eO8s", ATOM_numpad3,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOs",  ATOM_numpad3,                                     0 },
-    { "\e\eOs",ATOM_numpad3,                   MOD_ALT             },
+    { "\033O2s", ATOM_numpad3,                             MOD_SHIFT },
+    { "\033O3s", ATOM_numpad3,                   MOD_ALT             },
+    { "\033O5s", ATOM_numpad3,        MOD_CTRL                       },
+    { "\033O6s", ATOM_numpad3,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4s", ATOM_numpad3,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7s", ATOM_numpad3,        MOD_CTRL | MOD_ALT             },
+    { "\033O8s", ATOM_numpad3,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Os",  ATOM_numpad3,                                     0 },
+    { "\033\033Os",ATOM_numpad3,                   MOD_ALT             },
 
-    { "\eO2t", ATOM_numpad4,                             MOD_SHIFT },
-    { "\eO3t", ATOM_numpad4,                   MOD_ALT             },
-    { "\eO5t", ATOM_numpad4,        MOD_CTRL                       },
-    { "\eO6t", ATOM_numpad4,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4t", ATOM_numpad4,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7t", ATOM_numpad4,        MOD_CTRL | MOD_ALT             },
-    { "\eO8t", ATOM_numpad4,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOt",  ATOM_numpad4,                                     0 },
-    { "\e\eOt",ATOM_numpad4,                   MOD_ALT             },
+    { "\033O2t", ATOM_numpad4,                             MOD_SHIFT },
+    { "\033O3t", ATOM_numpad4,                   MOD_ALT             },
+    { "\033O5t", ATOM_numpad4,        MOD_CTRL                       },
+    { "\033O6t", ATOM_numpad4,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4t", ATOM_numpad4,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7t", ATOM_numpad4,        MOD_CTRL | MOD_ALT             },
+    { "\033O8t", ATOM_numpad4,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Ot",  ATOM_numpad4,                                     0 },
+    { "\033\033Ot",ATOM_numpad4,                   MOD_ALT             },
 
-    { "\eO2u", ATOM_numpad5,                             MOD_SHIFT },
-    { "\eO3u", ATOM_numpad5,                   MOD_ALT             },
-    { "\eO5u", ATOM_numpad5,        MOD_CTRL                       },
-    { "\eO6u", ATOM_numpad5,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4u", ATOM_numpad5,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7u", ATOM_numpad5,        MOD_CTRL | MOD_ALT             },
-    { "\eO8u", ATOM_numpad5,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOu",  ATOM_numpad5,                                     0 },
-    { "\e\eOu",ATOM_numpad5,                   MOD_ALT             },
-    { "\e[E", ATOM_numpad5, 0 },
+    { "\033O2u", ATOM_numpad5,                             MOD_SHIFT },
+    { "\033O3u", ATOM_numpad5,                   MOD_ALT             },
+    { "\033O5u", ATOM_numpad5,        MOD_CTRL                       },
+    { "\033O6u", ATOM_numpad5,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4u", ATOM_numpad5,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7u", ATOM_numpad5,        MOD_CTRL | MOD_ALT             },
+    { "\033O8u", ATOM_numpad5,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Ou",  ATOM_numpad5,                                     0 },
+    { "\033\033Ou",ATOM_numpad5,                   MOD_ALT             },
+    { "\033[E", ATOM_numpad5, 0 },
     XTERM_MODS_GT("1;", "E", ATOM_numpad5),
-    { "\eOE", ATOM_numpad5, 0 },
-    { "\e[G",  ATOM_numpad5,                                     0 },
+    { "\033OE", ATOM_numpad5, 0 },
+    { "\033[G",  ATOM_numpad5,                                     0 },
 
-    { "\eO2v", ATOM_numpad6,                             MOD_SHIFT },
-    { "\eO3v", ATOM_numpad6,                   MOD_ALT             },
-    { "\eO5v", ATOM_numpad6,        MOD_CTRL                       },
-    { "\eO6v", ATOM_numpad6,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4v", ATOM_numpad6,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7v", ATOM_numpad6,        MOD_CTRL | MOD_ALT             },
-    { "\eO8v", ATOM_numpad6,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOv",  ATOM_numpad6,                                     0 },
-    { "\e\eOv",ATOM_numpad6,                   MOD_ALT             },
+    { "\033O2v", ATOM_numpad6,                             MOD_SHIFT },
+    { "\033O3v", ATOM_numpad6,                   MOD_ALT             },
+    { "\033O5v", ATOM_numpad6,        MOD_CTRL                       },
+    { "\033O6v", ATOM_numpad6,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4v", ATOM_numpad6,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7v", ATOM_numpad6,        MOD_CTRL | MOD_ALT             },
+    { "\033O8v", ATOM_numpad6,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Ov",  ATOM_numpad6,                                     0 },
+    { "\033\033Ov",ATOM_numpad6,                   MOD_ALT             },
 
-    { "\eO2w", ATOM_numpad7,                             MOD_SHIFT },
-    { "\eO3w", ATOM_numpad7,                   MOD_ALT             },
-    { "\eO5w", ATOM_numpad7,        MOD_CTRL                       },
-    { "\eO6w", ATOM_numpad7,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4w", ATOM_numpad7,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7w", ATOM_numpad7,        MOD_CTRL | MOD_ALT             },
-    { "\eO8w", ATOM_numpad7,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOw",  ATOM_numpad7,                                     0 },
-    { "\e\eOw",ATOM_numpad7,                   MOD_ALT             },
+    { "\033O2w", ATOM_numpad7,                             MOD_SHIFT },
+    { "\033O3w", ATOM_numpad7,                   MOD_ALT             },
+    { "\033O5w", ATOM_numpad7,        MOD_CTRL                       },
+    { "\033O6w", ATOM_numpad7,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4w", ATOM_numpad7,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7w", ATOM_numpad7,        MOD_CTRL | MOD_ALT             },
+    { "\033O8w", ATOM_numpad7,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Ow",  ATOM_numpad7,                                     0 },
+    { "\033\033Ow",ATOM_numpad7,                   MOD_ALT             },
 
-    { "\eO2x", ATOM_numpad8,                             MOD_SHIFT },
-    { "\eO3x", ATOM_numpad8,                   MOD_ALT             },
-    { "\eO5x", ATOM_numpad8,        MOD_CTRL                       },
-    { "\eO6x", ATOM_numpad8,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4x", ATOM_numpad8,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7x", ATOM_numpad8,        MOD_CTRL | MOD_ALT             },
-    { "\eO8x", ATOM_numpad8,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOx",  ATOM_numpad8,                                     0 },
-    { "\e\eOx",ATOM_numpad8,                   MOD_ALT             },
+    { "\033O2x", ATOM_numpad8,                             MOD_SHIFT },
+    { "\033O3x", ATOM_numpad8,                   MOD_ALT             },
+    { "\033O5x", ATOM_numpad8,        MOD_CTRL                       },
+    { "\033O6x", ATOM_numpad8,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4x", ATOM_numpad8,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7x", ATOM_numpad8,        MOD_CTRL | MOD_ALT             },
+    { "\033O8x", ATOM_numpad8,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Ox",  ATOM_numpad8,                                     0 },
+    { "\033\033Ox",ATOM_numpad8,                   MOD_ALT             },
 
-    { "\eO2y", ATOM_numpad9,                             MOD_SHIFT },
-    { "\eO3y", ATOM_numpad9,                   MOD_ALT             },
-    { "\eO5y", ATOM_numpad9,        MOD_CTRL                       },
-    { "\eO6y", ATOM_numpad9,        MOD_CTRL           | MOD_SHIFT },
-    { "\eO4y", ATOM_numpad9,                   MOD_ALT | MOD_SHIFT },
-    { "\eO7y", ATOM_numpad9,        MOD_CTRL | MOD_ALT             },
-    { "\eO8y", ATOM_numpad9,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eOy",  ATOM_numpad9,                                     0 },
-    { "\e\eOy",ATOM_numpad9,                   MOD_ALT             },
+    { "\033O2y", ATOM_numpad9,                             MOD_SHIFT },
+    { "\033O3y", ATOM_numpad9,                   MOD_ALT             },
+    { "\033O5y", ATOM_numpad9,        MOD_CTRL                       },
+    { "\033O6y", ATOM_numpad9,        MOD_CTRL           | MOD_SHIFT },
+    { "\033O4y", ATOM_numpad9,                   MOD_ALT | MOD_SHIFT },
+    { "\033O7y", ATOM_numpad9,        MOD_CTRL | MOD_ALT             },
+    { "\033O8y", ATOM_numpad9,        MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033Oy",  ATOM_numpad9,                                     0 },
+    { "\033\033Oy",ATOM_numpad9,                   MOD_ALT             },
 
-    // { "\e", ATOM_escape, }, via special case in code (also Ctrl-[ in traditional mode)
-    XTERM_MODS("\e[27;", ";27~", ATOM_escape), // modifiy other keys mode
-    XTERM_MODS("\e[27;", "u", ATOM_escape), // modifiy other keys mode
-    { "\e\e", ATOM_escape,                                 MOD_ALT },
+    // { "\033", ATOM_escape, }, via special case in code (also Ctrl-[ in traditional mode)
+    XTERM_MODS("\033[27;", ";27~", ATOM_escape), // modifiy other keys mode
+    XTERM_MODS("\033[27;", "u", ATOM_escape), // modifiy other keys mode
+    { "\033\033", ATOM_escape,                                 MOD_ALT },
 
 
-    { "\eOP", ATOM_f1, 0 },
+    { "\033OP", ATOM_f1, 0 },
     XTERM_MODS_GT("1;", "P", ATOM_f1),
-    XTERM_MODS("\eO", "P", ATOM_f1),
-    { "\e[[A", ATOM_f1, 0 },
-    { "\e[25~", ATOM_f1, MOD_SHIFT },
-    { "\e[25^", ATOM_f1, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[25~", ATOM_f1, MOD_ALT | MOD_SHIFT },
-    { "\e\e[25^", ATOM_f1, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eO1P", ATOM_f1, MOD_ALTGR },
-    { "\e[11~", ATOM_f1, 0 },
-    { "\e[11^", ATOM_f1, MOD_CTRL },
-    { "\e\e[11~", ATOM_f1, MOD_ALT },
-    { "\e\e[11^", ATOM_f1, MOD_CTRL | MOD_ALT },
-    { "\eOQ", ATOM_f2, 0 },
+    XTERM_MODS("\033O", "P", ATOM_f1),
+    { "\033[[A", ATOM_f1, 0 },
+    { "\033[25~", ATOM_f1, MOD_SHIFT },
+    { "\033[25^", ATOM_f1, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[25~", ATOM_f1, MOD_ALT | MOD_SHIFT },
+    { "\033\033[25^", ATOM_f1, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033O1P", ATOM_f1, MOD_ALTGR },
+    { "\033[11~", ATOM_f1, 0 },
+    { "\033[11^", ATOM_f1, MOD_CTRL },
+    { "\033\033[11~", ATOM_f1, MOD_ALT },
+    { "\033\033[11^", ATOM_f1, MOD_CTRL | MOD_ALT },
+    { "\033OQ", ATOM_f2, 0 },
     XTERM_MODS_GT("1;", "Q", ATOM_f2),
-    XTERM_MODS("\eO", "Q", ATOM_f2),
-    { "\e[[B", ATOM_f2, 0 },
-    { "\e[26~", ATOM_f2, MOD_SHIFT },
-    { "\e[26^", ATOM_f2, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[26~", ATOM_f2, MOD_ALT | MOD_SHIFT },
-    { "\e\e[26^", ATOM_f2, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eO1Q", ATOM_f2, MOD_ALTGR },
-    { "\e[12~", ATOM_f2, 0 },
-    { "\e[12^", ATOM_f2, MOD_CTRL },
-    { "\e\e[12~", ATOM_f2, MOD_ALT },
-    { "\e\e[12^", ATOM_f2, MOD_CTRL | MOD_ALT },
-    { "\eOR", ATOM_f3, 0 },
+    XTERM_MODS("\033O", "Q", ATOM_f2),
+    { "\033[[B", ATOM_f2, 0 },
+    { "\033[26~", ATOM_f2, MOD_SHIFT },
+    { "\033[26^", ATOM_f2, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[26~", ATOM_f2, MOD_ALT | MOD_SHIFT },
+    { "\033\033[26^", ATOM_f2, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033O1Q", ATOM_f2, MOD_ALTGR },
+    { "\033[12~", ATOM_f2, 0 },
+    { "\033[12^", ATOM_f2, MOD_CTRL },
+    { "\033\033[12~", ATOM_f2, MOD_ALT },
+    { "\033\033[12^", ATOM_f2, MOD_CTRL | MOD_ALT },
+    { "\033OR", ATOM_f3, 0 },
     XTERM_MODS_GT("1;", "R", ATOM_f3),
-    XTERM_MODS("\eO", "R", ATOM_f3),
-    { "\e[[C", ATOM_f3, 0 },
-    { "\e[28~", ATOM_f3, MOD_SHIFT },
-    { "\e[28^", ATOM_f3, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[28~", ATOM_f3, MOD_ALT | MOD_SHIFT },
-    { "\e\e[28^", ATOM_f3, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\eO1R", ATOM_f3, MOD_ALTGR },
-    { "\e[13~", ATOM_f3, 0 },
-    { "\e[13^", ATOM_f3, MOD_CTRL },
-    { "\e\e[13~", ATOM_f3, MOD_ALT },
-    { "\e\e[13^", ATOM_f3, MOD_CTRL | MOD_ALT },
-    { "\eOS", ATOM_f4, 0 },
+    XTERM_MODS("\033O", "R", ATOM_f3),
+    { "\033[[C", ATOM_f3, 0 },
+    { "\033[28~", ATOM_f3, MOD_SHIFT },
+    { "\033[28^", ATOM_f3, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[28~", ATOM_f3, MOD_ALT | MOD_SHIFT },
+    { "\033\033[28^", ATOM_f3, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033O1R", ATOM_f3, MOD_ALTGR },
+    { "\033[13~", ATOM_f3, 0 },
+    { "\033[13^", ATOM_f3, MOD_CTRL },
+    { "\033\033[13~", ATOM_f3, MOD_ALT },
+    { "\033\033[13^", ATOM_f3, MOD_CTRL | MOD_ALT },
+    { "\033OS", ATOM_f4, 0 },
     XTERM_MODS_GT("1;", "S", ATOM_f4),
-    XTERM_MODS("\eO", "S", ATOM_f4),
-    { "\e[[D", ATOM_f4, 0 },
-    { "\eO1S", ATOM_f4, MOD_ALTGR },
-    { "\e[14~", ATOM_f4, 0 },
-    { "\e[14^", ATOM_f4, MOD_CTRL },
-    { "\e\e[14~", ATOM_f4, MOD_ALT },
-    { "\e\e[14^", ATOM_f4, MOD_CTRL | MOD_ALT },
-    { "\e[29^", ATOM_f4, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[29~", ATOM_f4, MOD_ALT | MOD_SHIFT },
-    { "\e\e[29^", ATOM_f4, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\e[15~", ATOM_f5, 0 },
-    { "\e[15^", ATOM_f5, MOD_CTRL },
-    { "\e\e[15~", ATOM_f5, MOD_ALT },
-    { "\e\e[15^", ATOM_f5, MOD_CTRL | MOD_ALT },
+    XTERM_MODS("\033O", "S", ATOM_f4),
+    { "\033[[D", ATOM_f4, 0 },
+    { "\033O1S", ATOM_f4, MOD_ALTGR },
+    { "\033[14~", ATOM_f4, 0 },
+    { "\033[14^", ATOM_f4, MOD_CTRL },
+    { "\033\033[14~", ATOM_f4, MOD_ALT },
+    { "\033\033[14^", ATOM_f4, MOD_CTRL | MOD_ALT },
+    { "\033[29^", ATOM_f4, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[29~", ATOM_f4, MOD_ALT | MOD_SHIFT },
+    { "\033\033[29^", ATOM_f4, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[15~", ATOM_f5, 0 },
+    { "\033[15^", ATOM_f5, MOD_CTRL },
+    { "\033\033[15~", ATOM_f5, MOD_ALT },
+    { "\033\033[15^", ATOM_f5, MOD_CTRL | MOD_ALT },
     XTERM_MODS_GT("15;", "~", ATOM_f5),
-    { "\e[[E", ATOM_f5, 0 },
-    { "\e[31~", ATOM_f5, MOD_SHIFT },
-    { "\e[31^", ATOM_f5, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[31~", ATOM_f5, MOD_ALT | MOD_SHIFT },
-    { "\e\e[31^", ATOM_f5, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\e[15;1~", ATOM_f5, MOD_ALTGR },
-    { "\e[17~", ATOM_f6, 0 },
-    { "\e[17^", ATOM_f6, MOD_CTRL },
-    { "\e\e[17~", ATOM_f6, MOD_ALT },
-    { "\e\e[17^", ATOM_f6, MOD_CTRL | MOD_ALT },
+    { "\033[[E", ATOM_f5, 0 },
+    { "\033[31~", ATOM_f5, MOD_SHIFT },
+    { "\033[31^", ATOM_f5, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[31~", ATOM_f5, MOD_ALT | MOD_SHIFT },
+    { "\033\033[31^", ATOM_f5, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[15;1~", ATOM_f5, MOD_ALTGR },
+    { "\033[17~", ATOM_f6, 0 },
+    { "\033[17^", ATOM_f6, MOD_CTRL },
+    { "\033\033[17~", ATOM_f6, MOD_ALT },
+    { "\033\033[17^", ATOM_f6, MOD_CTRL | MOD_ALT },
     XTERM_MODS_GT("17;", "~", ATOM_f6),
-    { "\e[32~", ATOM_f6, MOD_SHIFT },
-    { "\e[32^", ATOM_f6, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[32~", ATOM_f6, MOD_ALT | MOD_SHIFT },
-    { "\e\e[32^", ATOM_f6, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\e[17;1~", ATOM_f6, MOD_ALTGR },
-    { "\e[18~", ATOM_f7, 0 },
-    { "\e[18^", ATOM_f7, MOD_CTRL },
-    { "\e\e[18~", ATOM_f7, MOD_ALT },
-    { "\e\e[18^", ATOM_f7, MOD_CTRL | MOD_ALT },
+    { "\033[32~", ATOM_f6, MOD_SHIFT },
+    { "\033[32^", ATOM_f6, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[32~", ATOM_f6, MOD_ALT | MOD_SHIFT },
+    { "\033\033[32^", ATOM_f6, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[17;1~", ATOM_f6, MOD_ALTGR },
+    { "\033[18~", ATOM_f7, 0 },
+    { "\033[18^", ATOM_f7, MOD_CTRL },
+    { "\033\033[18~", ATOM_f7, MOD_ALT },
+    { "\033\033[18^", ATOM_f7, MOD_CTRL | MOD_ALT },
     XTERM_MODS_GT("18;", "~", ATOM_f7),
-    { "\e[33~", ATOM_f7, MOD_SHIFT },
-    { "\e[33^", ATOM_f7, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[33~", ATOM_f7, MOD_ALT | MOD_SHIFT },
-    { "\e\e[33^", ATOM_f7, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\e[18;1~", ATOM_f7, MOD_ALTGR },
-    { "\e[19~", ATOM_f8, 0 },
-    { "\e[19^", ATOM_f8, MOD_CTRL },
-    { "\e\e[19~", ATOM_f8, MOD_ALT },
-    { "\e\e[19^", ATOM_f8, MOD_CTRL | MOD_ALT },
+    { "\033[33~", ATOM_f7, MOD_SHIFT },
+    { "\033[33^", ATOM_f7, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[33~", ATOM_f7, MOD_ALT | MOD_SHIFT },
+    { "\033\033[33^", ATOM_f7, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[18;1~", ATOM_f7, MOD_ALTGR },
+    { "\033[19~", ATOM_f8, 0 },
+    { "\033[19^", ATOM_f8, MOD_CTRL },
+    { "\033\033[19~", ATOM_f8, MOD_ALT },
+    { "\033\033[19^", ATOM_f8, MOD_CTRL | MOD_ALT },
     XTERM_MODS_GT("19;", "~", ATOM_f8),
-    { "\e[34~", ATOM_f8, MOD_SHIFT },
-    { "\e[34^", ATOM_f8, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[34~", ATOM_f8, MOD_ALT | MOD_SHIFT },
-    { "\e\e[34^", ATOM_f8, MOD_CTRL | MOD_ALT | MOD_SHIFT },
-    { "\e[19;1~", ATOM_f8, MOD_ALTGR },
-    { "\e[20~", ATOM_f9, 0 },
-    { "\e[20^", ATOM_f9, MOD_CTRL },
-    { "\e\e[20~", ATOM_f9, MOD_ALT },
-    { "\e\e[20^", ATOM_f9, MOD_CTRL | MOD_ALT },
+    { "\033[34~", ATOM_f8, MOD_SHIFT },
+    { "\033[34^", ATOM_f8, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[34~", ATOM_f8, MOD_ALT | MOD_SHIFT },
+    { "\033\033[34^", ATOM_f8, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[19;1~", ATOM_f8, MOD_ALTGR },
+    { "\033[20~", ATOM_f9, 0 },
+    { "\033[20^", ATOM_f9, MOD_CTRL },
+    { "\033\033[20~", ATOM_f9, MOD_ALT },
+    { "\033\033[20^", ATOM_f9, MOD_CTRL | MOD_ALT },
     XTERM_MODS_GT("20;", "~", ATOM_f9),
-    { "\e[20;1~", ATOM_f9, MOD_ALTGR },
-    { "\e[21~", ATOM_f10, 0 },
-    { "\e[21^", ATOM_f10, MOD_CTRL },
-    { "\e\e[21~", ATOM_f10, MOD_ALT },
-    { "\e\e[21^", ATOM_f10, MOD_CTRL | MOD_ALT },
+    { "\033[20;1~", ATOM_f9, MOD_ALTGR },
+    { "\033[21~", ATOM_f10, 0 },
+    { "\033[21^", ATOM_f10, MOD_CTRL },
+    { "\033\033[21~", ATOM_f10, MOD_ALT },
+    { "\033\033[21^", ATOM_f10, MOD_CTRL | MOD_ALT },
     XTERM_MODS_GT("21;", "~", ATOM_f10),
-    { "\e[21;1~", ATOM_f10, MOD_ALTGR },
-    { "\e[23~", ATOM_f11, 0 },
-    { "\e[23$", ATOM_f11, MOD_SHIFT },
-    { "\e[23^", ATOM_f11, MOD_CTRL },
-    { "\e[23@", ATOM_f11, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[23~", ATOM_f11, MOD_ALT },
-    { "\e\e[23$", ATOM_f11, MOD_ALT | MOD_SHIFT },
-    { "\e\e[23^", ATOM_f11, MOD_CTRL | MOD_ALT },
-    { "\e\e[23@", ATOM_f11, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[21;1~", ATOM_f10, MOD_ALTGR },
+    { "\033[23~", ATOM_f11, 0 },
+    { "\033[23$", ATOM_f11, MOD_SHIFT },
+    { "\033[23^", ATOM_f11, MOD_CTRL },
+    { "\033[23@", ATOM_f11, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[23~", ATOM_f11, MOD_ALT },
+    { "\033\033[23$", ATOM_f11, MOD_ALT | MOD_SHIFT },
+    { "\033\033[23^", ATOM_f11, MOD_CTRL | MOD_ALT },
+    { "\033\033[23@", ATOM_f11, MOD_CTRL | MOD_ALT | MOD_SHIFT },
     XTERM_MODS_GT("23;", "~", ATOM_f11),
-    { "\e[23;1~", ATOM_f11, MOD_ALTGR },
-    { "\e[24~", ATOM_f12, 0 },
-    { "\e[24$", ATOM_f12, MOD_SHIFT },
-    { "\e[24^", ATOM_f12, MOD_CTRL },
-    { "\e[24@", ATOM_f12, MOD_CTRL | MOD_SHIFT },
-    { "\e\e[24~", ATOM_f12, MOD_ALT },
-    { "\e\e[24$", ATOM_f12, MOD_ALT | MOD_SHIFT },
-    { "\e\e[24^", ATOM_f12, MOD_CTRL | MOD_ALT },
-    { "\e\e[24@", ATOM_f12, MOD_CTRL | MOD_ALT | MOD_SHIFT },
+    { "\033[23;1~", ATOM_f11, MOD_ALTGR },
+    { "\033[24~", ATOM_f12, 0 },
+    { "\033[24$", ATOM_f12, MOD_SHIFT },
+    { "\033[24^", ATOM_f12, MOD_CTRL },
+    { "\033[24@", ATOM_f12, MOD_CTRL | MOD_SHIFT },
+    { "\033\033[24~", ATOM_f12, MOD_ALT },
+    { "\033\033[24$", ATOM_f12, MOD_ALT | MOD_SHIFT },
+    { "\033\033[24^", ATOM_f12, MOD_CTRL | MOD_ALT },
+    { "\033\033[24@", ATOM_f12, MOD_CTRL | MOD_ALT | MOD_SHIFT },
     XTERM_MODS_GT("24;", "~", ATOM_f12),
-    { "\e[24;1~", ATOM_f12, MOD_ALTGR },
+    { "\033[24;1~", ATOM_f12, MOD_ALTGR },
 
 
     //{ "", ATOM_, 0 },
@@ -555,88 +555,88 @@ static const key_mapping_entry key_mapping_table[] = {
     //{ "", ATOM_, 0 },
 
     { "\x01",   "a", MOD_CTRL |           MOD_PRINT },
-    { "\e\x01", "a", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x01", "a", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x02",   "b", MOD_CTRL |           MOD_PRINT },
-    { "\e\x02", "b", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x02", "b", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x03",   "c", MOD_CTRL |           MOD_PRINT },
-    { "\e\x03", "c", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x03", "c", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x04",   "d", MOD_CTRL |           MOD_PRINT },
-    { "\e\x04", "d", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x04", "d", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x05",   "e", MOD_CTRL |           MOD_PRINT },
-    { "\e\x05", "e", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x05", "e", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x06",   "f", MOD_CTRL |           MOD_PRINT },
-    { "\e\x06", "f", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x06", "f", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x07",   "g", MOD_CTRL |           MOD_PRINT },
-    { "\e\x07", "g", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x07", "g", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //{ "\x08",   "h", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-Backspace
-    //{ "\e\x08", "h", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //{ "\033\x08", "h", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also ctrl-alt-Backspace (which might not be usable as xorg binds zap to it)
     //{ "\x09",   "i",                      MOD_PRINT },
     //+ also Tab, Ctrl-Tab
-    //{ "\e\x09", "i",            MOD_ALT | MOD_PRINT },
+    //{ "\033\x09", "i",            MOD_ALT | MOD_PRINT },
     //+ also Alt-Tab
     { "\x0a",   "j", MOD_CTRL |           MOD_PRINT },
-    { "\e\x0a", "j", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x0a", "j", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x0b",   "k", MOD_CTRL |           MOD_PRINT },
-    { "\e\x0b", "k", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x0b", "k", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x0c",   "l", MOD_CTRL |           MOD_PRINT },
-    { "\e\x0c", "l", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x0c", "l", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //{ "\x0d",   "m", MOD_CTRL |           MOD_PRINT },
     //+ also Return, Ctrl-Return
-    //{ "\e\x0d", "m", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    //{ "\033\x0d", "m", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also alt-Return, alt-Ctrl-Return
     { "\x0e",   "n", MOD_CTRL |           MOD_PRINT },
-    { "\e\x0e", "n", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x0e", "n", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x0f",   "o", MOD_CTRL |           MOD_PRINT },
-    { "\e\x0f", "o", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x0f", "o", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x10",   "p", MOD_CTRL |           MOD_PRINT },
-    { "\e\x10", "p", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x10", "p", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x11",   "q", MOD_CTRL |           MOD_PRINT },
-    { "\e\x11", "q", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x11", "q", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x12",   "r", MOD_CTRL |           MOD_PRINT },
-    { "\e\x12", "r", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x12", "r", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x13",   "s", MOD_CTRL |           MOD_PRINT },
-    { "\e\x13", "s", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x13", "s", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x14",   "t", MOD_CTRL |           MOD_PRINT },
-    { "\e\x14", "t", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x14", "t", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x15",   "u", MOD_CTRL |           MOD_PRINT },
-    { "\e\x15", "u", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x15", "u", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x16",   "v", MOD_CTRL |           MOD_PRINT },
-    { "\e\x16", "v", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x16", "v", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x17",   "w", MOD_CTRL |           MOD_PRINT },
-    { "\e\x17", "w", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x17", "w", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x18",   "x", MOD_CTRL |           MOD_PRINT },
-    { "\e\x18", "x", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x18", "x", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x19",   "y", MOD_CTRL |           MOD_PRINT },
-    { "\e\x19", "y", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x19", "y", MOD_CTRL | MOD_ALT | MOD_PRINT },
     { "\x1a",   "z", MOD_CTRL |           MOD_PRINT },
-    { "\e\x1a", "z", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x1a", "z", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //{ "\x1b",   "[", MOD_CTRL |           MOD_PRINT },
     //+ also ESC
     //+ also ctrl-3
     { "\x1c",   "\\", MOD_CTRL |           MOD_PRINT },
-    { "\e\x1c", "\\", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x1c", "\\", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also ctrl-4
     { "\x1d",   "]", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-5
-    { "\e\x1d", "]", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x1d", "]", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also alt-ctrl-5
     { "\x1e",   "~", MOD_CTRL |           MOD_PRINT },
     //+ also ctrl-6
-    { "\e\x1e", "~", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x1e", "~", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also alt-ctrl-6
     { "\x1f",   "?", MOD_CTRL |           MOD_PRINT },
-    { "\e\x1f", "?", MOD_CTRL | MOD_ALT | MOD_PRINT },
+    { "\033\x1f", "?", MOD_CTRL | MOD_ALT | MOD_PRINT },
     //+ also ctrl-7
     { "\x7f", ATOM_backspace, 0 },
     { "\x08", ATOM_backspace, MOD_CTRL },
-    { "\e\x08", ATOM_backspace, MOD_CTRL | MOD_ALT },
-    { "\e\x7f", ATOM_backspace, MOD_ALT },
-    XTERM_MODS("\e[27;", ";127~", ATOM_backspace), // modifiy other keys mode
-    XTERM_MODS("\e[127;", "u", ATOM_backspace), // modifiy other keys mode
-    XTERM_MODS("\e[27;", ";8~", ATOM_backspace), // modifiy other keys mode
-    XTERM_MODS("\e[8;", "u", ATOM_backspace), // modifiy other keys mode
+    { "\033\x08", ATOM_backspace, MOD_CTRL | MOD_ALT },
+    { "\033\x7f", ATOM_backspace, MOD_ALT },
+    XTERM_MODS("\033[27;", ";127~", ATOM_backspace), // modifiy other keys mode
+    XTERM_MODS("\033[127;", "u", ATOM_backspace), // modifiy other keys mode
+    XTERM_MODS("\033[27;", ";8~", ATOM_backspace), // modifiy other keys mode
+    XTERM_MODS("\033[8;", "u", ATOM_backspace), // modifiy other keys mode
 
     { 0, 0, 0 }
 };
@@ -800,7 +800,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         ctx->esc_pending = false;
     } else {
         if (!ctx->esc_pending) {
-            if (length == 1 && data[0] == '\e') {
+            if (length == 1 && data[0] == '\033') {
                 // skip processing this, either next key or resync will trigger real handling
                 ctx->esc_pending = true;
                 return;
@@ -811,7 +811,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             bool found = false;
 
             if (length + 1 < sizeof (dbl_esc_tmp)) {
-                dbl_esc_tmp[0] = '\e';
+                dbl_esc_tmp[0] = '\033';
                 memcpy(dbl_esc_tmp + 1, data, length);
                 for (const key_mapping_entry* entry = key_mapping_table; entry->sequence != nullptr; entry++) {
                     if (strlen(entry->sequence) == length + 1 && memcmp(entry->sequence, dbl_esc_tmp, length + 1) == 0) {
@@ -826,7 +826,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 data = dbl_esc_tmp;
             } else {
                 // something else, two events
-                if (ctx->raw_filter_cb && ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)"\e", 1, false)) {
+                if (ctx->raw_filter_cb && ctx->raw_filter_cb(ctx->raw_filter_user_data, (const char *)"\033", 1, false)) {
                     ; // skipped by raw filter
                 } else if (ctx->event_cb) {
                     termpaint_event event;
@@ -866,7 +866,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
         event.key.length = strlen(ATOM_space);
         event.key.atom = ATOM_space;
         event.key.modifier = MOD_CTRL;
-    } else if (length == 2 && data[0] == '\e' && data[1] == 0) {
+    } else if (length == 2 && data[0] == '\033' && data[1] == 0) {
         event.type = TERMPAINT_EV_KEY;
         event.key.length = strlen(ATOM_space);
         event.key.atom = ATOM_space;
@@ -905,13 +905,13 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
                 event.key.modifier = matched_entry->modifiers;
             }
         }
-        if (length == 4 && data[0] == '\e' && data[1] == '[' && data[2] == '0' && data[3] == 'n') {
+        if (length == 4 && data[0] == '\033' && data[1] == '[' && data[2] == '0' && data[3] == 'n') {
             event.type = TERMPAINT_EV_MISC;
             event.misc.atom = ATOM_i_resync;
             event.misc.length = strlen(ATOM_i_resync);
         }
 
-        if (!event.type && length >= 2 && data[0] == '\e' && (0xc0 == (0xc0 & data[1]))) {
+        if (!event.type && length >= 2 && data[0] == '\033' && (0xc0 == (0xc0 & data[1]))) {
             // tokenizer can only abort on invalid utf-8 sequences, so now recheck and issue a distinct event type
             event.type = termpaintp_check_valid_sequence(data+1, length - 1) ? TERMPAINT_EV_CHAR : TERMPAINT_EV_INVALID_UTF8;
             if (length - 1 > 4 && !ctx->extended_unicode) {
@@ -921,7 +921,7 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             event.c.string = (const char*)data+1;
             event.c.modifier = MOD_ALT;
         }
-        if (!event.type && length == 2 && data[0] == '\e' && data[1] > 32 && data[1] < 127) {
+        if (!event.type && length == 2 && data[0] == '\033' && data[1] > 32 && data[1] < 127) {
             event.type = TERMPAINT_EV_CHAR;
             event.c.length = length-1;
             event.c.string = (const char*)data+1;
@@ -1116,8 +1116,8 @@ static void termpaintp_input_raw(termpaint_input *ctx, const unsigned char *data
             }
 
             // the nice key modifier extensions:
-            // \e[27;<mod>;<char>~
-            // \e[<char>;<mod>u
+            // \033[27;<mod>;<char>~
+            // \033[<char>;<mod>u
             if (!event.type
                     && ((sequence_id == SEQ('~', 0, 0) && arg_count >= 3 && args[0] == 27)
                         || (sequence_id == SEQ('u', 0, 0) && arg_count >= 2 && !has_sub_args))) {
@@ -1515,7 +1515,7 @@ void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
 
         bool finished = false;
         bool retrigger = false;
-        bool retrigger2 = false; // used in tpis_cmd_str to reprocess "\e[" (last 2 chars)
+        bool retrigger2 = false; // used in tpis_cmd_str to reprocess "\033[" (last 2 chars)
 
         switch (ctx->state) {
             case tpis_base:
@@ -1534,7 +1534,7 @@ void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     ctx->state = tpid_utf8_1;
 
                 // escape sequence starts
-                } else if (cur_ch == '\e') {
+                } else if (cur_ch == '\033') {
                     ctx->state = tpis_esc;
                 } else if (cur_ch == 0x8f) { // SS3
                     ctx->state = tpis_ss3;
@@ -1569,7 +1569,7 @@ void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     ctx->state = tpid_utf8_2;
                 } else if (0xc0 == (0xe0 & cur_ch)) {
                     ctx->state = tpid_utf8_1;
-                } else if (cur_ch == '\e') {
+                } else if (cur_ch == '\033') {
                     retrigger = true;
                 } else {
                     finished = true;
@@ -1581,7 +1581,7 @@ void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 // parameters
                 if ((cur_ch >= '0' && cur_ch <= '9') || cur_ch == ';') {
                     ;
-                } else if (cur_ch == '\e') {
+                } else if (cur_ch == '\033') {
                     retrigger = true;
                 } else {
                     finished = true;
@@ -1592,12 +1592,12 @@ void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                     ctx->state = tpis_mouse_btn;
                 } else if (cur_ch >= '@' && cur_ch <= '~' && (cur_ch != '[' || ctx->used != 3 /* linux vt*/)) {
                     finished = true;
-                } else if (cur_ch == '\e') {
+                } else if (cur_ch == '\033') {
                     retrigger = true;
                 }
                 break;
             case tpis_cmd_str:
-                if (cur_ch == '\e') {
+                if (cur_ch == '\033') {
                     ctx->state = tpis_str_terminator_esc;
                 } else if (cur_ch == 0x9c || cur_ch == 0x07) {
                     finished = true;
@@ -1696,7 +1696,7 @@ void termpaint_input_add_data(termpaint_input *ctx, const char *data_s, unsigned
                 termpaintp_input_raw(ctx, ctx->buff, 0, ctx->overflow);
             }
             termpaintp_input_reset(ctx);
-            ctx->buff[ctx->used] = '\e';
+            ctx->buff[ctx->used] = '\033';
             ++ctx->used;
             ctx->buff[ctx->used] = '[';
             ++ctx->used;

@@ -171,7 +171,7 @@ void event_handler(void *user_data, termpaint_event *event) {
 
 void display_esc(int x, int y, const std::string &data) {
     for (unsigned i = 0; i < data.length(); i++) {
-        if (u8(data[i]) == '\e') {
+        if (u8(data[i]) == '\033') {
             termpaint_surface_write_with_colors(surface, x, y, "^[", 0xffffff, 0x7f0000);
             x+=2;
         } else if (0xfc == (0xfe & u8(data[i])) && i+5 < data.length()) {
@@ -467,12 +467,12 @@ int Main::main() {
     std::string reset = mode["reset"].get<std::string>();
 
     while (setup.find("\\e") != std::string::npos)
-        setup.replace(setup.find("\\e"), 2, "\e");
+        setup.replace(setup.find("\\e"), 2, "\033");
 
     while (reset.find("\\e") != std::string::npos)
-        reset.replace(reset.find("\\e"), 2, "\e");
+        reset.replace(reset.find("\\e"), 2, "\033");
 
-    outStr("\e[?1049h");
+    outStr("\033[?1049h");
     outStr(setup.data());
     fflush(stdout);
 
@@ -541,7 +541,7 @@ int Main::main() {
     termpaint_terminal_free(terminal);
 
     outStr(reset.data());
-    outStr("\e[?1049l");fflush(stdout);
+    outStr("\033[?1049l");fflush(stdout);
 
 
     result["sequences"] = picojson::value(recordedKeypresses);

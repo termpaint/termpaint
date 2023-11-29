@@ -79,8 +79,8 @@ int main(int argc, char **argv) {
     auto addMode = [] (std::string mode, std::string name) {
         info i;
         i.name = name;
-        i.query = "\e[" + mode + "$p";
-        i.user = "\e[" + mode + ";";
+        i.query = "\033[" + mode + "$p";
+        i.user = "\033[" + mode + ";";
         i.decoder = [] (info &i) {
             if (i.raw.find_first_of(i.user) == 0) {
                 char result = i.raw[i.user.size()];

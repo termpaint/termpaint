@@ -89,19 +89,19 @@ bool parses_as_one(const char *input) {
     return state == OK;
 }
 
-#define SS3_7 "\eO"
+#define SS3_7 "\033O"
 #define SS3_8 "\x8f"
 
-#define CSI7 "\e["
+#define CSI7 "\033["
 #define CSI8 "\x9b"
 
-#define DCS7 "\eP"
+#define DCS7 "\033P"
 #define DCS8 "\x90"
 
-#define OSC7 "\e]"
+#define OSC7 "\033]"
 #define OSC8 "\x9d"
 
-#define ST7 "\e\\"
+#define ST7 "\033\\"
 #define ST8 "\x9c"
 
 TEST_CASE( "Input is correctly seperated", "[sep]" ) {
@@ -109,7 +109,7 @@ TEST_CASE( "Input is correctly seperated", "[sep]" ) {
     REQUIRE(parses_as_one("a"));
     REQUIRE(parses_as_one(CSI7 "1;3A")); // xterm: alt-arrow_up
     REQUIRE(parses_as_one(CSI8 "1;3A")); // xterm: alt-arrow_up with 8bit CSI
-    REQUIRE(parses_as_one(DCS7 "1$r0m" ST7)); // possible reply to "\eP$qm\e\\";
+    REQUIRE(parses_as_one(DCS7 "1$r0m" ST7)); // possible reply to "\033P$qm\033\\";
     REQUIRE(parses_as_one(DCS8 "1$r0m" ST8));
     REQUIRE(!parses_as_one(DCS8 "1$r0m\007"));
     REQUIRE(parses_as_one(OSC7 "lsome title" ST7)); // possible reply to "\[21t"
@@ -690,7 +690,7 @@ TEST_CASE( "Recorded sequences parsed as usual", "[pin-recorded]" ) {
             REQUIRE(state == GOT_EVENT);
         } else {
             REQUIRE(state == START);
-            termpaint_input_add_data(input_ctx, "\e[0n", 4);
+            termpaint_input_add_data(input_ctx, "\033[0n", 4);
             REQUIRE(state == GOT_SYNC);
         }
         REQUIRE(termpaint_input_peek_buffer_length(input_ctx) == 0);
