@@ -508,15 +508,25 @@ int Main::main() {
     // should not matter when ~ICANON|IEXTEN
     tattr.c_cc[VEOF] = 0;
     tattr.c_cc[VEOL] = 0;
+#ifdef VEOL2
     tattr.c_cc[VEOL2] = 0;
+#endif
     tattr.c_cc[VERASE] = 0;
     tattr.c_cc[VKILL] = 0;
+#ifdef VREPRINT
     tattr.c_cc[VREPRINT] = 0;
+#endif
+#ifdef VLNEXT
     tattr.c_cc[VLNEXT] = 0;
+#endif
+#ifdef VWERASE
     tattr.c_cc[VWERASE] = 0;
+#endif
 
     // misc (aka not supported under linux):
+#ifdef VDISCARD
     tattr.c_cc[VDISCARD] = 0;
+#endif
 
     tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
 #endif
