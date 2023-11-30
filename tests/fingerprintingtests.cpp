@@ -1597,6 +1597,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "tmux 3.3a" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>84;0;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>84;0;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|tmux 3.3a\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\", { "" }},
+        },
+        "Type: tmux(3003000)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "tmux 3.3a",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "like tmux 2.0 but with terminal software self report" LINEINFO,
         {
             { "\033[>c",          { "\033[>84;0;0c" }},
