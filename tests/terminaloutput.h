@@ -24,7 +24,8 @@ public:
         std::unique_lock<std::mutex> lock(mutex);
         while (queue.empty()) {
             if (cond.wait_for(lock, std::chrono::milliseconds(500)) == std::cv_status::timeout) {
-                return nullptr;
+                puts("Timeout while waiting for message. Aborting\n.");
+                abort();
             }
         }
         auto item = move(queue.front());
