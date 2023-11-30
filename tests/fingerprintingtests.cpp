@@ -655,6 +655,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "kitty 0.31.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;4000;31c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "\033P>|kitty(0.31.0)\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+            { "\033P+q544e\033\\", { "\033P1+r544e=787465726d2d6b69747479\033\\" }},
+        },
+        "Type: kitty(31) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "kitty(0.31.0)",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "st 0.8.2" LINEINFO,
         {
             { "\033[>c",          { "" }},
@@ -1183,6 +1206,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "alacritty 0.12.2" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;1901;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>0;1901;1c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "eterm 0.9.6" LINEINFO,
         {
             { "\033[>c",          { "" }},
@@ -1203,6 +1249,78 @@ static const std::initializer_list<TestCase> tests = {
           C(CLEARED_COLORING), C(7BIT_ST) },
         "",
         WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "qml-module-termwidget 0.2+git20220109.6322802" LINEINFO, // used in cool-retro-term and lomiri-terminal-app
+        {
+
+            { "\033[>c",          { "\033[>0;115;0c" }},
+            { "\033[>1c",         { "\033[>0;115;0c" }},
+            { "\033[>0;1c",       { "\033[>0;115;0c\033[>0;115;0c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "", "+q544e" }},
+        },
+        "Type: konsole(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "deepin-termial 5.9.40" LINEINFO,
+        {
+
+            { "\033[>c",          { "\033[>0;115;0c" }},
+            { "\033[>1c",         { "\033[>0;115;0c" }},
+            { "\033[>0;1c",       { "\033[>0;115;0c\033[>0;115;0c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "", "+q544e" }},
+        },
+        "Type: konsole(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "qtermwidget 1.3.0" LINEINFO, // use in cool-retro-term and lomiri-terminal-app
+        {
+
+            { "\033[>c",          { "\033[>0;115;0c" }},
+            { "\033[>1c",         { "\033[>0;115;0c" }},
+            { "\033[>0;1c",       { "\033[>0;115;0c\033[>0;115;0c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "", "+q544e" }},
+        },
+        "Type: konsole(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+        "",
+        NeedsGlitchPatching
     },
     // ---------------
     {
@@ -1405,6 +1523,29 @@ static const std::initializer_list<TestCase> tests = {
             { "\033P+q544e\033\\",{ "", "+q544e" }},
         },
         "Type: base(0) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "pterm/putty 0.79" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;136;0c" }},
+            { "\033[>1c",         { "\033[>0;136;0c" }},
+            { "\033[>0;1c",       { "\033[>0;136;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\", { "", "+q544e" }},
+        },
+        "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
@@ -1758,6 +1899,146 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "fbterm" LINEINFO,
+        {
+            { "\033[>c",          { "", "c" }},
+            { "\033[>1c",         { "", "1c" }},
+            { "\033[>0;1c",       { "", "0;1c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "", "q" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "", ";255;?" }},
+            { "\033P+q544e\033\\",{ "", "+q544e" }},
+        },
+        "Type: misparsing(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        NeedsGlitchPatching
+    },
+    // ---------------
+    {
+        "kmscon" LINEINFO, // using libtsm
+        {
+            { "\033[>c",          { "\033[>1;1;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "\033[?60;1;6;9;15c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: base(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "foot 1.13.1" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>1;011301;0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>1;011301;0c" }},
+            { "\033[=c",          { "\033P!|464f4f54\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "\033P>|foot(1.13.1)\033\\" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\", { "\033P1+r544e=666F6F74\033\\" }},
+        },
+        "Type: unknown full featured(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "foot(1.13.1)",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "stterm" LINEINFO,
+        {
+            { "\033[>c",          { "" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\", { "" }},
+        },
+        "Type: incompatible with input handling(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "xiterm+thai" LINEINFO,
+        {
+            { "\033[>c",          { "\033[?1;2c" }},
+            { "\033[>1c",         { "\033[?1;2c" }},
+            { "\033[>0;1c",       { "\033[?1;2c" }},
+            { "\033[=c",          { "\033[?1;2c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\", { "", "+q544e" }},
+        },
+        "Type: toodumb(0)  seq:",
+        { C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "zutty" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>64;0;0c" }},
+            { "\033[>1c",         { "\033[>64;0;0c" }},
+            { "\033[>0;1c",       { "\033[>64;0;0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+            { "\033P+q544e\033\\", { "" }},
+        },
+        "Type: base(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "linux vc" LINEINFO,
         {
             { "\033[>c",          { "" }},
@@ -1778,6 +2059,29 @@ static const std::initializer_list<TestCase> tests = {
           C(CLEARED_COLORING), C(7BIT_ST) },
         "",
         WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "netbsd 9.1 wscon" LINEINFO, // also openbsd 6.8
+        {
+            { "\033[>c",          { "\033[>24;20;0c" }},
+            { "\033[>1c",         { "\033[>24;20;0c" }},
+            { "\033[>0;1c",       { "\033[>24;20;0c" }},
+            { "\033[=c",          { "", "c" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "" }},
+            { "\033]4;255;?\007", { TODO }}, // actually leaves terminal in ST state in netbsd (openbsd is robust)
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: base(0)  seq:>",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        NeedsGlitchPatching
     },
     // ---------------
     {
@@ -1934,6 +2238,29 @@ static const std::initializer_list<TestCase> tests = {
             { "\033P+q544e\033\\",{ "" }},
         },
         "Type: microsoft terminal(0)  seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "microsoft terminal 1.19.3172.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0;10;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>0;10;1c" }},
+            { "\033[=c",          { "\033P!|00000000\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS}R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;128;128;1;0x" }},
+            { "\033]4;255;?\007", { "" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: microsoft terminal(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
           C(CLEARED_COLORING), C(7BIT_ST) },
