@@ -2572,6 +2572,8 @@ TEST_CASE("finger printing") {
 
         INFO(integration.log);
 
+        CHECK(integration.log.find("ran off autodetect") == std::string::npos);
+
         REQUIRE(integration.sent == "");
 
         CHECK_UPDATE_OK(termpaint_terminal_auto_detect_state(term) != termpaint_auto_detect_running);
