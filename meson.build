@@ -14,7 +14,7 @@ add_project_arguments(cc.get_supported_arguments('-Wall', '-Wextra',
                       '-Werror=strict-prototypes', '-Werror=incompatible-pointer-types',
                       '-Werror=implicit-int', '-Werror=discarded-qualifiers',
                       '-Wno-string-plus-int'), language: 'c')
-add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', language: 'c')
+add_project_arguments('-Werror=return-type', '-Werror=implicit-function-declaration', '-Werror=int-conversion', '-Werror=old-style-definition', language: 'c')
 
 add_project_arguments('-Wall', '-Wextra', language: 'cpp')
 add_project_arguments('-Werror=return-type', language: 'cpp')
