@@ -1298,6 +1298,29 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "mlterm 3.9.3" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>24;279;0c" }},
+            { "\033[>1c",         { "\033[>24;279;0c" }},
+            { "\033[>0;1c",       { "\033[>24;279;0c" }},
+            { "\033[=c",          { "\033P!|000000\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "\033P>|mlterm(3.9.3)\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;112;112;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\033\\" }},
+            { "\033P+q544e\033\\", { "\033P1+r544e=6D6C7465726D\033\\" }},
+        },
+        "Type: mlterm(3009003) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "mlterm(3.9.3)",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "mosh 1.3.2" LINEINFO,
         {
             { "\033[>c",          { "\033[>1;10;0c" }},

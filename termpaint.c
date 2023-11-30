@@ -3162,6 +3162,13 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
     } else if (term->terminal_type == TT_MLTERM) {
+        if (term->terminal_self_reported_name_version.len) {
+            char *version_part = strchr((const char*)term->terminal_self_reported_name_version.data, '(');
+            if (version_part) {
+                term->terminal_version = termpaintp_parse_version(version_part + 1);
+            }
+        }
+
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_SUPPORTED);
         term->max_csi_parameters = 10;
