@@ -3449,6 +3449,10 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 terminal->terminal_type = TT_INCOMPATIBLE;
                 terminal->ad_state = AD_HTERM_RECOVERY1;
                 return true;
+            } else if (event->type == TERMPAINT_EV_RAW_SEC_DEV_ATTRIB) {
+                terminal->terminal_type = TT_TOODUMB;
+                terminal->ad_state = AD_FINISHED;
+                return false;
             }
             break;
         case AD_BASIC_REQ_FAILED_CURPOS_RECVED:
