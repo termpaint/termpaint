@@ -2881,7 +2881,7 @@ static int termpaintp_parse_version(char *s) {
     return res;
 }
 
-static int termpaintp_parse_version_strict(char *s) {
+static int termpaintp_parse_version_strict(char *s, int placeMul) {
     int res = 0;
     int place = 0;
     int tmp = 0;
@@ -2889,13 +2889,13 @@ static int termpaintp_parse_version_strict(char *s) {
         if (termpaintp_char_ascii_num(*s)) {
             tmp = tmp * 10 + *s - '0';
         } else if (*s == '.') {
-            if (tmp >= 1000) {
-                tmp = 999;
+            if (tmp >= placeMul) {
+                tmp = placeMul - 1;
             }
             if (place == 0) {
-                res += tmp * 1000000;
+                res += tmp * placeMul * placeMul;
             } else if (place == 1) {
-                res += tmp * 1000;
+                res += tmp * placeMul;
             } else if (place == 2) {
                 break;
             }
@@ -2906,13 +2906,13 @@ static int termpaintp_parse_version_strict(char *s) {
             break;
         }
     }
-    if (tmp >= 1000) {
-        tmp = 999;
+    if (tmp >= placeMul) {
+        tmp = placeMul - 1;
     }
     if (place == 0) {
-        res += tmp * 1000000;
+        res += tmp * placeMul * placeMul;
     } else if (place == 1) {
-        res += tmp * 1000;
+        res += tmp * placeMul;
     } else if (place == 2) {
         res += tmp;
         return res;
@@ -3142,7 +3142,7 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         if (term->terminal_self_reported_name_version.len) {
             char *version_part = strchr((const char*)term->terminal_self_reported_name_version.data, ' ');
             if (version_part) {
-                term->terminal_version = termpaintp_parse_version_strict(version_part + 1);
+                term->terminal_version = termpaintp_parse_version_strict(version_part + 1, 1000);
             }
         }
 
