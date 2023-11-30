@@ -283,6 +283,18 @@ TEST_CASE("simple text - with len, color and clipped") {
     });
 }
 
+TEST_CASE("simple text - with wide chars, len, color and clipped") {
+    Fixture f{80, 6};
+    termpaint_surface_clear(f.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_len_colors_clipped(f.surface, -1, 3, "あえ", strlen("あえ"),
+                                                    TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLACK, -1, 1);
+
+    checkEmptyPlusSome(f.surface, {
+        {{ 0, 3 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+        {{ 1, 3 }, singleWideChar(" ").withFg(TERMPAINT_COLOR_RED).withBg(TERMPAINT_COLOR_BLACK)},
+    });
+}
 
 TEST_CASE("simple text - with len and attr") {
     Fixture f{80, 6};
