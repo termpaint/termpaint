@@ -39,7 +39,7 @@ static std::string TODO = "\x01TODO\x02";
 static const std::vector<int> allCaps = {
     C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
     C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED), C(88_COLOR),
-    C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE),
+    C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR),
 };
 
 static std::vector<int> allCapsBut(std::initializer_list<int> excluded) {
@@ -90,7 +90,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: xterm(264) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE),
           C(EXTENDED_CHARSET),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -113,7 +113,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: xterm(280) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE),
           C(EXTENDED_CHARSET),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -136,7 +136,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: xterm(336) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -159,7 +159,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: xterm(354) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "XTerm(354)",
         WithoutGlitchPatching
     },
@@ -626,7 +626,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -649,7 +649,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: kitty(14) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -672,7 +672,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: kitty(31) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "kitty(0.31.0)",
         WithoutGlitchPatching
     },
@@ -695,7 +695,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: incompatible with input handling(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -718,7 +718,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: incompatible with input handling(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -741,7 +741,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -764,7 +764,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -787,7 +787,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -810,7 +810,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -832,7 +832,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -855,7 +855,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -878,7 +878,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: misparsing(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -901,7 +901,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -924,7 +924,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -947,7 +947,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -970,7 +970,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -993,7 +993,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1016,7 +1016,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1039,7 +1039,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1062,7 +1062,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1085,7 +1085,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -1108,7 +1108,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1131,7 +1131,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1154,7 +1154,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1177,7 +1177,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1200,7 +1200,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1223,7 +1223,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1246,7 +1246,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1270,7 +1270,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: konsole(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1294,7 +1294,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: konsole(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1318,7 +1318,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: konsole(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1341,7 +1341,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: konsole(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1364,7 +1364,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: konsole(220370)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1387,7 +1387,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: konsole(230801)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR), C(CURSOR_SHAPE_OSC50),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "Konsole 23.08.1",
         WithoutGlitchPatching
     },
@@ -1410,7 +1410,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: mlterm(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1433,7 +1433,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: mlterm(3009003) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "mlterm(3.9.3)",
         WithoutGlitchPatching
     },
@@ -1456,7 +1456,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1479,7 +1479,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1502,7 +1502,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -1525,7 +1525,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1548,7 +1548,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1571,7 +1571,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: screen(30915)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
-          C(7BIT_ST) },
+          C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1594,7 +1594,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: unknown full featured(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1617,7 +1617,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: terminology(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1640,7 +1640,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: terminology(1007000) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "terminology 1.7.0",
         WithoutGlitchPatching
     },
@@ -1663,7 +1663,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1686,7 +1686,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: incompatible with input handling(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1709,7 +1709,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1732,7 +1732,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1755,7 +1755,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: tmux(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1778,7 +1778,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: tmux(3003000)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "tmux 3.3a",
         WithoutGlitchPatching
     },
@@ -1801,7 +1801,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: tmux(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -1824,7 +1824,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
-          C(CLEARED_COLORING) },
+          C(CLEARED_COLORING), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1847,7 +1847,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(88_COLOR),
-          C(CLEARED_COLORING) },
+          C(CLEARED_COLORING), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1870,7 +1870,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
-          C(CLEARED_COLORING) },
+          C(CLEARED_COLORING), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -1893,7 +1893,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: urxvt(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(88_COLOR),
-          C(CLEARED_COLORING) },
+          C(CLEARED_COLORING), C(CLEARED_COLORING_DEFCOLOR) },
         "fictional",
         WithoutGlitchPatching
     },
@@ -1916,7 +1916,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: misparsing(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -1940,7 +1940,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -1963,7 +1963,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: unknown full featured(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "foot(1.13.1)",
         WithoutGlitchPatching
     },
@@ -1987,7 +1987,7 @@ static const std::initializer_list<TestCase> tests = {
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2010,7 +2010,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2033,7 +2033,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2056,7 +2056,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2079,7 +2079,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -2102,7 +2102,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: iterm2(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2125,7 +2125,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: iterm2(3004000) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "iTerm2 3.4.20201030-nightly",
         WithoutGlitchPatching
     },
@@ -2148,7 +2148,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: apple terminal(0)  seq:>",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET),
-          C(7BIT_ST) },
+          C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2171,7 +2171,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: mintty(30200) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE), C(CLEARED_COLORING_DEFCOLOR) },
         "mintty 3.2.0",
         WithoutGlitchPatching
     },
@@ -2194,7 +2194,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: incompatible with input handling(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2217,7 +2217,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2240,7 +2240,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: microsoft terminal(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2263,7 +2263,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: microsoft terminal(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2286,7 +2286,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2309,7 +2309,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: toodumb(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2332,7 +2332,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0)  seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2355,7 +2355,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: base(0) safe-CPR seq:>=",
         { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
@@ -2378,7 +2378,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: misparsing(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -2401,7 +2401,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: misparsing(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         NeedsGlitchPatching
     },
@@ -2424,7 +2424,7 @@ static const std::initializer_list<TestCase> tests = {
         "Type: incompatible with input handling(0)  seq:",
         { C(MAY_TRY_CURSOR_SHAPE_BAR),
           C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED),
-          C(CLEARED_COLORING), C(7BIT_ST) },
+          C(CLEARED_COLORING), C(7BIT_ST), C(CLEARED_COLORING_DEFCOLOR) },
         "",
         WithoutGlitchPatching
     },
