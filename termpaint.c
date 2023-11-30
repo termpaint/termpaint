@@ -3036,6 +3036,12 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
             // this is set by 3RD_DEV_ATTRIB, which was introduced in version 22.03.70
             term->terminal_version = 220370;
         }
+        if (term->terminal_self_reported_name_version.len) {
+            char *version_part = strchr((const char*)term->terminal_self_reported_name_version.data, ' ');
+            if (version_part) {
+                term->terminal_version = termpaintp_parse_version_strict(version_part + 1, 100);
+            }
+        }
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
         // konsole starting at version 18.07.70 could do the CSI space q one too, but
         // we don't have the konsole version.
