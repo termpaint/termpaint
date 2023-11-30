@@ -398,6 +398,7 @@ int main( int argc, char* argv[] ) {
         setenv("DRIVERFD", fdString.data(), 1);
 
         execv(testdriver.data(), args.data());
+        return 1;
     }
 
 }
