@@ -19,9 +19,9 @@ The full documentation for Termpaint can be found [here](https://termpaint.namep
 
 ## Building / Installing
 
-    $ meson setup -Dprefix=$HOME/opt/termpaint/ _build
-    $ ninja -C _build
-    $ ninja -C _build install
+    $ meson setup _build -Dprefix=$HOME/opt/tuiwidgets-prefix
+    $ meson compile -C _build
+    $ meson install -C _build
 
 ## Example
 
