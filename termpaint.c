@@ -314,7 +314,8 @@ typedef struct termpaint_terminal_ {
     termpaint_hash colors;
     termpaint_color_entry *colors_dirty;
 
-    termpaint_str restore_seq;
+    termpaint_str restore_seq_partial;
+    termpaint_str restore_seq_cached;
     auto_detect_state ad_state;
     // additional auto detect state machine temporary space
     int glitch_cursor_x;
@@ -1864,10 +1865,14 @@ static void int_awaiting_response(termpaint_integration *integration) {
     }
 }
 
+static void int_restore_sequence_complete(termpaint_terminal *term) {
+    termpaintp_str_assign_n(&term->restore_seq_cached, (const char*)term->restore_seq_partial.data, term->restore_seq_partial.len);
+}
+
 static void int_restore_sequence_updated(termpaint_terminal *term) {
     termpaint_integration_private *vtbl = term->integration_vtbl;
     if (vtbl->restore_sequence_updated) {
-        vtbl->restore_sequence_updated(term->integration, (char*)term->restore_seq.data, term->restore_seq.len);
+        vtbl->restore_sequence_updated(term->integration, (char*)term->restore_seq_cached.data, term->restore_seq_cached.len);
     }
 }
 
@@ -1931,7 +1936,8 @@ static void termpaintp_terminal_update_cursor_style(termpaint_terminal *term) {
         }
         if (term->cursor_prev_data == -1) {
             // add style reset. We don't know the original style, so just reset to terminal default.
-            termpaintp_prepend_str(&term->restore_seq, (const uchar*)resetSequence);
+            termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)resetSequence);
+            int_restore_sequence_complete(term);
             int_restore_sequence_updated(term);
         }
         term->cursor_prev_data = cmd;
@@ -2001,7 +2007,15 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
         return nullptr;
     }
 
-    if (!termpaintp_str_preallocate(&ret->restore_seq, 256)) {
+    if (!termpaintp_str_preallocate(&ret->restore_seq_cached, 256)) {
+        termpaintp_str_destroy(&ret->unpause_basic_setup);
+        termpaint_input_free(ret->input);
+        free(ret);
+        return nullptr;
+    }
+
+    if (!termpaintp_str_preallocate(&ret->restore_seq_partial, 256)) {
+        termpaintp_str_destroy(&ret->restore_seq_cached);
         termpaintp_str_destroy(&ret->unpause_basic_setup);
         termpaint_input_free(ret->input);
         free(ret);
@@ -2009,7 +2023,8 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
     }
 
     if (!termpaintp_str_preallocate(&ret->terminal_self_reported_name_version, 64)) {
-        termpaintp_str_destroy(&ret->restore_seq);
+        termpaintp_str_destroy(&ret->restore_seq_partial);
+        termpaintp_str_destroy(&ret->restore_seq_cached);
         termpaintp_str_destroy(&ret->unpause_basic_setup);
         termpaint_input_free(ret->input);
         free(ret);
@@ -2018,14 +2033,16 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
 
     if (!termpaintp_str_preallocate(&ret->auto_detect_sec_device_attributes, 64)) {
         termpaintp_str_destroy(&ret->terminal_self_reported_name_version);
-        termpaintp_str_destroy(&ret->restore_seq);
+        termpaintp_str_destroy(&ret->restore_seq_partial);
+        termpaintp_str_destroy(&ret->restore_seq_cached);
         termpaintp_str_destroy(&ret->unpause_basic_setup);
         termpaint_input_free(ret->input);
         free(ret);
         return nullptr;
     }
 
-    termpaintp_prepend_str(&ret->restore_seq, (const uchar*)"\033[?25h\033[m");
+    termpaintp_prepend_str(&ret->restore_seq_partial, (const uchar*)"\033[?25h\033[m");
+    int_restore_sequence_complete(ret);
     int_restore_sequence_updated(ret);
 
     return ret;
@@ -2055,7 +2072,8 @@ void termpaint_terminal_free(termpaint_terminal *term) {
     termpaintp_str_destroy(&term->auto_detect_sec_device_attributes);
     termpaintp_str_destroy(&term->terminal_self_reported_name_version);
     termpaintp_surface_destroy(&term->primary);
-    termpaintp_str_destroy(&term->restore_seq);
+    termpaintp_str_destroy(&term->restore_seq_partial);
+    termpaintp_str_destroy(&term->restore_seq_cached);
     termpaint_input_free(term->input);
     term->input = nullptr;
     term->integration_vtbl->free(term->integration);
@@ -2078,8 +2096,8 @@ void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
         termpaintp_terminal_set_cursor(term, 0, term->primary.height - 1);
     }
 
-    if (term->restore_seq.len) {
-        int_write(integration, (const char*)term->restore_seq.data, term->restore_seq.len);
+    if (term->restore_seq_cached.len) {
+        int_write(integration, (const char*)term->restore_seq_cached.data, term->restore_seq_cached.len);
     }
     int_flush(integration);
 
@@ -2789,7 +2807,8 @@ bool termpaint_terminal_set_color_mustcheck(termpaint_terminal *term, int color_
         if (color_slot == TERMPAINT_COLOR_SLOT_CURSOR) {
             // even requesting a color report does not allow to restore this, so just reset.
             // terminals tend to internally store more than just color (e.g. an automatic mode) but can't report those
-            termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033]112\033\\");
+            termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033]112\033\\");
+            int_restore_sequence_complete(term);
             int_restore_sequence_updated(term);
             termpaintp_str_assign(&entry->restore, "\033]112\033\\");
             entry->save_state = termpaint_save_state_ready;
@@ -3233,8 +3252,9 @@ static void termpaintp_input_event_callback(void *user_data, termpaint_event *ev
                     termpaintp_str_append_n(&entry->restore, event->color_slot_report.color, event->color_slot_report.length);
                     termpaintp_str_append(&entry->restore, termpaintp_terminal_correct_string_terminator(term));
 
-                    termpaintp_prepend_str(&term->restore_seq, entry->restore.data);
+                    termpaintp_prepend_str(&term->restore_seq_partial, entry->restore.data);
 
+                    int_restore_sequence_complete(term);
                     int_restore_sequence_updated(term);
 
                     if (entry->requested.len && !entry->dirty) {
@@ -4211,33 +4231,34 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
 
     termpaint_str *init_sequence = &terminal->unpause_basic_setup;
 
-    termpaintp_prepend_str(&terminal->restore_seq, (const uchar*)"\033[?7h");
+    termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\033[?7h");
     terminal->did_terminal_disable_wrap = true;
     termpaintp_str_assign(init_sequence, "\033[?7l");
 
     if (!termpaintp_has_option(options, "-altscreen")) {
-        termpaintp_prepend_str(&terminal->restore_seq, (const uchar*)"\r\n\033[?1049l");
+        termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\r\n\033[?1049l");
         termpaintp_str_append(init_sequence, "\033[?1049h");
     }
-    termpaintp_prepend_str(&terminal->restore_seq, (const uchar*)"\033[?66l");
+    termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\033[?66l");
     termpaintp_str_append(init_sequence, "\033[?66h");
     termpaintp_str_append(init_sequence, "\033[?1036h");
     if (!termpaintp_has_option(options, "+kbdsig") && terminal->terminal_type == TT_XTERM) {
         // xterm modify other characters
         // in this keyboard event mode xterm does no longer send the traditional one byte ^C, ^Z ^\ sequences
         // that the kernel tty layer uses to raise signals.
-        termpaintp_prepend_str(&terminal->restore_seq, (const uchar*)"\033[>4m");
+        termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\033[>4m");
         termpaintp_str_append(init_sequence, "\033[>4;2m");
     }
     int_put_tps(integration, init_sequence);
     int_flush(integration);
+    int_restore_sequence_complete(terminal);
     int_restore_sequence_updated(terminal);
 
     termpaint_surface_resize(&terminal->primary, width, height);
 }
 
 const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) {
-    return (const char*)(term->restore_seq.len ? term->restore_seq.data : (const uchar*)"");
+    return (const char*)(term->restore_seq_cached.len ? term->restore_seq_cached.data : (const uchar*)"");
 }
 
 void termpaint_terminal_pause(termpaint_terminal *term) {
@@ -4245,8 +4266,8 @@ void termpaint_terminal_pause(termpaint_terminal *term) {
 
     term->force_full_repaint = true;
 
-    if (term->restore_seq.len) {
-        int_write(integration, (const char*)term->restore_seq.data, term->restore_seq.len);
+    if (term->restore_seq_cached.len) {
+        int_write(integration, (const char*)term->restore_seq_cached.data, term->restore_seq_cached.len);
     }
     int_flush(integration);
 }
@@ -4800,7 +4821,8 @@ bool termpaint_terminal_set_title_mustcheck(termpaint_terminal *term, const char
     termpaint_integration *integration = term->integration;
 
     if (!term->did_terminal_push_title) {
-        termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033[23t");
+        termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033[23t");
+        int_restore_sequence_complete(term);
         int_restore_sequence_updated(term);
         int_puts(integration, "\033[22t");
         term->did_terminal_push_title = true;
@@ -4838,7 +4860,8 @@ bool termpaint_terminal_set_icon_title_mustcheck(termpaint_terminal *term, const
     termpaint_integration *integration = term->integration;
 
     if (!term->did_terminal_push_title) {
-        termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033[23t");
+        termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033[23t");
+        int_restore_sequence_complete(term);
         int_restore_sequence_updated(term);
         int_puts(integration, "\033[22t");
         term->did_terminal_push_title = true;
@@ -4880,7 +4903,8 @@ _Bool termpaint_terminal_set_mouse_mode_mustcheck(termpaint_terminal *term, int 
     if (mouse_mode != TERMPAINT_MOUSE_MODE_OFF) {
         if (!term->did_terminal_add_mouse_to_restore) {
             termpaint_terminal_expect_legacy_mouse_reports(term, TERMPAINT_INPUT_EXPECT_LEGACY_MOUSE);
-            termpaintp_prepend_str(&term->restore_seq, (const uchar*)DISABLE_MOUSE_SEQUENCE);
+            termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)DISABLE_MOUSE_SEQUENCE);
+            int_restore_sequence_complete(term);
             int_restore_sequence_updated(term);
             term->did_terminal_add_mouse_to_restore = true;
         }
@@ -4936,7 +4960,8 @@ void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
 bool termpaint_terminal_request_focus_change_reports_mustcheck(termpaint_terminal *term, bool enabled) {
     if (enabled && !term->did_terminal_add_focusreporting_to_restore) {
         term->did_terminal_add_focusreporting_to_restore = true;
-         termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033[?1004l");
+         termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033[?1004l");
+         int_restore_sequence_complete(term);
          int_restore_sequence_updated(term);
     }
 
@@ -4970,7 +4995,8 @@ void termpaint_terminal_request_focus_change_reports(termpaint_terminal *term, b
 bool termpaint_terminal_request_tagged_paste_mustcheck(termpaint_terminal *term, bool enabled) {
     if (enabled && !term->did_terminal_add_bracketedpaste_to_restore) {
         term->did_terminal_add_bracketedpaste_to_restore = true;
-         termpaintp_prepend_str(&term->restore_seq, (const uchar*)"\033[?2004l");
+         termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033[?2004l");
+         int_restore_sequence_complete(term);
          int_restore_sequence_updated(term);
     }
 
