@@ -34,8 +34,10 @@ struct unique_cptr : public std::unique_ptr<T, Deleter<T, del>> {
 using uattr_ptr = unique_cptr<termpaint_attr, termpaint_attr_free>;
 
 struct SimpleFullscreen {
-    SimpleFullscreen(bool altScreen = true) {
-        resetAndClear();
+    SimpleFullscreen(bool altScreen = true, bool reset = true) {
+        if (reset) {
+            resetAndClear();
+        }
 
         integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
         REQUIRE(integration);
@@ -70,15 +72,42 @@ public:
         return *this;
     }
 
+    Overrides noAltScreen() {
+        altScreen = false;
+        return *this;
+    }
+
 public:
     std::vector<int> softWrappedLines;
+    bool altScreen = true;
 };
+
+
+using CellMap = std::map<std::tuple<int,int>, CapturedCell>;
+
+class SomeCells : public CellMap {
+public:
+    using CellMap::CellMap;
+
+    SomeCells extend(CellMap addition) {
+        SomeCells ret = *this;
+        ret.insert(std::begin(addition), std::end(addition));
+        return ret;
+    }
+
+    template<typename... Additions>
+    SomeCells extend(CellMap addition, Additions... additions) {
+        return extend(addition).extend(additions...);
+    }
+
+};
+
 
 void checkEmptyPlusSome(const CapturedState &s, const std::map<std::tuple<int,int>, CapturedCell> &some,
                         const Overrides overrides = {}) {
     CHECK(s.width == 80);
     CHECK(s.height == 24);
-    CHECK(s.altScreen == true);
+    CHECK(s.altScreen == overrides.altScreen);
     for (const CapturedRow& row: s.rows) {
         {
             INFO("y = " << row.cells[0].y);
