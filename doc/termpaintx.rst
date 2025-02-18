@@ -176,7 +176,7 @@ These functions are contained in the header ``termpaintx.h``
 
 .. c:function:: void termpaintx_full_integration_wait_for_ready(termpaint_integration *integration)
 
-  Waits for the auto-detection to be finished. It internally calls :c:func:`termpaint_full_integration_do_iteration`
+  Waits for the auto-detection to be finished. It internally calls :c:func:`termpaintx_full_integration_do_iteration`
   while waiting.
 
 .. c:function:: void termpaintx_full_integration_wait_for_ready_with_message(termpaint_integration *integration, int milliseconds, const char* message)
@@ -199,7 +199,7 @@ These functions are contained in the header ``termpaintx.h``
 .. c:function:: void termpaintx_full_integration_set_terminal(termpaint_integration *integration, termpaint_terminal *terminal)
 
   Sets the terminal object to be managed by this integration object. This needs to be called before using
-  :c:func:`termpaint_full_integration_do_iteration` when not using
+  :c:func:`termpaintx_full_integration_do_iteration` when not using
   :c:func:`termpaintx_full_integration_setup_terminal_fullscreen` (which already does that).
 
 .. c:function:: const struct termios *termpaintx_full_integration_original_terminal_attributes(termpaint_integration *integration)
@@ -281,7 +281,7 @@ interface layer settings to the watchdog. The watchdog is automatically shut dow
 integration is freed.
 
 If the watchdog is used with a custom terminal integration it is started using
-:c:func:`termpaintx_ttyrescue_start`, passing it the initial restore sequence and the file
+:c:func:`termpaintx_ttyrescue_start_or_nullptr`, passing it the initial restore sequence and the file
 descriptor of the terminal. The integration has to call
 :c:func:`termpaintx_ttyrescue_set_restore_termios` to set the original ``struct termios``
 contents and if the restore sequence changes it has to call :c:func:`termpaintx_ttyrescue_update`
