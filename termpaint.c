@@ -2709,8 +2709,13 @@ void termpaint_terminal_flush(termpaint_terminal *term, bool full_repaint) {
 }
 
 void termpaint_terminal_set_cursor_position(termpaint_terminal *term, int x, int y) {
-    term->cursor_x = x;
-    term->cursor_y = y;
+    if (x < 0 || y < 0) {
+        term->cursor_x = -1;
+        term->cursor_y = -1;
+    } else {
+        term->cursor_x = x;
+        term->cursor_y = y;
+    }
 }
 
 void termpaint_terminal_set_cursor_visible(termpaint_terminal *term, bool visible) {
