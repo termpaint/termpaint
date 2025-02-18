@@ -43,6 +43,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 highlight_language = 'c'
 
+nitpick_ignore = [
+    ('c:identifier', 'FILE'),
+    ('c:identifier', 'termios'),
+    ('c:identifier', 'uint16_t'),
+    ('c:identifier', 'uint32_t'),
+]
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
