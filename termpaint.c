@@ -2332,7 +2332,10 @@ static inline void write_color_sgr_values(termpaint_integration *integration, te
 
 static void termpaintp_terminal_flush_with_surface(termpaint_terminal *term, bool full_repaint, termpaint_surface *surface) {
     termpaint_integration *integration = term->integration;
-    full_repaint |= term->force_full_repaint;
+    if (surface == &term->primary) {
+        full_repaint |= term->force_full_repaint;
+        term->force_full_repaint = false;
+    }
     termpaintp_terminal_hide_cursor(term);
     int_puts(integration, "\033[H");
     char speculation_buffer[30];
@@ -4239,6 +4242,8 @@ const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) 
 
 void termpaint_terminal_pause(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
+
+    term->force_full_repaint = true;
 
     if (term->restore_seq.len) {
         int_write(integration, (const char*)term->restore_seq.data, term->restore_seq.len);
