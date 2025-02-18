@@ -38,7 +38,12 @@ Does not contain:
 Termpaint is meant as a basic building block to build more specific libraries upon. There are a lot
 of different higher layer styles, so it's cleaner to have separate libraries for this.
 
-.. TODO link libraries when something is released in this space
+.. TODO link more libraries when something is released in this space
+
+Known libraries using Termpaint:
+
+* `Tui Widgets <https://tuiwidgets.namepad.de>`_ implements various common UI widgets
+  based on QtCore as platform abstraction.
 
 Minimal example
 ---------------

@@ -264,7 +264,9 @@ Event loop usage
 Existing event loops differ in their API in various details, but the general
 approach is fairly similar between common event loops.
 
-Currently there are no ready made integrations into event loops available.
+Currently the only known library to integrate termpaint into a general purpose
+event loop is `Tui Widgets <https://tuiwidgets.namepad.de>`_ which provides
+a widget framework using the event loop from QtCore.
 
 The general steps are:
 
