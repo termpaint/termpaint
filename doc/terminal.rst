@@ -13,7 +13,7 @@ The terminal always needs an bi-directional connection for the terminal object t
 See :doc:`integration` for how write a custom integrate of termpaint into an application.
 
 See :doc:`termpaintx` for a simple premade integration suitable for simple applications using a synchronous
-usage style.
+usage style or which work with a very simple event loop design.
 
 Terminals have different capabilities and thus a auto detection step is recommended before using the terminal
 in the application.
