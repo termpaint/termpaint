@@ -7,7 +7,7 @@ integrations.
 
 For applications that deal with any kind of asynchronous events, apart from
 the terminal, it’s recommended to use a custom integration or an external
-integration into an general event loop. But for simple applications that only
+integration into a general event loop. But for simple applications that only
 deal with synchronous data sources and time based events this simple
 integration can be used.
 
@@ -126,7 +126,7 @@ These functions are contained in the header ``termpaintx.h``
   Creates an integration and a terminal object with the given options and connects them to work together.
   The integration is returned and the terminal object is made available via the ``terminal`` out-parameter.
 
-  It also runs terminal autodetection and applies detected input processing quirks, initializes full screen
+  It also runs terminal auto-detection and applies detected input processing quirks, initializes full screen
   mode using :c:func:`termpaint_terminal_setup_fullscreen()` and sets up a watchdog process to restore the terminal to
   it's normal state if the main application suddenly terminates (e.g. a crash).
 

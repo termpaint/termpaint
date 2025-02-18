@@ -185,7 +185,7 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 
 .. c:function:: void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, _Bool enabled)
 
-  Request the termial to send the needed information so :c:macro:`TERMPAINT_EV_PASTE` events can be generated.
+  Request the terminal to send the needed information so :c:macro:`TERMPAINT_EV_PASTE` events can be generated.
 
 .. c:function:: void termpaint_terminal_set_mouse_mode(termpaint_terminal *term, int mouse_mode)
 
@@ -360,7 +360,7 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 
   This is a wrapper for using :c:func:`termpaint_input_handle_paste` with a terminal object.
 
-  Explicit paste handling is an switchable termianl feature, see
+  Explicit paste handling is an switchable terminal feature, see
   :c:func:`termpaint_terminal_request_tagged_paste` for enabling it.
 
 
@@ -369,7 +369,7 @@ See :ref:`safety` for general rules for calling functions in termpaint.
   Returns a pointer to a string with the result of the terminal's self reported name and version. Only some terminals
   support this. For other terminals NULL will be returned.
 
-  This value is only available after successful terminal autodetection. The returned pointer is valid until the
+  This value is only available after successful terminal auto-detection. The returned pointer is valid until the
   terminal object is freed or terminal auto detection is triggered again.
 
 .. c:function:: void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length)
