@@ -79,6 +79,9 @@ void reader() {
 }
 
 void resetAndClear() {
+    // altscreen should be disabled by reset. But somehow that doesn't seem to work.
+    // So for now manually ensure altscreen is disabled.
+    puts("\033[?1049l");
     char msg[] = "reset";
     write_or_abort(driverFd, msg, sizeof(msg));
     queue.pop();
