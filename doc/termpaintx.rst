@@ -158,6 +158,27 @@ These functions are contained in the header ``termpaintx.h``
     termpaint_terminal_setup_fullscreen(terminal, width, height, options);
     termpaintx_full_integration_ttyrescue_start(integration);
 
+.. c:function:: termpaint_integration *termpaintx_full_integration_setup_terminal_inline(const char *options, int lines, void (*event_handler)(void *, termpaint_event *), void *event_handler_user_data, termpaint_terminal **terminal_out)
+
+  Creates an integration and a terminal object with the given options and connects them to work together.
+  The integration is returned and the terminal object is made available via the ``terminal`` out-parameter.
+
+  It also runs terminal auto-detection and applies detected input processing quirks, initializes inline
+  mode using :c:func:`termpaint_terminal_setup_inline()` and sets up a watchdog process to restore the terminal to
+  it's normal state if the main application suddenly terminates (e.g. a crash).
+
+  The height of the inline rendering area is set to ``lines`` high.
+
+  The ``event_handler`` and ``event_handler_user_data`` are passed to :c:func:`termpaint_terminal_set_event_cb`.
+
+  Valid options are :ref:`options for termpaint<termpaint-inline-options>` and
+  :ref:`options for termpaintx<termpaintx-options>`.
+
+  If the integration can not be initialized then the function prints an error message and returns NULL.
+
+  The steps are similar to :c:func:`termpaintx_full_integration_setup_terminal_fullscreen` except that
+  termpaint_terminal_setup_inline is used and the height passed to it is limited to `lines`.
+
 .. c:function:: _Bool termpaintx_full_integration_do_iteration(termpaint_integration *integration)
 
   Waits for input from the terminal and passes it to the connected terminal object.
@@ -209,6 +230,24 @@ These functions are contained in the header ``termpaintx.h``
 
   Note: As all functions in termpaint this function is not async-signal safe. If the application needs this information
   in a signal handler it needs to call this function while initializing and store the value for the signal handler to use.
+
+.. c:function:: void termpaintx_full_integration_set_inline(termpaint_integration *integration, _Bool enabled, int height)
+
+  Sets the inline status and inline height for the associated terminal.
+
+  If ``enabled`` is true, the terminal is set to inline mode and resized to the height given in ``height`` (or the
+  size of the connected terminal if ``height`` is larger).
+
+  In contrast to :c:func:`termpaint_terminal_set_inline` this function updates essential state in termpaintx needed for
+  handling terminal resize.
+
+  A call to this function must be followed by reestablishing the primary surface contents and
+  by a call to :c:func:`termpaint_terminal_flush()` to finalize the switch to the new mode.
+
+  On manual terminal initializations (i.e. using :c:func:`termpaint_terminal_setup_inline` instead of
+  :c:func:`termpaintx_full_integration_setup_terminal_inline`) of inline mode, this function may also be used to
+  synchronize termpaintx internal state to inline state of termpaint, if used with ``enabled`` is true and ``height`` is
+  greater than zero.
 
 .. c:function:: _Bool termpaintx_full_integration_ttyrescue_start(termpaint_integration *integration)
 

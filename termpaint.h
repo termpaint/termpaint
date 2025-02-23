@@ -129,6 +129,8 @@ _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_apply_input_quirks(termpai
 _tERMPAINT_PUBLIC void termpaint_terminal_auto_detect_result_text(const termpaint_terminal *terminal, char *buffer, int buffer_length);
 _tERMPAINT_PUBLIC const char *termpaint_terminal_self_reported_name_and_version(const termpaint_terminal *terminal);
 _tERMPAINT_PUBLIC void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options);
+_tERMPAINT_PUBLIC void termpaint_terminal_setup_inline(termpaint_terminal *terminal, int width, int height, const char *options);
+_tERMPAINT_PUBLIC void termpaint_terminal_set_inline(termpaint_terminal *terminal, _Bool enabled);
 
 #define TERMPAINT_CAPABILITY_SAFE_POSITION_REPORT 0
 #define TERMPAINT_CAPABILITY_CSI_GREATER 1

@@ -265,6 +265,9 @@ typedef struct termpaint_integration_private_ {
 
 #define NUM_CAPABILITIES 16
 
+#define SETUP_STATE_FULLSCREEN 1
+#define SETUP_STATE_INLINE     2
+
 typedef struct termpaint_terminal_ {
     termpaint_integration *integration;
     termpaint_integration_private *integration_vtbl;
@@ -274,6 +277,11 @@ typedef struct termpaint_terminal_ {
     bool data_pending_after_input_received : 1;
     bool request_repaint : 1;
     termpaint_str auto_detect_sec_device_attributes;
+    // line of the terminal cursor relativ to the top of the inline display in the terminal; -1 if not in inline mode.
+    int inline_current_terminal_cursor_line;
+    // number of rows currently shown in terminal in inline mode; 0 if no lines are currently painted in inline mode.
+    int last_inline_height;
+    int setup_state;
 
     int terminal_type;
     const termpaintp_width *char_width_table;
@@ -300,6 +308,7 @@ typedef struct termpaint_terminal_ {
     unsigned did_terminal_add_focusreporting_to_restore : 1;
     unsigned did_terminal_add_bracketedpaste_to_restore : 1;
     unsigned did_terminal_disable_wrap : 1;
+    unsigned altscreen_active : 1;
 
     unsigned cache_should_use_truecolor : 1;
 
@@ -1866,7 +1875,12 @@ static void int_awaiting_response(termpaint_integration *integration) {
 }
 
 static void int_restore_sequence_complete(termpaint_terminal *term) {
-    termpaintp_str_assign_n(&term->restore_seq_cached, (const char*)term->restore_seq_partial.data, term->restore_seq_partial.len);
+    if (term->altscreen_active) {
+        termpaintp_str_assign_n(&term->restore_seq_cached, (const char*)term->restore_seq_partial.data, term->restore_seq_partial.len);
+        termpaintp_str_append(&term->restore_seq_cached, "\r\n\033[?1049l");
+    } else {
+        termpaintp_str_assign_n(&term->restore_seq_cached, (const char*)term->restore_seq_partial.data, term->restore_seq_partial.len);
+    }
 }
 
 static void int_restore_sequence_updated(termpaint_terminal *term) {
@@ -1969,6 +1983,7 @@ termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *int
     termpaintp_collapse(&ret->primary);
     ret->integration = integration;
     ret->integration_vtbl = integration->p;
+    ret->inline_current_terminal_cursor_line = -1;
 
     ret->cursor_visible = true;
     ret->cursor_x = -1;
@@ -2085,6 +2100,24 @@ void termpaint_terminal_free(termpaint_terminal *term) {
     free(term);
 }
 
+static void termpaintp_erase_inline(termpaint_terminal *term) {
+    termpaint_integration *integration = term->integration;
+    int to_move = term->last_inline_height - 1 - term->inline_current_terminal_cursor_line;
+    int_puts(integration, "\r");
+    if (to_move > 0) {
+        int_puts(integration, "\033[");
+        int_put_num(integration, to_move);
+        int_puts(integration, "B");
+    }
+    int_write(integration, "\033[K", 3);
+    for (int i = 1; i < term->last_inline_height; i++) {
+        int_write(integration, "\033[A", 3);
+        int_write(integration, "\033[K", 3);
+    }
+    term->inline_current_terminal_cursor_line = 0;
+    term->last_inline_height = 0;
+}
+
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
     if (!term) {
         return;
@@ -2092,8 +2125,12 @@ void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
 
     termpaint_integration *integration = term->integration;
 
-    if (term->primary.height && term->primary.height) {
-        termpaintp_terminal_set_cursor(term, 0, term->primary.height - 1);
+    if (term->setup_state != SETUP_STATE_INLINE) {
+        if (term->primary.height && term->primary.height) {
+            termpaintp_terminal_set_cursor(term, 0, term->primary.height - 1);
+        }
+    } else {
+        termpaintp_erase_inline(term);
     }
 
     if (term->restore_seq_cached.len) {
@@ -2355,7 +2392,29 @@ static void termpaintp_terminal_flush_with_surface(termpaint_terminal *term, boo
         term->force_full_repaint = false;
     }
     termpaintp_terminal_hide_cursor(term);
-    int_puts(integration, "\033[H");
+    if (term->setup_state == SETUP_STATE_INLINE) {
+        int_puts(integration, "\r");
+        if (term->inline_current_terminal_cursor_line != 0) {
+            int_puts(integration, "\033[");
+            int_put_num(integration, term->inline_current_terminal_cursor_line);
+            int_puts(integration, "A");
+        }
+        if (surface->height < term->last_inline_height) {
+            int_puts(integration, "\033[");
+            int_put_num(integration, term->last_inline_height - 1);
+            int_puts(integration, "B");
+            int_write(integration, "\033[K", 3);
+            for (int i = 1; i < term->last_inline_height - surface->height; i++) {
+                int_puts(integration, "\033[A\033[K");
+            }
+            int_puts(integration, "\033[");
+            int_put_num(integration, surface->height);
+            int_puts(integration, "A");
+        }
+        term->last_inline_height = surface->height;
+    } else {
+        int_puts(integration, "\033[H");
+    }
     char speculation_buffer[30];
     int speculation_buffer_state = 0; // 0 = cursor position matches current cell, -1 = force move, > 0 bytes to print instead of move
     int pending_row_move = 0;
@@ -2692,8 +2751,27 @@ static void termpaintp_terminal_flush_with_surface(termpaint_terminal *term, boo
     }
 
     if (term->cursor_x != -1 && term->cursor_y != -1) {
-        termpaintp_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
+        if (term->setup_state == SETUP_STATE_INLINE) {
+            term->inline_current_terminal_cursor_line = term->cursor_y;
+            int_puts(integration, "\r");
+            if (term->cursor_x) {
+                int_puts(integration, "\033[");
+                int_put_num(integration, term->cursor_x);
+                int_puts(integration, "C");
+            }
+            int move_up = surface->height - 1 - term->cursor_y;
+            if (move_up) {
+                int_puts(integration, "\033[");
+                int_put_num(integration, move_up);
+                int_puts(integration, "A");
+            }
+        } else {
+            termpaintp_terminal_set_cursor(term, term->cursor_x, term->cursor_y);
+        }
     } else {
+        if (term->setup_state == SETUP_STATE_INLINE) {
+            term->inline_current_terminal_cursor_line = surface->height - 1;
+        }
         if (pending_colum_move) {
             int_puts(integration, "\033[");
             if (pending_colum_move != 1) {
@@ -4226,19 +4304,13 @@ static bool termpaintp_has_option(const char *options, const char *name) {
     return false;
 }
 
-void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options) {
-    termpaint_integration *integration = terminal->integration;
-
+static void termpaintp_terminal_setup_common(termpaint_terminal *terminal, const char *options) {
     termpaint_str *init_sequence = &terminal->unpause_basic_setup;
 
     termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\033[?7h");
     terminal->did_terminal_disable_wrap = true;
     termpaintp_str_assign(init_sequence, "\033[?7l");
 
-    if (!termpaintp_has_option(options, "-altscreen")) {
-        termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\r\n\033[?1049l");
-        termpaintp_str_append(init_sequence, "\033[?1049h");
-    }
     termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\033[?66l");
     termpaintp_str_append(init_sequence, "\033[?66h");
     termpaintp_str_append(init_sequence, "\033[?1036h");
@@ -4249,12 +4321,88 @@ void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width
         termpaintp_prepend_str(&terminal->restore_seq_partial, (const uchar*)"\033[>4m");
         termpaintp_str_append(init_sequence, "\033[>4;2m");
     }
+}
+
+void termpaint_terminal_setup_fullscreen(termpaint_terminal *terminal, int width, int height, const char *options) {
+    termpaint_integration *integration = terminal->integration;
+
+    termpaintp_terminal_setup_common(terminal, options);
+
+    termpaint_str *init_sequence = &terminal->unpause_basic_setup;
+
+    if (!termpaintp_has_option(options, "-altscreen")) {
+        int_puts(integration, "\033[?1049h");
+        terminal->altscreen_active = 1;
+    }
+
+    int_put_tps(integration, init_sequence);
+    int_flush(integration);
+    int_restore_sequence_complete(terminal);
+    int_restore_sequence_updated(terminal);
+    terminal->setup_state = SETUP_STATE_FULLSCREEN;
+
+    termpaint_surface_resize(&terminal->primary, width, height);
+}
+
+void termpaint_terminal_setup_inline(termpaint_terminal *terminal, int width, int height, const char *options) {
+    termpaint_integration *integration = terminal->integration;
+
+    termpaintp_terminal_setup_common(terminal, options);
+
+    termpaint_str *init_sequence = &terminal->unpause_basic_setup;
+
     int_put_tps(integration, init_sequence);
     int_flush(integration);
     int_restore_sequence_complete(terminal);
     int_restore_sequence_updated(terminal);
 
     termpaint_surface_resize(&terminal->primary, width, height);
+    terminal->setup_state = SETUP_STATE_INLINE;
+    terminal->inline_current_terminal_cursor_line = 0;
+}
+
+void termpaint_terminal_set_inline(termpaint_terminal *terminal, _Bool enabled) {
+    if (enabled && terminal->setup_state == SETUP_STATE_INLINE) {
+        // already in inline mode
+        return;
+    }
+
+    if (!enabled && terminal->setup_state == SETUP_STATE_FULLSCREEN) {
+        // already fullscreen
+        return;
+    }
+
+    if (terminal->setup_state != SETUP_STATE_INLINE && terminal->setup_state != SETUP_STATE_FULLSCREEN) {
+        // bogus
+        return;
+    }
+
+    termpaint_integration *integration = terminal->integration;
+
+    if (!enabled) {
+        termpaintp_erase_inline(terminal);
+        terminal->inline_current_terminal_cursor_line = -1;
+        terminal->setup_state = SETUP_STATE_FULLSCREEN;
+
+        terminal->altscreen_active = 1;
+        int_restore_sequence_complete(terminal);
+        int_restore_sequence_updated(terminal);
+        int_puts(integration, "\033[?1049h");
+    } else {
+        // for terminals without alt screen support clear terminal.
+        int_puts(integration, "\033[H\033[2J");
+
+        terminal->altscreen_active = 0;
+        int_restore_sequence_complete(terminal);
+        int_restore_sequence_updated(terminal);
+        int_puts(integration, "\033[?1049l");
+
+        terminal->inline_current_terminal_cursor_line = 0;
+        terminal->last_inline_height = 0;
+        terminal->setup_state = SETUP_STATE_INLINE;
+    }
+
+    terminal->force_full_repaint = true;
 }
 
 const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) {
@@ -4265,6 +4413,10 @@ void termpaint_terminal_pause(termpaint_terminal *term) {
     termpaint_integration *integration = term->integration;
 
     term->force_full_repaint = true;
+
+    if (term->setup_state == SETUP_STATE_INLINE) {
+        termpaintp_erase_inline(term);
+    }
 
     if (term->restore_seq_cached.len) {
         int_write(integration, (const char*)term->restore_seq_cached.data, term->restore_seq_cached.len);
@@ -4278,6 +4430,10 @@ void termpaint_terminal_unpause(termpaint_terminal *term) {
 
     // reconstruct state after setup_fullscreen
     int_put_tps(integration, &term->unpause_basic_setup);
+
+    if (term->altscreen_active) {
+        int_puts(integration, "\033[?1049h");
+    }
 
     // save/push sequences
     if (term->did_terminal_push_title) {

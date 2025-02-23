@@ -217,7 +217,11 @@ TERMPAINT_0.3 { global:
     termpaintx_ttyrescue_update;
 };
 TERMPAINT_0.3.1 { global:
+    termpaint_terminal_set_inline;
+    termpaint_terminal_setup_inline;
     termpaintx_full_integration_from_fds;
+    termpaintx_full_integration_set_inline;
+    termpaintx_full_integration_setup_terminal_inline;
 };
 TERMPAINT_PRIVATE {
     global: termpaintp_test;

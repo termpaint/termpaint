@@ -45,6 +45,8 @@ typedef struct termpaint_integration_fd_ {
     bool callback_requested;
     bool awaiting_response;
     bool poll_sigwinch;
+    bool inline_active;
+    int inline_height;
     termpaint_terminal *terminal;
     termpaintx_ttyrescue *rescue;
 } termpaint_integration_fd;
@@ -441,6 +443,9 @@ static void termpaintp_handle_self_pipe(termpaint_integration_fd *t, struct poll
         }
         int width, height;
         termpaintx_full_integration_terminal_size(&t->base, &width, &height);
+        if (t->inline_active && t->inline_height && height > t->inline_height) {
+            height = t->inline_height;
+        }
         termpaint_surface* surface = termpaint_terminal_get_surface(t->terminal);
         termpaint_surface_resize(surface, width, height);
     } else {
@@ -631,8 +636,7 @@ bool termpaintx_full_integration_ttyrescue_start(termpaint_integration *integrat
     return false;
 }
 
-
-termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(const char *options,
+static termpaint_integration *termpaintp_full_integration_setup_terminal_common(const char *options,
                                                                              void (*event_handler)(void *, termpaint_event *),
                                                                              void *event_handler_user_data,
                                                                              termpaint_terminal **terminal_out) {
@@ -650,6 +654,23 @@ termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(con
     termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
                                            "Terminal auto detection is taking unusually long, press space to abort.");
     termpaintx_full_integration_apply_input_quirks(integration);
+    *terminal_out = terminal;
+    return integration;
+}
+
+termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(const char *options,
+                                                                             void (*event_handler)(void *, termpaint_event *),
+                                                                             void *event_handler_user_data,
+                                                                             termpaint_terminal **terminal_out) {
+    termpaint_terminal *terminal;
+    termpaint_integration *integration = termpaintp_full_integration_setup_terminal_common(options,
+                                                                                           event_handler,
+                                                                                           event_handler_user_data,
+                                                                                           &terminal);
+    if (!integration) {
+        return nullptr;
+    }
+
     int width, height;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, options);
@@ -657,6 +678,54 @@ termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(con
     *terminal_out = terminal;
     return integration;
 }
+
+
+termpaint_integration *termpaintx_full_integration_setup_terminal_inline(const char *options,
+                                                                         int lines,
+                                                                         void (*event_handler)(void *, termpaint_event *),
+                                                                         void *event_handler_user_data,
+                                                                         termpaint_terminal **terminal_out) {
+    termpaint_terminal *terminal;
+    termpaint_integration *integration = termpaintp_full_integration_setup_terminal_common(options,
+                                                                                           event_handler,
+                                                                                           event_handler_user_data,
+                                                                                           &terminal);
+    if (!integration) {
+        return nullptr;
+    }
+    termpaint_integration_fd* fd_data = FDPTR(integration);
+    fd_data->inline_height = lines;
+    fd_data->inline_active = true;
+    int width, height;
+    termpaintx_full_integration_terminal_size(integration, &width, &height);
+    if (height > lines) {
+        height = lines;
+    }
+    termpaint_terminal_setup_inline(terminal, width, height, options);
+    termpaintx_full_integration_ttyrescue_start(integration);
+    *terminal_out = terminal;
+    return integration;
+}
+
+void termpaintx_full_integration_set_inline(termpaint_integration *integration, _Bool enabled, int height) {
+    termpaint_integration_fd* fd_data = FDPTR(integration);
+
+    if (height > 0) {
+        fd_data->inline_height = height;
+    }
+
+    termpaint_terminal_set_inline(fd_data->terminal, enabled);
+    fd_data->inline_active = enabled;
+
+    int term_width, term_height;
+    termpaintx_full_integration_terminal_size(integration, &term_width, &term_height);
+    if (fd_data->inline_active && fd_data->inline_height && term_height > fd_data->inline_height) {
+        term_height = fd_data->inline_height;
+    }
+    termpaint_surface* surface = termpaint_terminal_get_surface(fd_data->terminal);
+    termpaint_surface_resize(surface, term_width, term_height);
+}
+
 
 static void termpaintx_dummy_log(struct termpaint_integration_ *integration, char *data, int length) {
     (void)integration;

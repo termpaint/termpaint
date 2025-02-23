@@ -48,7 +48,22 @@ For applications preferring asynchronous integration the application needs to wa
 
 In either case the application needs to set an event callback before starting auto-detection.
 
-When the application terminates it needs to restore both terminal configuration as well as the kernel level terminal
+Applications should call either :c:func:`termpaint_terminal_setup_fullscreen`
+or :c:func:`termpaint_terminal_setup_inline` after
+terminal detection to setup the terminal for the chosen mode.
+
+In fullscreen mode the application claims and repaints the full terminal screen.
+If the terminal supports alternative screen mode, the terminal contents is not erased by the application and reappears
+after the application quits.
+
+In inline mode the application instead claims a stripe with limited height for display.
+This stripe starts at the line where the cursor is located.
+If the requested number of lines in not available the terminal will be scrolled to make the necessary space available.
+(Requesting a stripe higher than the terminal height is invalid and will lead to display corruption)
+When the application terminates in inline mode the cursor is reset to the top line of
+the stripe and the output stripe is erased.
+
+For clean shutdown the application needs to restore both terminal configuration as well as the kernel level terminal
 setup back to it's previous values. The first part should be done by calling
 :c:func:`termpaint_terminal_free_with_restore`. The second part should be done by using operating system specific calls
 to save the kernel settings before changing those and then restoring them after restoring the terminal setup.
@@ -183,6 +198,21 @@ See :ref:`safety` for general rules for calling functions in termpaint.
   Reset color choices made using :c:func:`termpaint_terminal_set_color`. When ``color_slot`` is
   ``TERMPAINT_COLOR_SLOT_CURSOR`` the cursor color is reset to the default.
 
+.. c:function:: void termpaint_terminal_set_inline(termpaint_terminal *terminal, _Bool enabled)
+
+  Switch between inline and fullscreen mode.
+
+  If ``enabled`` is true switch to inline mode.
+  Otherwise switch to fullscreen mode.
+
+  A call to this function must be followed by reestablishing the primary surface size and contents and
+  by a call to :c:func:`termpaint_terminal_flush()` to finalize the switch to the new mode.
+
+  Note: As primary surface resizing requirements differ between inline and fullscreen mode, check if your
+  integration has an API for switching that needs to be called in addition or instead of this function.
+  For example when using termpaintx :c:func:`termpaintx_full_integration_set_inline` needs to be called instead of
+  this function.
+
 .. c:function:: void termpaint_terminal_request_tagged_paste(termpaint_terminal *term, _Bool enabled)
 
   Request the terminal to send the needed information so :c:macro:`TERMPAINT_EV_PASTE` events can be generated.
@@ -311,6 +341,31 @@ See :ref:`safety` for general rules for calling functions in termpaint.
       terminal layer processing.
 
       Affected key combinations are usually ctrl-c, ctrl-z and, ctrl-\\
+
+.. _termpaint-inline-options:
+
+.. c:function:: void termpaint_terminal_setup_inline(termpaint_terminal *terminal, int width, int height, const char *options)
+
+  Setup the terminal connected to the terminal object ``term`` to inline mode. Assume terminal size is ``width``
+  columns. And the initially used height is ``height`` lines.
+
+  ``options`` specifies an space delimited list of additional settings:
+
+    ``+kbdsig``
+      Do not activate any modes of the terminal that might conflict with processing of keyboard signals in the kernel
+      tty layer. Use this when passing ``+kdbsigint``, ``+kdbsigquit`` or ``+kdbsigtstp`` to
+      :c:func:`termpaintx_full_integration` or when using an custom integration that enabled the equivalent kernel
+      terminal layer processing.
+
+      Affected key combinations are usually ctrl-c, ctrl-z and, ctrl-\\
+
+  In inline mode termpaint does not paint the full screen, but it only paints a vertical stripe starting at the
+  previous cursor position of a given height.
+  This allows integration of the output into the "transcript" of commands in a command line environment.
+  For example implementing entering of interactive commands.
+
+  Inline mode never uses the alternative screen of the terminal itself.
+  But when switching from inline mode to fullscreen mode, alternative screen mode is always used when available.
 
 .. c:function:: void termpaint_terminal_auto_detect_apply_input_quirks(termpaint_terminal *terminal, _Bool backspace_is_x08)
 

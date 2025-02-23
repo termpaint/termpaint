@@ -162,6 +162,73 @@ CapturedCell doubleWideChar(std::string ch) {
     return c;
 }
 
+// only works for ascii
+std::map<std::tuple<int,int>, CapturedCell> lineOfText(int y, std::string text) {
+    std::map<std::tuple<int,int>, CapturedCell> data;
+
+    int x = 0;
+    for (char ch: text) {
+        data.insert({{x++, y}, singleWideChar(std::string(1, ch))});
+    }
+
+    return data;
+}
+
+
+struct SimpleInline {
+    SimpleInline(int height, SomeCells* base_ = nullptr) {
+        if (!base_) {
+            resetAndClear();
+
+            puts("user@host:~$ ls -1");
+            puts("Desktop");
+            puts("Downloads");
+            puts("Pictures");
+            puts("user@host:~$ app");
+
+            base = SomeCells().extend(
+                        lineOfText(0, "user@host:~$ ls -1"),
+                        lineOfText(1, "Desktop"),
+                        lineOfText(2, "Downloads"),
+                        lineOfText(3, "Pictures"),
+                        lineOfText(4, "user@host:~$ app")
+                    );
+        } else {
+            base = *base_;
+        }
+
+        CapturedState s = capture();
+        if (!base_) {
+            CHECK(s.cursorX == 0);
+            CHECK(s.cursorY == 5);
+        }
+
+        checkEmptyPlusSome(s, base, Overrides().noAltScreen());
+
+        integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+        REQUIRE(integration);
+
+        terminal.reset(termpaint_terminal_new(integration));
+        REQUIRE(terminal);
+
+        termpaintx_full_integration_set_terminal(integration, terminal);
+        surface = termpaint_terminal_get_surface(terminal);
+        REQUIRE(surface);
+        termpaint_terminal_set_event_cb(terminal, [] (void *, termpaint_event*) {}, nullptr);
+        termpaint_terminal_auto_detect(terminal);
+        termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
+                                               "Terminal auto detection is taking unusually long, press space to abort.");
+
+        termpaint_terminal_setup_inline(terminal, 80, height, "+kbdsig");
+        termpaintx_full_integration_set_inline(integration, true, height);
+    }
+
+    unique_cptr<termpaint_terminal, termpaint_terminal_free_with_restore> terminal;
+    termpaint_surface *surface;
+    termpaint_integration *integration;
+    SomeCells base;
+};
+
 
 TEST_CASE("no init") {
     SimpleFullscreen t;
@@ -242,6 +309,335 @@ TEST_CASE("restore - no fullscreen") {
     CHECK(s.sgrState.fg == std::string());
     CHECK(s.sgrState.bg == std::string());
     CHECK(s.sgrState.deco == std::string());
+}
+
+
+TEST_CASE("inline") {
+    resetAndClear();
+
+    puts("user@host:~$ ls -1");
+    puts("Desktop");
+    puts("Downloads");
+    puts("Pictures");
+    puts("user@host:~$ app");
+
+    CapturedState s = capture();
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 5);
+
+    SomeCells base = SomeCells().extend(
+                lineOfText(0, "user@host:~$ ls -1"),
+                lineOfText(1, "Desktop"),
+                lineOfText(2, "Downloads"),
+                lineOfText(3, "Pictures"),
+                lineOfText(4, "user@host:~$ app")
+            );
+
+    checkEmptyPlusSome(s, base, Overrides().noAltScreen());
+
+    termpaint_integration *integration = termpaintx_full_integration_from_fd(1, 0, "+kbdsigint +kbdsigtstp");
+    REQUIRE(integration);
+
+    unique_cptr<termpaint_terminal, termpaint_terminal_free_with_restore> terminal;
+    terminal.reset(termpaint_terminal_new(integration));
+    REQUIRE(terminal);
+
+    termpaintx_full_integration_set_terminal(integration, terminal);
+    termpaint_surface *surface = termpaint_terminal_get_surface(terminal);
+    REQUIRE(surface);
+    termpaint_terminal_set_event_cb(terminal, [] (void *, termpaint_event*) {}, nullptr);
+    termpaint_terminal_auto_detect(terminal);
+    termpaintx_full_integration_wait_for_ready_with_message(integration, 10000,
+                                           "Terminal auto detection is taking unusually long, press space to abort.");
+
+    termpaint_terminal_setup_inline(terminal, 80, 3, "+kbdsig");
+    termpaintx_full_integration_set_inline(integration, true, 3);
+
+    s = capture();
+    checkEmptyPlusSome(s, base, Overrides().noAltScreen());
+
+    termpaint_surface_clear(surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_terminal_set_cursor_position(terminal, 5, 1);
+    termpaint_terminal_flush(terminal, false);
+
+    CellMap filled;
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled.insert({{ x, y + 5 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+
+    s = capture();
+    CHECK(s.cursorX == 5);
+    CHECK(s.cursorY == 1 + 5);
+
+    checkEmptyPlusSome(s, base.extend(
+            filled
+        ),
+        Overrides().noAltScreen());
+
+    terminal.reset();
+
+    s = capture();
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 5);
+    checkEmptyPlusSome(s, base, Overrides().noAltScreen());
+
+    CHECK(s.altScreen == false);
+    CHECK(s.invScreen == false);
+
+    CHECK(s.sgrState.style == 0);
+    CHECK(s.sgrState.fg == std::string());
+    CHECK(s.sgrState.bg == std::string());
+    CHECK(s.sgrState.deco == std::string());
+}
+
+TEST_CASE("inline expand + contract + fullscreen") {
+    SimpleInline t{3};
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "A", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "B", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 2, "C", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CellMap filled;
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled.insert({{ x, y + 5 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled[{ 0, 0 + 5 }] = singleWideChar("A");
+    filled[{ 0, 1 + 5 }] = singleWideChar("B");
+    filled[{ 0, 2 + 5 }] = singleWideChar("C");
+
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, t.base.extend(
+            filled
+        ),
+        Overrides().noAltScreen());
+
+
+    termpaintx_full_integration_set_inline(t.integration, true, 5);
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "a", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "b", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 2, "c", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 3, "d", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 4, "e", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CellMap filled2;
+    for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled2.insert({{ x, y + 5 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled2[{ 0, 0 + 5 }] = singleWideChar("a");
+    filled2[{ 0, 1 + 5 }] = singleWideChar("b");
+    filled2[{ 0, 2 + 5 }] = singleWideChar("c");
+    filled2[{ 0, 3 + 5 }] = singleWideChar("d");
+    filled2[{ 0, 4 + 5 }] = singleWideChar("e");
+
+    s = capture();
+    checkEmptyPlusSome(s, t.base.extend(
+            filled2
+        ),
+        Overrides().noAltScreen());
+
+    termpaintx_full_integration_set_inline(t.integration, true, 2);
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "Y", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "Z", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CellMap filled3;
+    for (int y = 0; y < 2; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled3.insert({{ x, y + 5 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled3[{ 0, 0 + 5 }] = singleWideChar("Y");
+    filled3[{ 0, 1 + 5 }] = singleWideChar("Z");
+
+    s = capture();
+    checkEmptyPlusSome(s, t.base.extend(
+            filled3
+        ),
+        Overrides().noAltScreen());
+
+
+    termpaintx_full_integration_set_inline(t.integration, false, -1);
+
+    s = capture();
+    checkEmptyPlusSome(s, {
+    });
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "J", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "K", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+
+    CellMap filled4;
+    for (int y = 0; y < 24; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled4.insert({{ x, y }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled4[{ 0, 0 }] = singleWideChar("J");
+    filled4[{ 0, 1 }] = singleWideChar("K");
+
+    s = capture();
+    checkEmptyPlusSome(s, filled4);
+
+    termpaintx_full_integration_set_inline(t.integration, true, -1);
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "Y", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "Z", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    checkEmptyPlusSome(s, t.base.extend(
+            filled3
+        ),
+        Overrides().noAltScreen());
+}
+
+
+TEST_CASE("inline at top") {
+    resetAndClear();
+    SomeCells base;
+    SimpleInline t{3, &base};
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "A", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "B", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 2, "C", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CellMap filled;
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled.insert({{ x, y }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled[{ 0, 0 }] = singleWideChar("A");
+    filled[{ 0, 1 }] = singleWideChar("B");
+    filled[{ 0, 2 }] = singleWideChar("C");
+
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s,
+        filled,
+        Overrides().noAltScreen());
+}
+
+
+TEST_CASE("inline at bottom") {
+    resetAndClear();
+
+    puts(std::string(15, '\n').c_str());
+
+    puts("user@host:~$ ls -1");
+    puts("Desktop");
+    puts("Downloads");
+    puts("Pictures");
+    puts("user@host:~$ app");
+
+    SomeCells base = SomeCells().extend(
+                lineOfText(16, "user@host:~$ ls -1"),
+                lineOfText(17, "Desktop"),
+                lineOfText(18, "Downloads"),
+                lineOfText(19, "Pictures"),
+                lineOfText(20, "user@host:~$ app")
+            );
+
+    SimpleInline t{3, &base};
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "A", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "B", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 2, "C", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+    CellMap filled;
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled.insert({{ x, y + 21 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled[{ 0, 0 + 21 }] = singleWideChar("A");
+    filled[{ 0, 1 + 21 }] = singleWideChar("B");
+    filled[{ 0, 2 + 21 }] = singleWideChar("C");
+
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, t.base.extend(
+            filled
+        ),
+        Overrides().noAltScreen());
+
+}
+
+
+TEST_CASE("inline scroll bottom") {
+    resetAndClear();
+
+    puts(std::string(16, '\n').c_str());
+
+    puts("user@host:~$ ls -1");
+    puts("Desktop");
+    puts("Downloads");
+    puts("Pictures");
+    puts("user@host:~$ app");
+
+    SomeCells preScroll = SomeCells().extend(
+                lineOfText(17, "user@host:~$ ls -1"),
+                lineOfText(18, "Desktop"),
+                lineOfText(19, "Downloads"),
+                lineOfText(20, "Pictures"),
+                lineOfText(21, "user@host:~$ app")
+            );
+
+    SimpleInline t{3, &preScroll};
+
+    termpaint_surface_clear(t.surface, TERMPAINT_COLOR_RED, TERMPAINT_COLOR_BLUE);
+    termpaint_surface_write_with_colors(t.surface, 0, 0, "A", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 1, "B", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 0, 2, "C", TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_terminal_flush(t.terminal, false);
+
+
+    SomeCells base = SomeCells().extend(
+                lineOfText(16, "user@host:~$ ls -1"),
+                lineOfText(17, "Desktop"),
+                lineOfText(18, "Downloads"),
+                lineOfText(19, "Pictures"),
+                lineOfText(20, "user@host:~$ app")
+            );
+
+    CellMap filled;
+    for (int y = 0; y < 3; y++) {
+        for (int x = 0; x < 80; x++) {
+            filled.insert({{ x, y + 21 }, singleWideChar(" ").setErased().withFg("red").withBg("blue")});
+        }
+    }
+    filled[{ 0, 0 + 21 }] = singleWideChar("A");
+    filled[{ 0, 1 + 21 }] = singleWideChar("B");
+    filled[{ 0, 2 + 21 }] = singleWideChar("C");
+
+
+    CapturedState s = capture();
+    checkEmptyPlusSome(s, base.extend(
+            filled
+        ),
+        Overrides().noAltScreen());
+
 }
 
 
@@ -1190,6 +1586,205 @@ TEST_CASE("pause with mouse") {
     checkEmptyPlusSome(s, {});
 
     CHECK(s.mouseMode == "movement");
+}
+
+TEST_CASE("pause inline to fullscreen") {
+    // Test that switching from inline to fullscreen followed by a pause and unpause works.
+    // Switching between fullscreen and inline changes the needed sequences for pause and unpause.
+    // This test also checks that cursor positions and screen contents are correct throughout the operation
+
+    resetAndClear();
+    puts("user@host:~$ ls -1");
+    puts("Desktop");
+    puts("user@host:~$ app");
+
+    CapturedState s = capture();
+    CHECK(s.altScreen == false);
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 3);
+
+    SomeCells base = SomeCells().extend(
+                lineOfText(0, "user@host:~$ ls -1"),
+                lineOfText(1, "Desktop"),
+                lineOfText(2, "user@host:~$ app")
+            );
+
+    SimpleInline t{3, &base};
+
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_colors(t.surface, 10, 2, "Sample", TERMPAINT_COLOR_GREEN, TERMPAINT_COLOR_BLACK);
+
+    termpaint_terminal_set_cursor_position(t.terminal, 6, 1);
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    CHECK(s.cursorX == 6);
+    CHECK(s.cursorY == 4);
+    checkEmptyPlusSome(s, base.extend({
+                           {{ 10, 5 }, singleWideChar("S").withFg("green").withBg("black")},
+                           {{ 11, 5 }, singleWideChar("a").withFg("green").withBg("black")},
+                           {{ 12, 5 }, singleWideChar("m").withFg("green").withBg("black")},
+                           {{ 13, 5 }, singleWideChar("p").withFg("green").withBg("black")},
+                           {{ 14, 5 }, singleWideChar("l").withFg("green").withBg("black")},
+                           {{ 15, 5 }, singleWideChar("e").withFg("green").withBg("black")},
+                       }), Overrides{}.noAltScreen());
+
+    CHECK(s.altScreen == false);
+
+    termpaint_terminal_set_inline(t.terminal, false);
+
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 10, 2, "Sample", TERMPAINT_COLOR_GREEN, TERMPAINT_COLOR_BLACK);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    CHECK(s.cursorX == 6);
+    CHECK(s.cursorY == 1);
+    checkEmptyPlusSome(s, {
+                           {{ 10, 2 }, singleWideChar("S").withFg("green").withBg("black")},
+                           {{ 11, 2 }, singleWideChar("a").withFg("green").withBg("black")},
+                           {{ 12, 2 }, singleWideChar("m").withFg("green").withBg("black")},
+                           {{ 13, 2 }, singleWideChar("p").withFg("green").withBg("black")},
+                           {{ 14, 2 }, singleWideChar("l").withFg("green").withBg("black")},
+                           {{ 15, 2 }, singleWideChar("e").withFg("green").withBg("black")},
+                       });
+
+    termpaint_terminal_pause(t.terminal);
+
+    s = capture();
+    CHECK(s.altScreen == false);
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 3);
+
+    checkEmptyPlusSome(s, base, Overrides{}.noAltScreen());
+
+    termpaint_terminal_unpause(t.terminal);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    CHECK(s.cursorX == 6);
+    CHECK(s.cursorY == 1);
+    checkEmptyPlusSome(s, {
+                           {{ 10, 2 }, singleWideChar("S").withFg("green").withBg("black")},
+                           {{ 11, 2 }, singleWideChar("a").withFg("green").withBg("black")},
+                           {{ 12, 2 }, singleWideChar("m").withFg("green").withBg("black")},
+                           {{ 13, 2 }, singleWideChar("p").withFg("green").withBg("black")},
+                           {{ 14, 2 }, singleWideChar("l").withFg("green").withBg("black")},
+                           {{ 15, 2 }, singleWideChar("e").withFg("green").withBg("black")},
+                       });
+
+    t.terminal.reset();
+
+    s = capture();
+
+    checkEmptyPlusSome(s, base, Overrides().noAltScreen());
+
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 3);
+    CHECK(s.altScreen == false);
+}
+
+TEST_CASE("pause fullscreen to inline") {
+    // Test that switching from fullscreen to inline followed by a pause and unpause works.
+    // Switching between fullscreen and inline changes the needed sequences for pause and unpause.
+    // This test also checks that cursor positions and screen contents are correct throughout the operation
+
+    resetAndClear();
+    puts("user@host:~$ ls -1");
+    puts("Desktop");
+    puts("user@host:~$ app");
+
+    CapturedState s = capture();
+    CHECK(s.altScreen == false);
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 3);
+
+    SomeCells base = SomeCells().extend(
+                lineOfText(0, "user@host:~$ ls -1"),
+                lineOfText(1, "Desktop"),
+                lineOfText(2, "user@host:~$ app")
+            );
+
+    SimpleFullscreen t{true, false};
+
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+
+    termpaint_surface_write_with_colors(t.surface, 10, 2, "Sample", TERMPAINT_COLOR_GREEN, TERMPAINT_COLOR_BLACK);
+
+    termpaint_terminal_set_cursor_position(t.terminal, 6, 1);
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    CHECK(s.cursorX == 6);
+    CHECK(s.cursorY == 1);
+    checkEmptyPlusSome(s, {
+                           {{ 10, 2 }, singleWideChar("S").withFg("green").withBg("black")},
+                           {{ 11, 2 }, singleWideChar("a").withFg("green").withBg("black")},
+                           {{ 12, 2 }, singleWideChar("m").withFg("green").withBg("black")},
+                           {{ 13, 2 }, singleWideChar("p").withFg("green").withBg("black")},
+                           {{ 14, 2 }, singleWideChar("l").withFg("green").withBg("black")},
+                           {{ 15, 2 }, singleWideChar("e").withFg("green").withBg("black")},
+                       });
+
+    CHECK(s.altScreen == true);
+
+    termpaint_terminal_set_inline(t.terminal, true);
+    termpaint_surface_resize(t.surface, 80, 3);
+
+    termpaint_surface_clear(t.surface, TERMPAINT_DEFAULT_COLOR, TERMPAINT_DEFAULT_COLOR);
+    termpaint_surface_write_with_colors(t.surface, 10, 2, "Sample", TERMPAINT_COLOR_GREEN, TERMPAINT_COLOR_BLACK);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    CHECK(s.cursorX == 6);
+    CHECK(s.cursorY == 4);
+    checkEmptyPlusSome(s, base.extend({
+                           {{ 10, 5 }, singleWideChar("S").withFg("green").withBg("black")},
+                           {{ 11, 5 }, singleWideChar("a").withFg("green").withBg("black")},
+                           {{ 12, 5 }, singleWideChar("m").withFg("green").withBg("black")},
+                           {{ 13, 5 }, singleWideChar("p").withFg("green").withBg("black")},
+                           {{ 14, 5 }, singleWideChar("l").withFg("green").withBg("black")},
+                           {{ 15, 5 }, singleWideChar("e").withFg("green").withBg("black")},
+                       }), Overrides{}.noAltScreen());
+
+    termpaint_terminal_pause(t.terminal);
+
+    s = capture();
+    CHECK(s.altScreen == false);
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 3);
+
+    checkEmptyPlusSome(s, base, Overrides{}.noAltScreen());
+
+    termpaint_terminal_unpause(t.terminal);
+
+    termpaint_terminal_flush(t.terminal, false);
+
+    s = capture();
+    CHECK(s.cursorX == 6);
+    CHECK(s.cursorY == 4);
+    checkEmptyPlusSome(s, base.extend({
+                           {{ 10, 5 }, singleWideChar("S").withFg("green").withBg("black")},
+                           {{ 11, 5 }, singleWideChar("a").withFg("green").withBg("black")},
+                           {{ 12, 5 }, singleWideChar("m").withFg("green").withBg("black")},
+                           {{ 13, 5 }, singleWideChar("p").withFg("green").withBg("black")},
+                           {{ 14, 5 }, singleWideChar("l").withFg("green").withBg("black")},
+                           {{ 15, 5 }, singleWideChar("e").withFg("green").withBg("black")},
+                       }), Overrides{}.noAltScreen());
+
+    t.terminal.reset();
+
+    s = capture();
+
+    checkEmptyPlusSome(s, base, Overrides().noAltScreen());
+
+    CHECK(s.cursorX == 0);
+    CHECK(s.cursorY == 3);
+    CHECK(s.altScreen == false);
 }
 
 
