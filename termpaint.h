@@ -61,6 +61,7 @@ _tERMPAINT_PUBLIC termpaint_terminal *termpaint_terminal_new(termpaint_integrati
 _tERMPAINT_PUBLIC termpaint_terminal *termpaint_terminal_new_or_nullptr(termpaint_integration *integration);
 _tERMPAINT_PUBLIC void termpaint_terminal_free(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_free_with_restore(termpaint_terminal *term);
+_tERMPAINT_PUBLIC void termpaint_terminal_free_with_restore_and_persistent(termpaint_terminal *term, termpaint_surface *surface);
 _tERMPAINT_PUBLIC termpaint_surface *termpaint_terminal_get_surface(termpaint_terminal *term);
 _tERMPAINT_PUBLIC void termpaint_terminal_flush(termpaint_terminal *term, _Bool full_repaint);
 _tERMPAINT_PUBLIC const char *termpaint_terminal_restore_sequence(const termpaint_terminal *term);
@@ -155,6 +156,7 @@ _tERMPAINT_PUBLIC void termpaint_terminal_disable_capability(termpaint_terminal 
 _tERMPAINT_PUBLIC _Bool termpaint_terminal_should_use_truecolor(termpaint_terminal *terminal);
 
 _tERMPAINT_PUBLIC void termpaint_terminal_pause(termpaint_terminal *term);
+_tERMPAINT_PUBLIC void termpaint_terminal_pause_and_persistent(termpaint_terminal *term, termpaint_surface *surface);
 _tERMPAINT_PUBLIC void termpaint_terminal_unpause(termpaint_terminal *term);
 
 #define TERMPAINT_LOG_AUTO_DETECT_TRACE (1 << 0)

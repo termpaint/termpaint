@@ -2118,7 +2118,13 @@ static void termpaintp_erase_inline(termpaint_terminal *term) {
     term->last_inline_height = 0;
 }
 
+static void termpaintp_terminal_flush_with_surface(termpaint_terminal *term, bool full_repaint, termpaint_surface *surface);
+
 void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
+    termpaint_terminal_free_with_restore_and_persistent(term, nullptr);
+}
+
+void termpaint_terminal_free_with_restore_and_persistent(termpaint_terminal *term, termpaint_surface *surface) {
     if (!term) {
         return;
     }
@@ -2129,8 +2135,33 @@ void termpaint_terminal_free_with_restore(termpaint_terminal *term) {
         if (term->primary.height && term->primary.height) {
             termpaintp_terminal_set_cursor(term, 0, term->primary.height - 1);
         }
+
+        if (surface) {
+            if (term->altscreen_active) {
+                int_puts(integration, "\033[?1049l");
+                term->altscreen_active = false;
+                int_restore_sequence_complete(term);
+            }
+            term->setup_state = SETUP_STATE_INLINE;
+            term->inline_current_terminal_cursor_line = 0;
+            term->last_inline_height = 0;
+            term->cursor_x = term->cursor_y = -1;
+            termpaintp_terminal_flush_with_surface(term, true, surface);
+            int_puts(integration, "\r\n");
+            // Output is persistent
+            term->inline_current_terminal_cursor_line = 0;
+            term->last_inline_height = 0;
+        }
     } else {
         termpaintp_erase_inline(term);
+        if (surface) {
+            term->cursor_x = term->cursor_y = -1;
+            termpaintp_terminal_flush_with_surface(term, true, surface);
+            int_puts(integration, "\r\n");
+            // Output is persistent
+            term->inline_current_terminal_cursor_line = 0;
+            term->last_inline_height = 0;
+        }
     }
 
     if (term->restore_seq_cached.len) {
@@ -4410,17 +4441,65 @@ const char* termpaint_terminal_restore_sequence(const termpaint_terminal *term) 
 }
 
 void termpaint_terminal_pause(termpaint_terminal *term) {
+    termpaint_terminal_pause_and_persistent(term, nullptr);
+}
+
+void termpaint_terminal_pause_and_persistent(termpaint_terminal *term, termpaint_surface *surface) {
     termpaint_integration *integration = term->integration;
 
     term->force_full_repaint = true;
 
+    bool saved_altscreen_active = term->altscreen_active;
+
     if (term->setup_state == SETUP_STATE_INLINE) {
         termpaintp_erase_inline(term);
+        if (surface) {
+            int saved_cursor_x = term->cursor_x;
+            int saved_cursor_y = term->cursor_y;
+            term->cursor_x = term->cursor_y = -1;
+            termpaintp_terminal_flush_with_surface(term, true, surface);
+            term->cursor_x = saved_cursor_x;
+            term->cursor_y = saved_cursor_y;
+            int_puts(integration, "\r\n");
+            // Output is persistent
+            term->inline_current_terminal_cursor_line = 0;
+            term->last_inline_height = 0;
+        }
+    } else {
+        if (surface) {
+            if (term->altscreen_active) {
+                // resetting term->altscreen_active here is important to keep the correct cursor position
+                int_puts(integration, "\033[?1049l");
+                term->altscreen_active = false;
+                int_restore_sequence_complete(term);
+            }
+            term->inline_current_terminal_cursor_line = 0;
+            term->last_inline_height = 0;
+            int saved_setup_state = term->setup_state;
+            int saved_cursor_x = term->cursor_x;
+            int saved_cursor_y = term->cursor_y;
+            term->setup_state = SETUP_STATE_INLINE;
+            term->cursor_x = term->cursor_y = -1;
+            termpaintp_terminal_flush_with_surface(term, true, surface);
+            term->setup_state = saved_setup_state;
+            term->cursor_x = saved_cursor_x;
+            term->cursor_y = saved_cursor_y;
+            int_puts(integration, "\r\n");
+            // Output is persistent
+            term->inline_current_terminal_cursor_line = 0;
+            term->last_inline_height = 0;
+        }
     }
 
     if (term->restore_seq_cached.len) {
         int_write(integration, (const char*)term->restore_seq_cached.data, term->restore_seq_cached.len);
     }
+
+    if (saved_altscreen_active != term->altscreen_active) {
+        term->altscreen_active = saved_altscreen_active;
+        int_restore_sequence_complete(term);
+    }
+
     int_flush(integration);
 }
 

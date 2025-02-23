@@ -77,7 +77,17 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 
 .. c:function:: void termpaint_terminal_free_with_restore(termpaint_terminal *term)
 
-  Frees the terminal object ``term`` and restores the attached terminal to it's base state.
+  Frees the terminal object ``term`` and restores the attached terminal to its base state.
+
+  This function calls the integrations free callback.
+
+.. c:function:: void termpaint_terminal_free_with_restore_and_persistent(termpaint_terminal *term, termpaint_surface *surface)
+
+  Frees the terminal object ``term`` and restores the attached terminal to its base state.
+  The contents of the surface ``surface`` is left visible on the terminal.
+  The cursor is placed after the contents of ``surface``.
+
+  If ``surface`` is NULL, this function is the same as :c:func:`termpaint_terminal_free_with_restore()`.
 
   This function calls the integrations free callback.
 
@@ -390,6 +400,20 @@ See :ref:`safety` for general rules for calling functions in termpaint.
 .. c:function:: void termpaint_terminal_pause(termpaint_terminal *term)
 
   Temporarily restore the terminal state. This should be called before running external applications.
+  To return to rendering by termpaint call :c:func:`termpaint_terminal_unpause`.
+
+  After calling this function the application still needs to restore the kernel tty layer settings
+  to the state needed to run external applications.
+
+.. c:function:: void termpaint_terminal_pause_and_persistent(termpaint_terminal *term, termpaint_surface *surface)
+
+  Temporarily restore the terminal state. This should be called before running external applications.
+
+  The contents of the surface ``surface`` is left visible on the terminal.
+  The cursor is placed after the contents of ``surface``.
+
+  If ``surface`` is NULL, this function is the same as :c:func:`termpaint_terminal_pause_and_persistent()`.
+
   To return to rendering by termpaint call :c:func:`termpaint_terminal_unpause`.
 
   After calling this function the application still needs to restore the kernel tty layer settings
