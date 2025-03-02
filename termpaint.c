@@ -2985,6 +2985,20 @@ static bool termpaintp_input_raw_filter_callback(void *user_data, const char *da
     }
 }
 
+static int termpaintp_parse_delimited_uint(char *s, char delim) {
+    int res = 0;
+    for (; *s; s++) {
+        if (termpaintp_char_ascii_num(*s)) {
+            res = res * 10 + *s - '0';
+        } else if (*s == delim) {
+            return res;
+        } else  {
+            return -1;
+        }
+    }
+    return -1;
+}
+
 static int termpaintp_parse_version(char *s) {
     int res = 0;
     int place = 0;
@@ -3082,7 +3096,21 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
         }
     } else if (term->terminal_type == TT_VTE) {
         termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_TAGGED_PASTE);
-        if (term->auto_detect_sec_device_attributes.len > 11) {
+
+        int version = 0;
+
+        if (term->terminal_self_reported_name_version.len) {
+            char *version_part = strchr((const char*)term->terminal_self_reported_name_version.data, '(');
+            if (version_part) {
+                int tmp = termpaintp_parse_delimited_uint(version_part + 1, ')');
+                if (tmp > 0) {
+                    version = tmp;
+                    term->terminal_version = version;
+                }
+            }
+        }
+
+        if (!version && term->auto_detect_sec_device_attributes.len > 11) {
             const unsigned char* data = term->auto_detect_sec_device_attributes.data;
             bool vte_gt0_54 = memcmp(data, "\033[>65;", 6) == 0;
             bool vte_old = memcmp(data, "\033[>1;", 5) == 0;
@@ -3092,33 +3120,32 @@ static void termpaintp_auto_detect_init_terminal_version_and_caps(termpaint_term
                 } else {
                     data += 6;
                 }
-                int version = 0;
                 while (termpaintp_char_ascii_num(*data)) {
                     version = version * 10 + *data - '0';
                     ++data;
                 }
                 if (*data == ';' && (version < 5400) == vte_old) {
                     term->terminal_version = version;
-
-                    if (term->terminal_version < 4000) {
-                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
-                    } else {
-                        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
-                    }
-
-                    if (term->terminal_version >= 5400) {
-                        termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
-                    }
-                    if (term->terminal_version < 5400) {
-                        // fragile dictinary base parsing.
-                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_GREATER);
-                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_EQUALS);
-                        termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
-                    }
-
                 }
             }
         }
+
+        if (term->terminal_version < 4000) {
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
+        } else {
+            termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_MAY_TRY_CURSOR_SHAPE);
+        }
+
+        if (term->terminal_version >= 5400) {
+            termpaint_terminal_promise_capability(term, TERMPAINT_CAPABILITY_TITLE_RESTORE);
+        }
+        if (term->terminal_version < 5400) {
+            // fragile dictinary base parsing.
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_GREATER);
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_EQUALS);
+            termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_CSI_POSTFIX_MOD);
+        }
+
         if (term->terminal_version < 3600) {
             termpaint_terminal_disable_capability(term, TERMPAINT_CAPABILITY_TRUECOLOR_MAYBE_SUPPORTED);
         } else {
@@ -3939,6 +3966,9 @@ static bool termpaintp_terminal_auto_detect_event(termpaint_terminal *terminal, 
                 }
                 if (termpaintp_string_prefix((const uchar*)"iTerm2 ", (const uchar*)event->raw.string, event->raw.length)) {
                     terminal->terminal_type = TT_ITERM2;
+                }
+                if (termpaintp_string_prefix((const uchar*)"VTE(", (const uchar*)event->raw.string, event->raw.length)) {
+                    terminal->terminal_type = TT_VTE;
                 }
                 return true;
             } else if (event->type == TERMPAINT_EV_RAW_TERMINFO_QUERY_REPLY) {

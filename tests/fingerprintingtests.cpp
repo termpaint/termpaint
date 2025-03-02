@@ -609,6 +609,121 @@ static const std::initializer_list<TestCase> tests = {
     },
     // ---------------
     {
+        "vte 0.55.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>65;5500;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>65;5500;1c" }},
+            { "\033[=c",          { "\033P!|7E565445\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: vte(5500) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "vte 0.75.0" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>65;7500;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>65;7500;1c" }},
+            { "\033[=c",          { "\033P!|7E565445\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: vte(7500) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "vte 0.75.1" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>61;7501;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;7501;1c" }},
+            { "\033[=c",          { "\033P!|7E565445\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "\033P>|VTE(7501)\033\\" }},
+            { "\033[1x",          { "\033[x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: vte(7501) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "VTE(7501)",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "vte 0.78.2" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>61;7802;1c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>61;7802;1c" }},
+            { "\033[=c",          { "\033P!|7E565445\033\\" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "\033P>|VTE(7802)\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: vte(7802) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "VTE(7802)",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
+        "ficitious vte like without other ids than DCS>q" LINEINFO,
+        {
+            { "\033[>c",          { "\033[>0c" }},
+            { "\033[>1c",         { "" }},
+            { "\033[>0;1c",       { "\033[>0c" }},
+            { "\033[=c",          { "" }},
+            { "\033[5n",          { "\033[0n" }},
+            { "\033[6n",          { "\033[{POS}R" }},
+            { "\033[?6n",         { "\033[?{POS};1R" }},
+            { "\033[>q",          { "\033P>|VTE(7501)\033\\" }},
+            { "\033[1x",          { "\033[3;1;1;120;120;1;0x" }},
+            { "\033]4;255;?\007", { "\033]4;255;rgb:eeee/eeee/eeee\007" }},
+            { "\033P+q544e\033\\",{ "" }},
+        },
+        "Type: vte(7501) safe-CPR seq:>=",
+        { C(CSI_POSTFIX_MOD), C(MAY_TRY_CURSOR_SHAPE), C(TITLE_RESTORE), C(MAY_TRY_CURSOR_SHAPE_BAR),
+          C(EXTENDED_CHARSET), C(TRUECOLOR_MAYBE_SUPPORTED), C(TRUECOLOR_SUPPORTED),
+          C(CLEARED_COLORING), C(7BIT_ST), C(MAY_TRY_TAGGED_PASTE) },
+        "VTE(7501)",
+        WithoutGlitchPatching
+    },
+    // ---------------
+    {
         "kitty 0.13.3" LINEINFO,
         {
             { "\033[>c",          { "\033[>1;4000;13c" }},
