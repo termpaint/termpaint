@@ -662,6 +662,9 @@ void termpaintp_input_selfcheck(void) {
 
 void termpaintp_input_dump_table(void) {
     FILE * f = fopen("input.dump", "w");
+    if (!f) {
+        abort();
+    }
     for (const key_mapping_entry* entry_a = key_mapping_table; entry_a->sequence != nullptr; entry_a++) {
         fputs(entry_a->sequence, f);
         fputs("\n", f);

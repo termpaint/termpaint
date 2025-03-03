@@ -366,6 +366,10 @@ bool termpaintx_fd_set_termios(int fd, const char *options) {
 static termpaint_integration *termpaintp_full_integration_from_fds(int fd_read, int fd_write, _Bool auto_close, const char *options) {
     // NOTE: If fd_read != fd_write then auto_close must be false.
     termpaint_integration_fd *ret = calloc(1, sizeof(termpaint_integration_fd));
+    if (!ret) {
+        (void)!write(2, "Out of memory\n", 14); // ignore error, exiting soon anyway.
+        abort();
+    }
     termpaint_integration_init(&ret->base, fd_free, fd_write_data, fd_flush);
     termpaint_integration_set_is_bad(&ret->base, fd_is_bad);
     termpaint_integration_set_request_callback(&ret->base, fd_request_callback);

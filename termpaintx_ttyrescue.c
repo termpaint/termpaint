@@ -135,6 +135,9 @@ static char* termpaintp_asprintf(const char *fmt, ...) {
 
 termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const char *restore_seq) {
     termpaintx_ttyrescue *ret = calloc(1, sizeof(termpaintx_ttyrescue));
+    if (!ret) {
+        return nullptr;
+    }
     ret->using_mmap = 0;
     int pipe[2];
 #ifdef SOCK_CLOEXEC
