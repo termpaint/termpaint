@@ -33,7 +33,7 @@ Cap caps[] = {
     C(MAY_TRY_TAGGED_PASTE, "taggedpaste"),
     C(CLEARED_COLORING_DEFCOLOR, "clrcoldef"),
 #undef C
-    { 0, NULL, 0 }
+    { 0, NULL, 0, 0 }
 };
 
 char *debug = NULL;
@@ -61,6 +61,10 @@ void debug_log(termpaint_integration *integration, const char *data, int length)
 char *strdup_escaped(const char *tmp) {
     // escaping could quadruple size
     char *ret = malloc(strlen(tmp) * 4 + 1);
+    if (!ret) {
+        perror("malloc");
+        abort();
+    }
     char *dst = ret;
     for (; *tmp; tmp++) {
         if (*tmp >= ' ' && *tmp <= 126 && *tmp != '\\') {
@@ -174,6 +178,8 @@ int main(int argc, char **argv) {
             getchar();
         }
     }
+
+    free(self_reported_name_and_version);
 
     return 0;
 }
