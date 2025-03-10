@@ -135,7 +135,7 @@ int termpaintp_rescue_embedded(struct termpaint_ipcseg *ctlseg) {
             } else {
                 output(restore);
             }
-            if (atomic_load(&ctlseg->flags) & TTYRESCUE_FLAG_TERMIOS_SET) {
+            if (ctlseg && atomic_load(&ctlseg->flags) & TTYRESCUE_FLAG_TERMIOS_SET) {
                 if (tcgetpgrp(2) == getpgrp()) {
                     struct termios tattr;
                     if (tcgetattr(2, &tattr) >= 0) {
