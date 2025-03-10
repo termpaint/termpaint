@@ -1747,7 +1747,7 @@ void termpaint_input_expect_apc_sequences(termpaint_input *ctx, bool enable) {
 
 static void termpaintp_input_prepend_quirk(termpaint_input *ctx, const key_mapping_entry *e) {
     // takes ownership of e.sequence;
-    key_mapping_entry* new_quirks = calloc(sizeof(key_mapping_entry), ctx->quirks_len + 1);
+    key_mapping_entry* new_quirks = calloc(ctx->quirks_len + 1, sizeof(key_mapping_entry));
     if (!new_quirks) {
         abort();
     }
