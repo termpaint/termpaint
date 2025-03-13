@@ -2916,10 +2916,18 @@ bool termpaint_terminal_set_color_mustcheck(termpaint_terminal *term, int color_
         if (color_slot == TERMPAINT_COLOR_SLOT_CURSOR) {
             // even requesting a color report does not allow to restore this, so just reset.
             // terminals tend to internally store more than just color (e.g. an automatic mode) but can't report those
-            termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033]112\033\\");
+            if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
+                termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033]112\033\\");
+            } else {
+                termpaintp_prepend_str(&term->restore_seq_partial, (const uchar*)"\033]112\a");
+            }
             int_restore_sequence_complete(term);
             int_restore_sequence_updated(term);
-            termpaintp_str_assign(&entry->restore, "\033]112\033\\");
+            if (termpaint_terminal_capable(term, TERMPAINT_CAPABILITY_7BIT_ST)) {
+                termpaintp_str_assign(&entry->restore, "\033]112\033\\");
+            } else {
+                termpaintp_str_assign(&entry->restore, "\033]112\a");
+            }
             entry->save_state = termpaint_save_state_ready;
             termpaintp_terminal_dirty_color_entry(term, entry);
         } else {
