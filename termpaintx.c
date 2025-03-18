@@ -446,12 +446,13 @@ static void termpaintp_handle_self_pipe(termpaint_integration_fd *t, struct poll
             sigwinch_set = false;
         }
         int width, height;
-        termpaintx_full_integration_terminal_size(&t->base, &width, &height);
-        if (t->inline_active && t->inline_height && height > t->inline_height) {
-            height = t->inline_height;
+        if (termpaintx_full_integration_terminal_size(&t->base, &width, &height)) {
+            if (t->inline_active && t->inline_height && height > t->inline_height) {
+                height = t->inline_height;
+            }
+            termpaint_surface* surface = termpaint_terminal_get_surface(t->terminal);
+            termpaint_surface_resize(surface, width, height);
         }
-        termpaint_surface* surface = termpaint_terminal_get_surface(t->terminal);
-        termpaint_surface_resize(surface, width, height);
     } else {
         // something broken, don't try again
         sigwinch_set = false;
@@ -675,7 +676,7 @@ termpaint_integration *termpaintx_full_integration_setup_terminal_fullscreen(con
         return nullptr;
     }
 
-    int width, height;
+    int width = 80, height = 25;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     termpaint_terminal_setup_fullscreen(terminal, width, height, options);
     termpaintx_full_integration_ttyrescue_start(integration);
@@ -700,7 +701,7 @@ termpaint_integration *termpaintx_full_integration_setup_terminal_inline(const c
     termpaint_integration_fd* fd_data = FDPTR(integration);
     fd_data->inline_height = lines;
     fd_data->inline_active = true;
-    int width, height;
+    int width = 80, height = 25;
     termpaintx_full_integration_terminal_size(integration, &width, &height);
     if (height > lines) {
         height = lines;
@@ -722,12 +723,13 @@ void termpaintx_full_integration_set_inline(termpaint_integration *integration, 
     fd_data->inline_active = enabled;
 
     int term_width, term_height;
-    termpaintx_full_integration_terminal_size(integration, &term_width, &term_height);
-    if (fd_data->inline_active && fd_data->inline_height && term_height > fd_data->inline_height) {
-        term_height = fd_data->inline_height;
+    if (termpaintx_full_integration_terminal_size(integration, &term_width, &term_height)) {
+        if (fd_data->inline_active && fd_data->inline_height && term_height > fd_data->inline_height) {
+            term_height = fd_data->inline_height;
+        }
+        termpaint_surface* surface = termpaint_terminal_get_surface(fd_data->terminal);
+        termpaint_surface_resize(surface, term_width, term_height);
     }
-    termpaint_surface* surface = termpaint_terminal_get_surface(fd_data->terminal);
-    termpaint_surface_resize(surface, term_width, term_height);
 }
 
 
