@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSL-1.0
 project('termpaint', ['c', 'cpp'],
   default_options : ['buildtype=debugoptimized', 'cpp_std=c++14', 'c_std=gnu11'],
-  version: '0.3.0')
+  version: '0.3.1')
 
 if meson.get_compiler('cpp').get_id() == 'gcc' or meson.get_compiler('cpp').get_id() == 'clang'
   add_project_arguments('-fvisibility=hidden', '-DTERMPAINT_EXPORT_SYMBOLS', language: 'c')
