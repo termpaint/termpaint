@@ -14,5 +14,5 @@ task:
     ninja -v -C _build
   test_script: |-
     cd tests
-    ../_build/testtermpaint
+    ../_build/tests/testtermpaint
 

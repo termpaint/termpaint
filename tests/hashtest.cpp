@@ -11,7 +11,7 @@
 #include "../third-party/catch.hpp"
 #endif
 
-#include <termpaint_hash.h>
+#include <../termpaint_hash.h>
 
 template <typename X>
 const unsigned char* u8p(X); // intentionally undefined

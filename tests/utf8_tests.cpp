@@ -12,7 +12,7 @@
 #endif
 
 typedef bool _Bool;
-#include <termpaint_utf8.h>
+#include <../termpaint_utf8.h>
 
 template <typename X>
 static const unsigned char* u8p(X); // intentionally undefined

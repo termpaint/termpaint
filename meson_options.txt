@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSL-1.0
 # termpaintx
+option('tests', type : 'boolean', value : true)
 option('ttyrescue-path', type : 'string', value : '/usr/libexec')
 option('ttyrescue-install', type : 'boolean', value : false)
 option('ttyrescue-fexec-blob', type : 'boolean', value : true)
