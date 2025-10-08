@@ -38,7 +38,7 @@ if get_option('ttyrescue-fexec-blob') and host_machine.system() == 'linux'
   ttyrescue_fexec_blob_type = get_option('ttyrescue-fexec-blob-type')
   if ttyrescue_fexec_blob_type == 'default'
     if (host_machine.cpu_family() == 'ppc64' or host_machine.cpu_family() == 's390x'
-        or host_machine.cpu_family() == 'aarch64')
+        or host_machine.cpu_family() == 'aarch64' or host_machine.cpu_family() == 'riscv64')
       # the vendored version of linux-syscall-support is known not to work on these architectures
       ttyrescue_fexec_blob_type = 'musl-gcc'
     else
