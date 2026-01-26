@@ -314,7 +314,7 @@ termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const ch
         const char* path = TERMPAINT_RESCUE_PATH;
         char tmp[sizeof(TERMPAINT_RESCUE_PATH) + sizeof("ttyrescue") + 1];
         for (const char *item = path; *item;) {
-            char *end = strchr(item, ':');
+            const char *end = strchr(item, ':');
             ptrdiff_t len;
             if (end) {
                 len = end - item;
