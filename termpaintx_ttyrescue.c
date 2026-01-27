@@ -275,6 +275,10 @@ termpaintx_ttyrescue *termpaintx_ttyrescue_start_or_nullptr(int tty_fd, const ch
         // first move file descriptors we intend to keep out of the way
         if (tty_fd == 0) {
             tty_fd = dup(tty_fd);
+            if (tty_fd < 0) {
+                // Nothing much to do when this fails... just bail
+                _exit(1);
+            }
         }
         if (shmfd == 0) {
             shmfd = dup(shmfd);
